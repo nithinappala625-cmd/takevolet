@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   keywords: ["bachelor rooms hyderabad", "room handover", "zero brokerage rooms", "pg rooms hyderabad", "flat handover hyderabad", "takevolet"],
   authors: [{ name: "Takevolet Technologies" }],
   creator: "Takevolet Technologies",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.in"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.online"),
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.in",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.online",
     siteName: "Takevolet",
     title: "Takevolet | Bachelor Room Handovers in Hyderabad",
     description: "Zero brokerage bachelor room handover platform. Post your room, find a room, sell furniture & earn commission.",
