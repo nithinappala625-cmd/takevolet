@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Home, ShoppingBag, Handshake, User, LayoutDashboard, LogOut, Shield } from "lucide-react";
@@ -84,18 +83,31 @@ const Navbar = () => {
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <Image
-            src="/logo.png"
-            alt="Takevolet Logo"
-            width={36}
-            height={36}
-            className="object-contain group-hover:scale-110 transition-transform duration-300"
-            priority
-          />
+          {/* Inline SVG — transparent, adapts to any bg */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 100 100"
+            fill="none"
+            className="w-9 h-9 group-hover:scale-110 transition-transform duration-300 text-foreground"
+            aria-label="Takevolet logo"
+          >
+            {/* House */}
+            <path d="M50 10 L90 48 H76 V85 H24 V48 H10 Z" fill="currentColor"/>
+            {/* Chimney */}
+            <rect x="26" y="18" width="11" height="22" fill="currentColor"/>
+            {/* Window */}
+            <rect x="41" y="54" width="18" height="16" fill="white" opacity="0.9"/>
+            <line x1="50" y1="54" x2="50" y2="70" stroke="currentColor" strokeWidth="2"/>
+            <line x1="41" y1="62" x2="59" y2="62" stroke="currentColor" strokeWidth="2"/>
+            {/* Swoosh relay arrow */}
+            <path d="M5 88 Q30 72 55 78 Q75 83 95 70" stroke="currentColor" strokeWidth="5" strokeLinecap="round"/>
+            <path d="M86 63 L95 70 L84 74" fill="currentColor"/>
+          </svg>
           <span className="text-xl font-bold tracking-widest uppercase text-foreground">
             TAKE<span className="text-primary">VOLET</span>
           </span>
         </Link>
+
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center space-x-8">
