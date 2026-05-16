@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -106,7 +106,7 @@ export default function RefundPolicyPage() {
               </div>
               <div className="border-l-2 border-primary pl-4">
                 <p className="font-semibold text-foreground mb-1">Account Cancellation</p>
-                <p>You may delete your account at any time by emailing support@Takevolet.in. Any unused contact unlocks in your pack at the time of account deletion are non-refundable.</p>
+                <p>You may delete your account at any time by emailing support@takevolet.online. Any unused contact unlocks in your pack at the time of account deletion are non-refundable.</p>
               </div>
             </div>
           </motion.div>
@@ -117,7 +117,7 @@ export default function RefundPolicyPage() {
             <h2 className="text-xl font-bold mb-5">3. How to Request a Refund</h2>
             <div className="space-y-3">
               {[
-                { step: "01", title: "Email Us", desc: "Send an email to refunds@Takevolet.in with subject line: \"Refund Request — [Your Name] — [Order ID]\"" },
+                { step: "01", title: "Email Us", desc: "Send an email to refunds@takevolet.online with subject line: \"Refund Request — [Your Name] — [Order ID]\"" },
                 { step: "02", title: "Provide Details", desc: "Include your registered email, Razorpay Order ID / Payment ID, date of purchase, reason for refund, and screenshot if applicable" },
                 { step: "03", title: "Review (48 hrs)", desc: "Our team will review your request within 48 business hours and respond with a decision" },
                 { step: "04", title: "Refund Processed", desc: "Approved refunds are processed back to the original payment method within 5–7 business days via Razorpay" },
@@ -170,7 +170,7 @@ export default function RefundPolicyPage() {
             className="border-t border-border pt-8">
             <h2 className="text-xl font-bold mb-4">5. Disputes & Chargebacks</h2>
             <p className="text-sm text-muted-foreground font-light leading-relaxed">
-              We strongly encourage you to contact us directly at <a href="mailto:refunds@Takevolet.in" className="text-primary font-semibold hover:underline">refunds@Takevolet.in</a> before initiating a chargeback with your bank. Chargebacks initiated without prior contact will be disputed and may result in account suspension.
+              We strongly encourage you to contact us directly at <a href="mailto:refunds@takevolet.online" className="text-primary font-semibold hover:underline">refunds@takevolet.online</a> before initiating a chargeback with your bank. Chargebacks initiated without prior contact will be disputed and may result in account suspension.
             </p>
             <p className="text-sm text-muted-foreground font-light leading-relaxed mt-3">
               We are committed to resolving all genuine disputes within 48 hours.
@@ -184,11 +184,11 @@ export default function RefundPolicyPage() {
           className="mt-14 bg-foreground text-background p-8">
           <p className="font-bold text-base mb-4">Need a Refund? Contact Us Directly:</p>
           <div className="grid md:grid-cols-3 gap-4">
-            <a href="mailto:refunds@Takevolet.in" className="flex items-center gap-3 border border-background/20 p-4 hover:border-primary transition-colors">
+            <a href="mailto:refunds@takevolet.online" className="flex items-center gap-3 border border-background/20 p-4 hover:border-primary transition-colors">
               <Mail size={18} className="text-primary" />
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-background/50 mb-0.5">Email</p>
-                <p className="text-sm font-semibold">refunds@Takevolet.in</p>
+                <p className="text-sm font-semibold">refunds@takevolet.online</p>
               </div>
             </a>
             <a href="tel:+917981994870" className="flex items-center gap-3 border border-background/20 p-4 hover:border-primary transition-colors">
@@ -202,7 +202,7 @@ export default function RefundPolicyPage() {
               <ArrowRight size={18} className="text-primary" />
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-background/50 mb-0.5">Contact Form</p>
-                <p className="text-sm font-semibold">Takevolet.in/contact</p>
+                <p className="text-sm font-semibold">takevolet.online/contact</p>
               </div>
             </Link>
           </div>

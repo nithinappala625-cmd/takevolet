@@ -2,20 +2,26 @@
 // POST /api/payment/webhook
 //
 // Razorpay sends server-to-server webhooks for payment events.
-// This is MORE RELIABLE than client-side callbacks (works even if user
-// closes browser after payment).
+// MORE RELIABLE than client-side callbacks — works even if user closes browser.
 //
 // Setup in Razorpay Dashboard:
 //   Settings → Webhooks → Add Webhook
-//   URL: https://yourdomain.com/api/payment/webhook
-//   Secret: Set RAZORPAY_WEBHOOK_SECRET in .env.local
-//   Events: payment.captured, payment.failed, order.paid
+//   URL: https://takevolet.online/api/payment/webhook
+//   Secret: set RAZORPAY_WEBHOOK_SECRET in Vercel env vars
+//   Events: ✅ payment.captured  ✅ payment.failed  ✅ refund.created  ✅ order.paid
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { createClient } from "@supabase/supabase-js";
 
 const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+// Admin Supabase — bypasses RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +33,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing webhook signature" }, { status: 400 });
     }
 
-    // ── 2. Verify webhook signature ───────────────────────────────────────────
+    // ── 2. Verify webhook signature (required in production) ──────────────────
     if (WEBHOOK_SECRET) {
       const expectedSig = crypto
         .createHmac("sha256", WEBHOOK_SECRET)
@@ -35,76 +41,92 @@ export async function POST(request: Request) {
         .digest("hex");
 
       if (expectedSig !== signature) {
-        console.warn("[Webhook] Invalid signature — ignoring event");
+        console.warn("[Webhook] ❌ Invalid signature — rejecting event");
         return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
       }
     } else {
-      console.warn("[Webhook] RAZORPAY_WEBHOOK_SECRET not set — skipping signature check (dev only)");
+      // In production WEBHOOK_SECRET must be set — log warning
+      console.warn("[Webhook] ⚠️ RAZORPAY_WEBHOOK_SECRET not set — skipping verification (dev only)");
     }
 
     // ── 3. Parse event ────────────────────────────────────────────────────────
     const event = JSON.parse(rawBody);
-    const eventType = event.event;
+    const eventType: string = event.event;
     const payload = event.payload;
 
-    console.log("[Webhook] Event received:", eventType);
+    console.log("[Webhook] ✅ Event received:", eventType);
 
     switch (eventType) {
 
       case "payment.captured": {
-        // Payment is fully captured — safe to unlock contact
+        // Payment fully captured — persist unlock to Supabase
         const payment = payload.payment?.entity;
-        const orderId = payment?.order_id;
+        const orderId   = payment?.order_id;
         const paymentId = payment?.id;
-        const amount = payment?.amount; // in paise
-        const notes = payment?.notes;
+        const amount    = payment?.amount; // paise
+        const notes     = payment?.notes || {};
 
         console.log("[Webhook] payment.captured", {
-          paymentId,
-          orderId,
-          amount: `₹${amount / 100}`,
-          roomId: notes?.roomId,
-          userId: notes?.userId,
+          paymentId, orderId,
+          amount: `₹${(amount / 100).toFixed(2)}`,
+          roomId: notes.roomId,
+          userId: notes.userId,
+          type: notes.type,
         });
 
-        // TODO (production): 
-        // 1. Update DB: mark contact as unlocked for userId on roomId
-        // 2. Send confirmation email/WhatsApp to seeker
-        // 3. Credit commission to room poster's earnings
-        // Example:
-        // await db.contactUnlock.create({
-        //   userId: notes.userId,
-        //   roomId: notes.roomId,
-        //   paymentId,
-        //   orderId,
-        //   amount: amount / 100,
-        //   unlockedAt: new Date(),
-        //   expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        // });
+        // ── Persist contact unlock to Supabase ────────────────────────────────
+        if (notes.roomId && notes.userId && notes.userId !== "guest") {
+          const { error } = await supabaseAdmin.from("interests").upsert({
+            room_id:    notes.roomId,
+            user_id:    notes.userId,
+            payment_id: paymentId,
+            order_id:   orderId,
+            amount:     Math.round(amount / 100),
+            status:     "paid",
+            type:       notes.type || "contact_unlock",
+            paid_at:    new Date().toISOString(),
+          }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
+
+          if (error) {
+            console.error("[Webhook] Supabase upsert error:", error.message);
+          } else {
+            console.log("[Webhook] ✅ Interest record saved to Supabase");
+          }
+        }
         break;
       }
 
       case "payment.failed": {
         const payment = payload.payment?.entity;
-        console.warn("[Webhook] payment.failed", {
-          paymentId: payment?.id,
-          orderId: payment?.order_id,
-          errorCode: payment?.error_code,
+        console.warn("[Webhook] ❌ payment.failed", {
+          paymentId:        payment?.id,
+          orderId:          payment?.order_id,
+          errorCode:        payment?.error_code,
           errorDescription: payment?.error_description,
         });
-
-        // TODO (production):
-        // Notify user of payment failure via email
+        // Log failure to Supabase for audit (non-critical)
+        try {
+          if (payment?.notes?.roomId) {
+            await supabaseAdmin.from("payment_failures").insert({
+              room_id:    payment.notes.roomId,
+              user_id:    payment.notes.userId || null,
+              payment_id: payment.id,
+              order_id:   payment.order_id,
+              error_code: payment.error_code,
+              error_desc: payment.error_description,
+              failed_at:  new Date().toISOString(),
+            });
+          }
+        } catch (_) {}
         break;
       }
 
       case "order.paid": {
-        // Fired when all payments for an order are complete
         const order = payload.order?.entity;
         console.log("[Webhook] order.paid", {
           orderId: order?.id,
-          amount: `₹${order?.amount / 100}`,
-          status: order?.status,
+          amount:  `₹${(order?.amount / 100).toFixed(2)}`,
+          status:  order?.status,
         });
         break;
       }
@@ -112,11 +134,19 @@ export async function POST(request: Request) {
       case "refund.created": {
         const refund = payload.refund?.entity;
         console.log("[Webhook] refund.created", {
-          refundId: refund?.id,
+          refundId:  refund?.id,
           paymentId: refund?.payment_id,
-          amount: `₹${refund?.amount / 100}`,
+          amount:    `₹${(refund?.amount / 100).toFixed(2)}`,
         });
-        // TODO: Revoke contact unlock if refunded
+        // Mark the unlock as refunded in Supabase
+        try {
+          if (refund?.payment_id) {
+            await supabaseAdmin
+              .from("interests")
+              .update({ status: "refunded", refund_id: refund.id })
+              .eq("payment_id", refund.payment_id);
+          }
+        } catch (_) {}
         break;
       }
 
@@ -125,7 +155,7 @@ export async function POST(request: Request) {
     }
 
     // Always return 200 to Razorpay to acknowledge receipt
-    return NextResponse.json({ received: true }, { status: 200 });
+    return NextResponse.json({ received: true, event: eventType }, { status: 200 });
 
   } catch (error: any) {
     console.error("[Webhook] Error:", error);

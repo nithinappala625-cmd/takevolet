@@ -643,8 +643,8 @@ function DashboardContent() {
                 <a href="tel:+917981994870" className="flex items-center gap-1.5 text-xs font-semibold hover:text-primary transition-colors">
                   <Phone size={12} /> +91 79819 94870
                 </a>
-                <a href="mailto:payouts@Takevolet.in" className="flex items-center gap-1.5 text-xs font-semibold hover:text-primary transition-colors">
-                  <Mail size={12} /> payouts@Takevolet.in
+                <a href="mailto:payouts@takevolet.online" className="flex items-center gap-1.5 text-xs font-semibold hover:text-primary transition-colors">
+                  <Mail size={12} /> payouts@takevolet.online
                 </a>
               </div>
             </div>

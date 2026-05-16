@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -32,7 +32,7 @@ const sections = [
       { heading: "House Numbers Hidden", text: "We explicitly do NOT allow house/door numbers in listings. Only colony and area names are shown publicly. Your exact address is never displayed." },
       { heading: "Encryption", text: "All data is transmitted over HTTPS with SSL encryption. Passwords are hashed using bcrypt and are never stored in plain text." },
       { heading: "Access Control", text: "Your contact details (phone, WhatsApp) are only revealed to users who have purchased a verified contact unlock pack. They are never publicly visible." },
-      { heading: "Data Retention", text: "Your account data is retained as long as your account is active. You may request deletion of your data at any time by emailing privacy@Takevolet.in." },
+      { heading: "Data Retention", text: "Your account data is retained as long as your account is active. You may request deletion of your data at any time by emailing privacy@takevolet.online." },
     ],
   },
   {
@@ -50,7 +50,7 @@ const sections = [
     content: [
       { heading: "Access", text: "You can view all the data we hold about you in your Dashboard profile section at any time." },
       { heading: "Correction", text: "You can update your profile information (name, phone, location, profession) at any time from your Dashboard." },
-      { heading: "Deletion", text: "You can delete your account and all associated data by emailing privacy@Takevolet.in. We will process your request within 7 business days." },
+      { heading: "Deletion", text: "You can delete your account and all associated data by emailing privacy@takevolet.online. We will process your request within 7 business days." },
       { heading: "Portability", text: "You may request an export of your data in JSON format by contacting our support team." },
     ],
   },
@@ -58,7 +58,7 @@ const sections = [
     icon: Mail,
     title: "6. Contact & Updates",
     content: [
-      { heading: "Privacy Contact", text: "For any privacy-related questions or requests, email us at privacy@Takevolet.in or use the contact form on our website." },
+      { heading: "Privacy Contact", text: "For any privacy-related questions or requests, email us at privacy@takevolet.online or use the contact form on our website." },
       { heading: "Policy Updates", text: "We may update this Privacy Policy as the platform evolves. Significant changes will be notified to you via email. The 'Last Updated' date at the top of this page will always reflect the most recent version." },
       { heading: "Governing Law", text: "This Privacy Policy is governed by the laws of India. Any disputes shall be subject to the jurisdiction of courts in Hyderabad, Telangana." },
     ],
@@ -136,7 +136,7 @@ export default function PrivacyPage() {
           className="mt-16 border border-border p-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <p className="font-bold mb-1">Questions about this policy?</p>
-            <p className="text-sm text-muted-foreground">Email us at <a href="mailto:privacy@Takevolet.in" className="text-primary font-semibold hover:underline">privacy@Takevolet.in</a></p>
+            <p className="text-sm text-muted-foreground">Email us at <a href="mailto:privacy@takevolet.online" className="text-primary font-semibold hover:underline">privacy@takevolet.online</a></p>
           </div>
           <Link href="/contact" className="border border-border px-6 py-3 text-sm uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all flex items-center gap-2 whitespace-nowrap">
             Contact Support <ArrowRight size={14} />

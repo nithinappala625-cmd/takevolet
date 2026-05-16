@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Phone, Mail, MessageCircle, Clock, CheckCircle2, Loader2, Send, ArrowRight } from "lucide-react";
 
 const contactInfo = [
-  { icon: Mail, label: "Email Us", value: "hello@Takevolet.in", sub: "We reply within 6 hours" },
+  { icon: Mail, label: "Email Us", value: "hello@takevolet.online", sub: "We reply within 6 hours" },
   { icon: Phone, label: "Call / WhatsApp", value: "+91 79819 94870", sub: "Nithin Patel · Founder & CEO" },
   { icon: MapPin, label: "Based In", value: "Hyderabad, Telangana", sub: "India — 500081" },
   { icon: Clock, label: "Support Hours", value: "9 AM – 9 PM", sub: "Monday to Saturday" },

@@ -91,7 +91,7 @@ Takevolet's maximum liability in any dispute shall not exceed the amount paid by
     title: "9. Governing Law & Dispute Resolution",
     content: `These Terms are governed by the laws of India. Any disputes arising from the use of Takevolet shall be subject to the exclusive jurisdiction of the courts of Hyderabad, Telangana, India.
 
-For any disputes or grievances, please first contact our support team at legal@takevolet.in. We aim to resolve all issues within 7 business days.`,
+For any disputes or grievances, please first contact our support team at legal@takevolet.online. We aim to resolve all issues within 7 business days.`,
   },
   {
     title: "10. Changes to Terms",
@@ -163,7 +163,7 @@ export default function TermsPage() {
           className="mt-16 border border-border p-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <p className="font-bold mb-1">Questions about these Terms?</p>
-            <p className="text-sm text-muted-foreground">Email <a href="mailto:legal@takevolet.in" className="text-primary font-semibold hover:underline">legal@takevolet.in</a></p>
+            <p className="text-sm text-muted-foreground">Email <a href="mailto:legal@takevolet.online" className="text-primary font-semibold hover:underline">legal@takevolet.online</a></p>
           </div>
           <Link href="/contact" className="border border-border px-6 py-3 text-sm uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all flex items-center gap-2 whitespace-nowrap">
             Contact Support <ArrowRight size={14} />
