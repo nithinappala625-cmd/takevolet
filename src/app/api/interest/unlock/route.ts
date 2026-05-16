@@ -1,4 +1,4 @@
-﻿// ─── Interest & Handover Payment APIs ────────────────────────────────────────
+// ─── Interest & Handover Payment APIs ────────────────────────────────────────
 // POST /api/interest/unlock — Pay ₹500 to unlock full address (interest payment)
 // POST /api/interest/confirm — Pay ₹1,000 to confirm handover (poster gets ₹1,000)
 //
@@ -78,19 +78,48 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Payment verification failed" }, { status: 400 });
     }
 
-    // Get room full address from mock data
-    const { MOCK_ROOMS } = await import("@/data/mock");
-    const room = MOCK_ROOMS.find(r => r.id === roomId);
+    // ── Fetch real room data from Supabase ──────────────────────────────────
+    const { createClient } = await import("@supabase/supabase-js");
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
-    // Record interest
+    const { data: room } = await admin
+      .from("rooms")
+      .select("id, title, location, colony, full_address, user_id, profiles(full_name, phone, whatsapp)")
+      .eq("id", roomId)
+      .single();
+
+    const poster = room?.profiles
+      ? (Array.isArray(room.profiles) ? room.profiles[0] : room.profiles)
+      : null;
+
+    // ── Persist interest record to Supabase ─────────────────────────────────
+    const interestId = `INT-${Date.now()}`;
+    if (userId && userId !== "guest") {
+      await admin.from("interests").upsert({
+        id:         interestId,
+        room_id:    roomId,
+        user_id:    userId,
+        poster_id:  posterId || room?.user_id,
+        payment_id: razorpay_payment_id,
+        order_id:   razorpay_order_id,
+        amount:     500,
+        status:     "paid",
+        paid_at:    new Date().toISOString(),
+      }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
+    }
+
+    // Also keep in-memory for handover flow within same session
     const interestRecord = {
-      id: `INT-${Date.now()}`,
+      id: interestId,
       roomId,
       roomTitle: roomTitle || room?.title || "Room",
       userId,
       userName: userName || "User",
-      posterId: posterId || room?.postedBy?.name || "poster",
-      posterName: posterName || room?.postedBy?.name || "Poster",
+      posterId: posterId || room?.user_id || "poster",
+      posterName: posterName || poster?.full_name || "Poster",
       paymentId: razorpay_payment_id,
       orderId: razorpay_order_id,
       platformFee: 500,
@@ -100,16 +129,17 @@ export async function POST(request: Request) {
     };
     global._rr_interests.push(interestRecord);
 
+    const fullAddress = room
+      ? `${room.colony || ""}, ${room.location || ""}, Hyderabad — Contact ${poster?.full_name || "the poster"} on WhatsApp: ${poster?.whatsapp || poster?.phone || "number will be shared"}`
+      : "Address will be shared by poster on WhatsApp";
+
     return NextResponse.json({
       success: true,
-      interestId: interestRecord.id,
-      // Full address revealed after payment
-      fullAddress: room
-        ? `${room.colony}, ${room.location}, Hyderabad — Flat/House details will be shared via WhatsApp by ${room.postedBy.name} on ${room.postedBy.whatsapp}`
-        : "Address will be shared by poster on WhatsApp",
-      posterContact: room?.postedBy?.phone || "Contact via WhatsApp",
-      posterWhatsapp: room?.postedBy?.whatsapp,
-      posterName: room?.postedBy?.name,
+      interestId,
+      fullAddress,
+      posterContact:  poster?.phone    || "Contact via WhatsApp",
+      posterWhatsapp: poster?.whatsapp || poster?.phone,
+      posterName:     poster?.full_name,
       message: "Address unlocked! ₹500 paid. Contact the poster to visit the room.",
     });
 

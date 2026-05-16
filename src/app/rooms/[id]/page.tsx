@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getRoomById } from "@/lib/db";
 import type { Room } from "@/lib/db";
+import { useUser } from "@/hooks/useUser";
 
 // ─── Adapt MOCK room format to match DB Room format ───────────────────────────
 function mockToRoom(m: any): Room {
@@ -62,6 +63,13 @@ export default function RoomDetailPage() {
   const [paying, setPaying] = useState(false);
   const [paySuccess, setPaySuccess] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
+
+  // ── Auth
+  const { user } = useUser();
+  const userId   = user?.id   || "guest";
+  const userName = user?.name || "Seeker";
+  const userEmail   = user?.email || "";
+  const userPhone   = user?.phone || "";
 
   // ── Interest & Handover state ────────────────────────────────────────────
   const [step, setStep] = useState<"idle"|"interested"|"handover"|"done">("idle");
@@ -154,7 +162,7 @@ export default function RoomDetailPage() {
       const orderRes = await fetch("/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomId: room.id, userId: "user_local", type: "contact_unlock", planId: selectedPlan.id, amount: selectedPlan.paise }),
+        body: JSON.stringify({ roomId: room.id, userId, type: "contact_unlock", planId: selectedPlan.id, amount: selectedPlan.paise }),
       });
       const orderData = await orderRes.json();
 
@@ -173,14 +181,14 @@ export default function RoomDetailPage() {
         key: orderData.keyId,                       // rzp_test_... or rzp_live_...
         amount: orderData.amount,                   // in paise (150000 = ₹1,500)
         currency: orderData.currency,               // "INR"
-        name: "RoomRelay",
-        description: "5 Contact Unlock Pack — 30 Days",
-        image: "/logo.png",                         // optional: your logo
-        order_id: orderData.orderId,                // from Step 1
+        name: "Takevolet",
+        description: `${selectedPlan.label} — Unlock Contact`,
+        image: "/logo.png",
+        order_id: orderData.orderId,
         prefill: {
-          name: "",          // optionally pre-fill from user profile
-          email: "",
-          contact: "",
+          name: userName,
+          email: userEmail,
+          contact: userPhone,
         },
         notes: {
           roomId: room.id,
@@ -210,7 +218,7 @@ export default function RoomDetailPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
                 roomId: room.id,
-                userId: "user_local",
+                userId,
               }),
             });
             const verifyData = await verifyRes.json();
@@ -263,7 +271,7 @@ export default function RoomDetailPage() {
       const orderRes = await fetch("/api/interest/unlock?action=create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomId: room.id, userId: "user_local", userName: "Seeker" }),
+        body: JSON.stringify({ roomId: room.id, userId, userName }),
       });
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData.error || "Failed to create order");
@@ -276,7 +284,7 @@ export default function RoomDetailPage() {
         key: orderData.keyId,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "RoomRelay",
+        name: "Takevolet",
         description: "Address Unlock — I’m Interested",
         order_id: orderData.orderId,
         theme: { color: "#D4AF37" },
@@ -289,8 +297,8 @@ export default function RoomDetailPage() {
             body: JSON.stringify({
               ...resp,
               roomId: room.id,
-              userId: "user_local",
-              userName: "Seeker",
+              userId,
+              userName,
               roomTitle: room.title,
               posterName: room.profiles?.full_name || "Poster",
               posterId: room.user_id,
@@ -319,7 +327,7 @@ export default function RoomDetailPage() {
       const orderRes = await fetch("/api/interest/unlock?action=create-handover-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomId: room.id, userId: "user_local", interestId }),
+        body: JSON.stringify({ roomId: room.id, userId, interestId }),
       });
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData.error || "Failed to create handover order");
@@ -332,7 +340,7 @@ export default function RoomDetailPage() {
         key: orderData.keyId,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "RoomRelay",
+        name: "Takevolet",
         description: "Handover Confirmation — ₹1,000 to Poster",
         order_id: orderData.orderId,
         theme: { color: "#D4AF37" },
@@ -342,7 +350,7 @@ export default function RoomDetailPage() {
           const verifyRes = await fetch("/api/interest/unlock?action=verify-handover", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...resp, roomId: room.id, userId: "user_local", interestId }),
+            body: JSON.stringify({ ...resp, roomId: room.id, userId, interestId }),
           });
           const vData = await verifyRes.json();
           if (!verifyRes.ok) throw new Error(vData.error || "Verification failed");
