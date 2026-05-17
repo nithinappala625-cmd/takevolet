@@ -81,8 +81,11 @@ const Navbar = () => {
     }`}>
       {/* ── TICKER ── */}
       <div className="bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-widest py-1.5 overflow-hidden whitespace-nowrap flex items-center">
-        <div className="animate-ticker inline-block min-w-full text-center px-4">
-          🔥 OFFER FOR BACHELORS: Post 50 rooms & earn ₹500 directly from Takevolet! Grab the offer now! 🔥
+        <div className="animate-ticker inline-block whitespace-nowrap">
+          <span className="mx-12">🔥 OFFER FOR BACHELORS: Post 50 rooms & earn ₹500 directly from Takevolet! Grab the offer now! 🔥</span>
+          <span className="mx-12">✨ HEY HOUSE OWNERS: List your property today and get the "Bachelor Verified" badge instantly! ✨</span>
+          <span className="mx-12">🔥 OFFER FOR BACHELORS: Post 50 rooms & earn ₹500 directly from Takevolet! Grab the offer now! 🔥</span>
+          <span className="mx-12">✨ HEY HOUSE OWNERS: List your property today and get the "Bachelor Verified" badge instantly! ✨</span>
         </div>
       </div>
 
