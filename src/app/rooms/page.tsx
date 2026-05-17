@@ -6,7 +6,7 @@ import { HYDERABAD_AREAS, FURNISHING_OPTIONS, MEMBERS_ALLOWED, BUDGET_RANGES, GE
 import { MapPin, IndianRupee, Calendar, Users, Sofa, ArrowUpRight, SlidersHorizontal, Search, X, ChevronDown, Eye, UserCheck, Car, Bike, Lock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { getAllRooms } from "@/lib/db";
+import { fetchAllRoomsAction } from "@/lib/server-actions";
 import type { Room } from "@/lib/db";
 
 // Convert MOCK room to unified Room type for display
@@ -38,7 +38,7 @@ export default function RoomsPage() {
   useEffect(() => {
     (async () => {
       setRoomsLoading(true);
-      const dbRooms = await getAllRooms();
+      const dbRooms = await fetchAllRoomsAction();
       const mockRooms = MOCK_ROOMS.map(mockToRoom);
       // DB rooms first (real listings), then mocks as demo
       setAllRooms([...dbRooms, ...mockRooms]);

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { getRoomById } from "@/lib/db";
+import { fetchRoomByIdAction } from "@/lib/server-actions";
 import type { Room } from "@/lib/db";
 import { useUser } from "@/hooks/useUser";
 
@@ -94,7 +94,7 @@ export default function RoomDetailPage() {
     const id = params.id as string;
     const load = async () => {
       // 1. Try Supabase
-      const dbRoom = await getRoomById(id);
+      const dbRoom = await fetchRoomByIdAction(id);
       if (dbRoom) { setRoom(dbRoom); setRoomLoading(false); return; }
       // 2. Try MOCK_ROOMS
       const mock = MOCK_ROOMS.find(r => r.id === id);
