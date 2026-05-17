@@ -138,5 +138,5 @@ img[loading="lazy"] {
 }
 
 .animate-ticker {
-  animation: ticker 15s linear infinite;
+  animation: ticker 30s linear infinite;
 }

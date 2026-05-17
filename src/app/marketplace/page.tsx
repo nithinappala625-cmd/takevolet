@@ -5,6 +5,7 @@ import { MOCK_ITEMS } from "@/data/mock";
 import { CATEGORIES, ITEM_CONDITIONS } from "@/data/locations";
 import { IndianRupee, ArrowUpRight, Tag, MapPin, Phone, Repeat } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -77,11 +78,12 @@ export default function MarketplacePage() {
         {/* Items Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredItems.map((item, i) => (
-            <motion.div key={item.id}
-              initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className="group border border-border overflow-hidden hover:border-primary/30 transition-all duration-500">
-              
-              <div className="relative aspect-square overflow-hidden">
+            <Link href={`/marketplace/${item.id}`} key={item.id} className="block group">
+              <motion.div
+                initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                className="border border-border overflow-hidden hover:border-primary/30 transition-all duration-500 h-full flex flex-col">
+                
+                <div className="relative aspect-square overflow-hidden shrink-0">
                 <img src={item.image || ""} alt={item.title} loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
@@ -129,10 +131,11 @@ export default function MarketplacePage() {
                   </div>
                   <button className="w-9 h-9 border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all">
                     <Phone size={14} />
-                  </button>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </Link>
           ))}
         </div>
 
