@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { fetchRoomByIdAction } from "@/lib/server-actions";
+import { fetchRoomByIdAction, checkRoomUnlockStatusAction } from "@/lib/server-actions";
 import type { Room } from "@/lib/db";
 import { useUser } from "@/hooks/useUser";
 
@@ -93,6 +93,15 @@ export default function RoomDetailPage() {
   useEffect(() => {
     const id = params.id as string;
     const load = async () => {
+      // Check if already unlocked
+      if (userId !== "guest") {
+        const contact = await checkRoomUnlockStatusAction(id, userId);
+        if (contact) {
+          setContactUnlocked(true);
+          setUnlockedContact(contact);
+        }
+      }
+
       // 1. Try Supabase
       const dbRoom = await fetchRoomByIdAction(id);
       if (dbRoom) { setRoom(dbRoom); setRoomLoading(false); return; }
@@ -104,7 +113,7 @@ export default function RoomDetailPage() {
       setRoomLoading(false);
     };
     load();
-  }, [params.id]);
+  }, [params.id, userId]);
 
   if (roomLoading) {
     return (

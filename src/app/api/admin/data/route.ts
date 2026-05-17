@@ -67,9 +67,30 @@ export async function GET(request: Request) {
       totalUsers:           profiles.length,
       totalRooms:           rooms.length,
     },
-    payouts,
-    interests,
-    handovers,
+    payouts: payouts.map((p: any) => ({
+      ...p,
+      userName: p.user_name,
+      upiId: p.upi_id,
+      bankAccount: p.bank_account,
+      bankIfsc: p.bank_ifsc,
+      bankName: p.bank_name,
+      requestedAt: p.created_at,
+      processedAt: p.processed_at,
+    })),
+    interests: interests.map((i: any) => ({
+      ...i,
+      userName: i.seeker_name,
+      userId: i.seeker_id,
+      roomTitle: i.room_title,
+      posterName: i.poster_name,
+      handoverConfirmed: i.handover_confirmed,
+    })),
+    handovers: handovers.map((h: any) => ({
+      ...h,
+      userName: h.seeker_name,
+      posterName: h.poster_name,
+      confirmedAt: h.confirmed_at,
+    })),
     // Map profiles to include computed fields
     users: profiles.map((p: any) => ({
       id:            p.id,

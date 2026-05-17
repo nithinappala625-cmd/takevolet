@@ -33,3 +33,31 @@ export async function fetchRoomByIdAction(id: string): Promise<Room | null> {
   if (error || !data) return null;
   return data as Room;
 }
+
+export async function checkRoomUnlockStatusAction(roomId: string, userId: string) {
+  if (!roomId || !userId || userId === "guest") return null;
+
+  const { data, error } = await supabaseAdmin
+    .from("interests")
+    .select("payment_status")
+    .eq("room_id", roomId)
+    .eq("seeker_id", userId)
+    .single();
+
+  if (error || !data || data.payment_status !== "paid") return null;
+  
+  // If paid, fetch contact info to return
+  const room = await fetchRoomByIdAction(roomId);
+  if (!room) return null;
+  
+  const p = Array.isArray(room.profiles) ? room.profiles[0] : room.profiles as any;
+  if (!p) return null;
+  
+  return {
+    name:       p.full_name  || "Room Poster",
+    phone:      p.phone      || "",
+    whatsapp:   p.whatsapp   || p.phone || "",
+    profession: p.profession || "",
+    avatar:     p.avatar_url || "",
+  };
+}
