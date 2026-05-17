@@ -131,3 +131,12 @@ img[loading="lazy"] {
 ::-webkit-scrollbar-thumb {
   background: var(--border);
 }
+
+@keyframes ticker {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-ticker {
+  animation: ticker 15s linear infinite;
+}

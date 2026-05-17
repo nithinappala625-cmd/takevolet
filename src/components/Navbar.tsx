@@ -77,9 +77,16 @@ const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b ${
-      isScrolled ? "bg-background/80 backdrop-blur-xl border-border py-4" : "bg-transparent border-transparent py-6"
+      isScrolled ? "bg-background/80 backdrop-blur-xl border-border" : "bg-transparent border-transparent"
     }`}>
-      <div className="container mx-auto px-6 md:px-12 flex justify-between items-center">
+      {/* ── TICKER ── */}
+      <div className="bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-widest py-1.5 overflow-hidden whitespace-nowrap flex items-center">
+        <div className="animate-ticker inline-block min-w-full text-center px-4">
+          🔥 OFFER FOR BACHELORS: Post 50 rooms & earn ₹500 directly from Takevolet! Grab the offer now! 🔥
+        </div>
+      </div>
+
+      <div className={`container mx-auto px-6 md:px-12 flex justify-between items-center transition-all ${isScrolled ? "py-4" : "py-6"}`}>
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
