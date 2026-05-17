@@ -36,14 +36,16 @@ export async function POST(request: Request) {
 
     // ── 3. Fetch contact — try Supabase first, then MOCK fallback ─────────────
     let contact: { name: string; phone: string; whatsapp: string; profession: string; avatar: string } | null = null;
+    let room: any = null;
 
     if (roomId) {
       try {
-        const { data: room } = await supabaseAdmin
+        const { data: dbRoom } = await supabaseAdmin
           .from("rooms")
-          .select("user_id, title")
+          .select("user_id, title, full_address")
           .eq("id", roomId)
           .single();
+        room = dbRoom;
 
         if (room?.user_id) {
           const { data: profile } = await supabaseAdmin
@@ -88,19 +90,28 @@ export async function POST(request: Request) {
 
     // ── 4. Persist unlock to Supabase (non-blocking — don't crash on failure) ─
     if (userId && userId !== "guest" && roomId) {
-      try {
+        let seekerName = "Anonymous";
+        if (userId && userId !== "guest") {
+          const { data: seeker } = await supabaseAdmin.from("profiles").select("full_name").eq("id", userId).single();
+          if (seeker?.full_name) seekerName = seeker.full_name;
+        }
+
         await supabaseAdmin.from("interests").upsert({
           room_id:    roomId,
-          user_id:    userId,
-          payment_id: razorpay_payment_id,
-          order_id:   razorpay_order_id,
-          amount:     500,
-          status:     "paid",
+          seeker_id:  userId,
+          poster_id:  room?.user_id || "",
+          room_title: room?.title || "",
+          poster_name: contact?.name || "Room Poster",
+          seeker_name: seekerName,
+          platform_fee: 500,
+          razorpay_order_id: razorpay_order_id,
+          razorpay_payment_id: razorpay_payment_id,
+          payment_status: "paid",
+          full_address: room?.full_address || "",
           paid_at:    new Date().toISOString(),
-        }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
+        }, { onConflict: "room_id,seeker_id", ignoreDuplicates: true });
       } catch (e) {
-        console.warn("[Razorpay] interests upsert failed (table may not exist yet):", e);
-        // Non-fatal — contact still returned below
+        console.warn("[Razorpay] interests upsert failed:", e);
       }
     }
 

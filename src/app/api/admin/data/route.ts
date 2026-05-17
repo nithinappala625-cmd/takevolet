@@ -1,4 +1,4 @@
-﻿// ─── Admin Auth & Data API ─────────────────────────────────────────────────────
+// ─── Admin Auth & Data API ─────────────────────────────────────────────────────
 // GET  /api/admin/data — all platform data (requires admin password header)
 // POST /api/admin/data — approve / reject / processing a payout
 // ─────────────────────────────────────────────────────────────────────────────
@@ -6,7 +6,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Nithin@Takevolet2026";
+const FRONTEND_ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
 // Service-role client — bypasses RLS (server-side only, never exposed to browser)
 const supabaseAdmin = createClient(
@@ -16,7 +16,7 @@ const supabaseAdmin = createClient(
 );
 
 function verifyAdmin(request: Request): boolean {
-  return request.headers.get("x-admin-password") === ADMIN_PASSWORD;
+  return request.headers.get("x-admin-password") === FRONTEND_ADMIN_PASSWORD;
 }
 
 // ─── GET /api/admin/data ───────────────────────────────────────────────────────
