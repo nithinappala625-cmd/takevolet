@@ -179,9 +179,11 @@ const Navbar = () => {
                     <Link href="/post/room" className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors text-sm font-medium">
                       <Home size={14} /> Post a Room
                     </Link>
-                    <Link href="/admin" className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors text-sm font-medium border-t border-border">
-                      <Shield size={14} className="text-primary" /> Admin Panel
-                    </Link>
+                    {user.email === "nithinappala625@gmail.com" && (
+                      <Link href="/admin" className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors text-sm font-medium border-t border-border">
+                        <Shield size={14} className="text-primary" /> Admin Panel
+                      </Link>
+                    )}
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-medium border-t border-border">
                       <LogOut size={14} /> Logout
                     </button>
@@ -191,10 +193,6 @@ const Navbar = () => {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Link href="/admin"
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors font-semibold">
-                <Shield size={13} /> Admin
-              </Link>
               <Link href="/auth"
                 className="bg-primary text-primary-foreground px-6 py-2.5 text-sm uppercase tracking-wider font-semibold hover:bg-primary/90 transition-all border border-primary hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]">
                 Sign Up Free
@@ -244,9 +242,11 @@ const Navbar = () => {
                   <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
                     <LayoutDashboard size={15} /> My Dashboard
                   </Link>
-                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
-                    <Shield size={15} className="text-primary" /> Admin Panel
-                  </Link>
+                  {user.email === "nithinappala625@gmail.com" && (
+                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
+                      <Shield size={15} className="text-primary" /> Admin Panel
+                    </Link>
+                  )}
                   <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="text-base uppercase tracking-widest font-medium text-red-500 flex items-center gap-2">
                     <LogOut size={15} /> Logout
                   </button>
@@ -255,9 +255,6 @@ const Navbar = () => {
                 <>
                   <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
                     <User size={15} /> Sign Up / Login
-                  </Link>
-                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-sm uppercase tracking-widest font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">
-                    <Shield size={14} /> Admin Login
                   </Link>
                 </>
               )}

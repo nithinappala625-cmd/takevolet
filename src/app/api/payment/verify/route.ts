@@ -90,6 +90,7 @@ export async function POST(request: Request) {
 
     // ── 4. Persist unlock to Supabase (non-blocking — don't crash on failure) ─
     if (userId && userId !== "guest" && roomId) {
+      try {
         let seekerName = "Anonymous";
         if (userId && userId !== "guest") {
           const { data: seeker } = await supabaseAdmin.from("profiles").select("full_name").eq("id", userId).single();

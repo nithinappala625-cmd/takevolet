@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,8 +6,9 @@ import {
   Shield, Users, Home, IndianRupee, TrendingUp, CheckCircle2,
   Clock, X, AlertCircle, RefreshCw, Eye, EyeOff, LogOut,
   Wallet, ArrowUpRight, Building2, Phone, Mail, Send,
-  BarChart2, Activity, Download, ChevronDown, Star
+  BarChart2, Activity, Download, ChevronDown, Star, Lock
 } from "lucide-react";
+import { useUser } from "@/hooks/useUser";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
@@ -24,6 +25,7 @@ export default function AdminPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionNote, setActionNote] = useState("");
   const [expandedPayout, setExpandedPayout] = useState<string | null>(null);
+  const { user, loading: userLoading } = useUser();
 
   // ── Login ──────────────────────────────────────────────────────────────────
   const handleLogin = (e: React.FormEvent) => {
@@ -108,6 +110,18 @@ export default function AdminPage() {
 
   const fmt = (n: number) => `₹${n.toLocaleString("en-IN")}`;
   const fmtDate = (d: string) => new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+  // ━━━ SECURITY GATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if (userLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><RefreshCw className="animate-spin text-primary" /></div>;
+  if (!user || user.email !== "nithinappala625@gmail.com") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+        <Lock size={48} className="text-red-500 mb-4" />
+        <h1 className="text-2xl font-black mb-2">Access Denied</h1>
+        <p className="text-muted-foreground">You do not have permission to view this page.</p>
+      </div>
+    );
+  }
 
   // ━━━ LOGIN SCREEN ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if (!authed) {
