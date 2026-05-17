@@ -516,16 +516,16 @@ export default function RoomDetailPage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="border border-border p-6 bg-secondary/20">
               <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4">Posted By</p>
               <div className="flex items-center gap-4 mb-5">
-                {(contactUnlocked && unlockedContact?.avatar) || room.profiles?.avatar_url ? (
-                  <img src={contactUnlocked && unlockedContact?.avatar ? unlockedContact.avatar : (room.profiles?.avatar_url || "")} alt={(contactUnlocked && unlockedContact?.name) || room.profiles?.full_name || ""} referrerPolicy="no-referrer" className="w-16 h-16 rounded-full object-cover border-2 border-primary/30" />
+                {room.profiles?.avatar_url || unlockedContact?.avatar ? (
+                  <img src={room.profiles?.avatar_url || unlockedContact?.avatar || ""} alt={room.profiles?.full_name || unlockedContact?.name || ""} referrerPolicy="no-referrer" className="w-16 h-16 rounded-full object-cover border-2 border-primary/30" />
                 ) : (
                   <div className="w-16 h-16 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-lg">{((contactUnlocked && unlockedContact?.name) || room.profiles?.full_name || "?")[0]}</span>
+                    <span className="text-primary-foreground font-bold text-lg">{((room.profiles?.full_name || unlockedContact?.name || "?")[0])}</span>
                   </div>
                 )}
                 <div>
-                  <p className="font-bold text-base">{(contactUnlocked && unlockedContact?.name) || room.profiles?.full_name || "Room Owner"}</p>
-                  <p className="text-xs text-muted-foreground">{(contactUnlocked && unlockedContact?.profession) || room.profiles?.profession || ""}</p>
+                  <p className="font-bold text-base">{room.profiles?.full_name || unlockedContact?.name || "Room Owner"}</p>
+                  <p className="text-xs text-muted-foreground">{room.profiles?.profession || unlockedContact?.profession || ""}</p>
                   <div className="flex items-center gap-1 mt-1">
                     {[1,2,3,4,5].map(s => <Star key={s} size={10} className="text-primary fill-primary" />)}
                     <span className="text-[10px] text-muted-foreground ml-1">Verified</span>
