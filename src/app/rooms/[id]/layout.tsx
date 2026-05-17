@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     const room = await getRoomById(params.id)
     if (room) {
       title = `${room.title} | Takevolet`
-      description = room.description.slice(0, 150) + "..."
+      description = room.description ? room.description.slice(0, 150) + "..." : "View details for this room handover."
       if (room.images && room.images.length > 0) {
         image = room.images[0]
       }
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       const mock = MOCK_ROOMS.find(r => r.id === params.id)
       if (mock) {
         title = `${mock.title} | Takevolet`
-        description = mock.description.slice(0, 150) + "..."
+        description = mock.description ? mock.description.slice(0, 150) + "..." : "View details for this room handover."
         if (mock.images && mock.images.length > 0) {
           image = mock.images[0]
         }
