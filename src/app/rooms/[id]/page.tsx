@@ -516,16 +516,16 @@ export default function RoomDetailPage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="border border-border p-6 bg-secondary/20">
               <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4">Posted By</p>
               <div className="flex items-center gap-4 mb-5">
-                {room.profiles?.avatar_url ? (
-                  <img src={room.profiles.avatar_url} alt={room.profiles?.full_name || ""} referrerPolicy="no-referrer" className="w-16 h-16 rounded-full object-cover border-2 border-primary/30" />
+                {(contactUnlocked && unlockedContact?.avatar) || room.profiles?.avatar_url ? (
+                  <img src={contactUnlocked && unlockedContact?.avatar ? unlockedContact.avatar : (room.profiles?.avatar_url || "")} alt={(contactUnlocked && unlockedContact?.name) || room.profiles?.full_name || ""} referrerPolicy="no-referrer" className="w-16 h-16 rounded-full object-cover border-2 border-primary/30" />
                 ) : (
                   <div className="w-16 h-16 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-lg">{(room.profiles?.full_name || "?")[0]}</span>
+                    <span className="text-primary-foreground font-bold text-lg">{((contactUnlocked && unlockedContact?.name) || room.profiles?.full_name || "?")[0]}</span>
                   </div>
                 )}
                 <div>
-                  <p className="font-bold text-base">{room.profiles?.full_name || "Room Owner"}</p>
-                  <p className="text-xs text-muted-foreground">{room.profiles?.profession || ""}</p>
+                  <p className="font-bold text-base">{(contactUnlocked && unlockedContact?.name) || room.profiles?.full_name || "Room Owner"}</p>
+                  <p className="text-xs text-muted-foreground">{(contactUnlocked && unlockedContact?.profession) || room.profiles?.profession || ""}</p>
                   <div className="flex items-center gap-1 mt-1">
                     {[1,2,3,4,5].map(s => <Star key={s} size={10} className="text-primary fill-primary" />)}
                     <span className="text-[10px] text-muted-foreground ml-1">Verified</span>
@@ -554,46 +554,66 @@ export default function RoomDetailPage() {
               {/* ── IDLE: Pricing Plans (primary) ──────────────────────── */}
               {step === "idle" && (
                 <div>
-                  {/* Blurred contact preview */}
-                  <div className="relative mb-4">
-                    <div className="blur-sm select-none p-4 bg-secondary/50 border border-border">
-                      <p className="font-mono font-bold">+91 XXXXX XXXXX</p>
-                      <p className="text-xs text-muted-foreground">Full address hidden</p>
+                  {contactUnlocked && unlockedContact ? (
+                    <div className="bg-green-50 border border-green-200 p-5 mb-5 text-center">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <CheckCircle2 size={24} className="text-green-600" />
+                      </div>
+                      <h3 className="font-bold text-green-800 text-lg mb-1">Contact Unlocked</h3>
+                      <p className="text-sm text-green-700 font-mono font-bold text-xl mb-4">{unlockedContact.phone || unlockedContact.whatsapp || "No Number Available"}</p>
+                      <div className="flex gap-2">
+                        <a href={`tel:${unlockedContact.phone}`} className="flex-1 bg-green-600 text-white py-3 text-xs uppercase tracking-wider font-bold hover:bg-green-700 transition-all flex items-center justify-center gap-1.5 rounded-sm">
+                          <Phone size={13}/> Call Now
+                        </a>
+                        <a href={`https://wa.me/${(unlockedContact.whatsapp || unlockedContact.phone || "").replace(/[^0-9]/g,"")}`} target="_blank" className="flex-1 border border-green-600 text-green-700 py-3 text-xs uppercase tracking-wider font-bold hover:bg-green-600 hover:text-white transition-all flex items-center justify-center gap-1.5 rounded-sm">
+                          <MessageCircle size={13}/> WhatsApp
+                        </a>
+                      </div>
                     </div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Lock size={22} className="text-muted-foreground" />
-                    </div>
-                  </div>
-
-                  {/* PRIMARY: Contact Plans */}
-                  <p className="text-[10px] uppercase tracking-widest font-bold mb-3">Choose Contact Plan</p>
-                  <div className="space-y-2 mb-4">
-                    {PLANS.map(plan => (
-                      <label key={plan.id}
-                        className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${
-                          selectedPlan.id === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                        }`}>
-                        <input type="radio" name="plan" checked={selectedPlan.id === plan.id}
-                          onChange={() => setSelectedPlan(plan)} className="accent-primary" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold">{plan.label}</span>
-                            {plan.badge && (
-                              <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 font-bold uppercase tracking-wider">{plan.badge}</span>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-muted-foreground">{plan.perContact}/contact</span>
+                  ) : (
+                    <>
+                      {/* Blurred contact preview */}
+                      <div className="relative mb-4">
+                        <div className="blur-sm select-none p-4 bg-secondary/50 border border-border">
+                          <p className="font-mono font-bold">+91 XXXXX XXXXX</p>
+                          <p className="text-xs text-muted-foreground">Full address hidden</p>
                         </div>
-                        <span className="font-black text-primary">₹{plan.price}</span>
-                      </label>
-                    ))}
-                  </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Lock size={22} className="text-muted-foreground" />
+                        </div>
+                      </div>
 
-                  {payError && <p className="text-xs text-red-500 mb-3 flex items-center gap-1"><AlertCircle size={11}/>{payError}</p>}
-                  <button onClick={() => setPaymentModal(true)}
-                    className="w-full bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 mb-3">
-                    <Phone size={15}/> Unlock Contact — ₹{selectedPlan.price}
-                  </button>
+                      {/* PRIMARY: Contact Plans */}
+                      <p className="text-[10px] uppercase tracking-widest font-bold mb-3">Choose Contact Plan</p>
+                      <div className="space-y-2 mb-4">
+                        {PLANS.map(plan => (
+                          <label key={plan.id}
+                            className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${
+                              selectedPlan.id === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                            }`}>
+                            <input type="radio" name="plan" checked={selectedPlan.id === plan.id}
+                              onChange={() => setSelectedPlan(plan)} className="accent-primary" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold">{plan.label}</span>
+                                {plan.badge && (
+                                  <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 font-bold uppercase tracking-wider">{plan.badge}</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">{plan.perContact}/contact</span>
+                            </div>
+                            <span className="font-black text-primary">₹{plan.price}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      {payError && <p className="text-xs text-red-500 mb-3 flex items-center gap-1"><AlertCircle size={11}/>{payError}</p>}
+                      <button onClick={() => setPaymentModal(true)}
+                        className="w-full bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 mb-3">
+                        <Phone size={15}/> Unlock Contact — ₹{selectedPlan.price}
+                      </button>
+                    </>
+                  )}
 
                   {/* SECONDARY: I'm Interested — address unlock */}
                   <div className="border border-dashed border-primary/30 p-4 bg-primary/3">
