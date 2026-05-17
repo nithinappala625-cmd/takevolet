@@ -515,23 +515,28 @@ export default function RoomDetailPage() {
             {/* Posted By */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="border border-border p-6 bg-secondary/20">
               <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4">Posted By</p>
-              <div className="flex items-center gap-4 mb-5">
-                {room.profiles?.avatar_url || unlockedContact?.avatar ? (
-                  <img src={room.profiles?.avatar_url || unlockedContact?.avatar || ""} alt={room.profiles?.full_name || unlockedContact?.name || ""} referrerPolicy="no-referrer" className="w-16 h-16 rounded-full object-cover border-2 border-primary/30" />
-                ) : (
-                  <div className="w-16 h-16 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-lg">{((room.profiles?.full_name || unlockedContact?.name || "?")[0])}</span>
+              {(() => {
+                const p = Array.isArray(room.profiles) ? room.profiles[0] : room.profiles;
+                return (
+                  <div className="flex items-center gap-4 mb-5">
+                    {p?.avatar_url || unlockedContact?.avatar ? (
+                      <img src={p?.avatar_url || unlockedContact?.avatar || ""} alt={p?.full_name || unlockedContact?.name || ""} referrerPolicy="no-referrer" className="w-16 h-16 rounded-full object-cover border-2 border-primary/30" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
+                        <span className="text-primary-foreground font-bold text-lg">{((p?.full_name || unlockedContact?.name || "?")[0])}</span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-bold text-base">{p?.full_name || unlockedContact?.name || "Room Owner"}</p>
+                      <p className="text-xs text-muted-foreground">{p?.profession || unlockedContact?.profession || ""}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        {[1,2,3,4,5].map(s => <Star key={s} size={10} className="text-primary fill-primary" />)}
+                        <span className="text-[10px] text-muted-foreground ml-1">Verified</span>
+                      </div>
+                    </div>
                   </div>
-                )}
-                <div>
-                  <p className="font-bold text-base">{room.profiles?.full_name || unlockedContact?.name || "Room Owner"}</p>
-                  <p className="text-xs text-muted-foreground">{room.profiles?.profession || unlockedContact?.profession || ""}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {[1,2,3,4,5].map(s => <Star key={s} size={10} className="text-primary fill-primary" />)}
-                    <span className="text-[10px] text-muted-foreground ml-1">Verified</span>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* ── STEP INDICATOR ──────────────────────────────────── */}
               <div className="flex items-center gap-1.5 mb-5">
