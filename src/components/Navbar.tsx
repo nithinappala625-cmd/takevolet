@@ -61,6 +61,7 @@ const Navbar = () => {
   const navLinks = [
     { name: "Rooms", href: "/rooms" },
     { name: "Marketplace", href: "/marketplace" },
+    { name: "Refer & Earn", href: "/refer" },
   ];
 
   const postOptions = [
