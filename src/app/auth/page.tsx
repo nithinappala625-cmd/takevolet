@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -109,11 +109,21 @@ function AuthForm() {
         {/* Logo */}
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-3 group mb-16">
-            <div className="w-10 h-10 border-2 border-primary flex items-center justify-center rotate-45 group-hover:rotate-90 transition-transform duration-500">
-              <div className="w-2.5 h-2.5 bg-primary -rotate-45" />
-            </div>
-            <span className="text-2xl font-black tracking-widest uppercase">
-              Room<span className="text-primary">Relay</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 100 100"
+              fill="none"
+              className="w-12 h-12 text-background group-hover:scale-110 transition-transform duration-300"
+              aria-label="Takevolet logo"
+            >
+              <path d="M50 10 L90 48 H76 V85 H24 V48 H10 Z" fill="currentColor"/>
+              <rect x="26" y="18" width="11" height="22" fill="currentColor"/>
+              <rect x="41" y="54" width="18" height="16" fill="black" opacity="0.9"/>
+              <line x1="50" y1="54" x2="50" y2="70" stroke="currentColor" strokeWidth="2"/>
+              <line x1="41" y1="62" x2="59" y2="62" stroke="currentColor" strokeWidth="2"/>
+            </svg>
+            <span className="text-3xl font-black tracking-[0.2em] uppercase">
+              Take<span className="text-primary">volet</span>
             </span>
           </Link>
 
@@ -156,13 +166,22 @@ function AuthForm() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 bg-background">
         <div className="w-full max-w-md">
 
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-8 text-center">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-8 h-8 border-2 border-primary flex items-center justify-center rotate-45">
-                <div className="w-2 h-2 bg-primary -rotate-45" />
-              </div>
-              <span className="text-xl font-black tracking-widest">Room<span className="text-primary">Relay</span></span>
+          <div className="lg:hidden mb-8 flex justify-center">
+            <Link href="/" className="inline-flex items-center gap-2 group">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 100 100"
+                fill="none"
+                className="w-8 h-8 text-foreground group-hover:scale-110 transition-transform duration-300"
+                aria-label="Takevolet logo"
+              >
+                <path d="M50 10 L90 48 H76 V85 H24 V48 H10 Z" fill="currentColor"/>
+                <rect x="26" y="18" width="11" height="22" fill="currentColor"/>
+                <rect x="41" y="54" width="18" height="16" fill="white" opacity="0.9"/>
+                <line x1="50" y1="54" x2="50" y2="70" stroke="currentColor" strokeWidth="2"/>
+                <line x1="41" y1="62" x2="59" y2="62" stroke="currentColor" strokeWidth="2"/>
+              </svg>
+              <span className="text-2xl font-black tracking-[0.2em] uppercase">Take<span className="text-primary">volet</span></span>
             </Link>
           </div>
 
