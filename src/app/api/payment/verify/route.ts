@@ -1,131 +1,128 @@
 // ─── Razorpay Payment Verification API ───────────────────────────────────────
-// POST /api/payment/verify
-//
-// After Razorpay checkout completes, it returns:
-//   razorpay_payment_id, razorpay_order_id, razorpay_signature
-//
-// We MUST verify the HMAC-SHA256 signature server-side before unlocking
-// the contact. This prevents fake/forged payment callbacks.
-// ─────────────────────────────────────────────────────────────────────────────
-
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 
-// Admin Supabase client — bypasses RLS to read poster profile
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// ─── POST /api/payment/verify ─────────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const {
-      razorpay_payment_id,
-      razorpay_order_id,
-      razorpay_signature,
-      roomId,
-      userId,
-    } = body;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, roomId, userId } = body;
 
-    // ── 1. Validate required fields ──────────────────────────────────────────
+    // ── 1. Validate fields ───────────────────────────────────────────────────
     if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
-      return NextResponse.json(
-        { error: "Missing payment fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing payment fields" }, { status: 400 });
     }
-
     if (!KEY_SECRET) {
       return NextResponse.json({ error: "Payment gateway not configured" }, { status: 503 });
     }
 
-    // ── 2. HMAC-SHA256 Signature Verification ─────────────────────────────────
-    const body_to_sign = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const expected_signature = crypto
+    // ── 2. HMAC-SHA256 Signature Verification ────────────────────────────────
+    const expected = crypto
       .createHmac("sha256", KEY_SECRET)
-      .update(body_to_sign)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    if (expected_signature !== razorpay_signature) {
+    if (expected !== razorpay_signature) {
       console.warn("[Razorpay] Signature mismatch", { razorpay_order_id });
-      return NextResponse.json(
-        { error: "Payment verification failed. Signature mismatch." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Payment verification failed. Signature mismatch." }, { status: 400 });
     }
 
-    // ── 3. Payment verified ✅ — fetch real contact from Supabase ─────────────
-    let contact = null;
+    // ── 3. Fetch contact — try Supabase first, then MOCK fallback ─────────────
+    let contact: { name: string; phone: string; whatsapp: string; profession: string; avatar: string } | null = null;
 
     if (roomId) {
-      // Fetch room + poster profile from Supabase
-      const { data: room } = await supabaseAdmin
-        .from("rooms")
-        .select("user_id, title, location, colony, profiles(full_name, phone, whatsapp, avatar_url, profession)")
-        .eq("id", roomId)
-        .single();
+      try {
+        const { data: room } = await supabaseAdmin
+          .from("rooms")
+          .select("user_id, title, profiles(full_name, phone, whatsapp, avatar_url, profession)")
+          .eq("id", roomId)
+          .single();
 
-      if (room && room.profiles) {
-        const p = Array.isArray(room.profiles) ? room.profiles[0] : room.profiles;
-        contact = {
-          name:       p.full_name  || "Room Poster",
-          phone:      p.phone      || "Contact via WhatsApp",
-          whatsapp:   p.whatsapp   || p.phone || "",
-          profession: p.profession || "",
-          avatar:     p.avatar_url || "",
-        };
+        if (room?.profiles) {
+          const p = Array.isArray(room.profiles) ? room.profiles[0] : room.profiles as any;
+          if (p?.full_name || p?.phone) {
+            contact = {
+              name:       p.full_name  || "Room Poster",
+              phone:      p.phone      || "",
+              whatsapp:   p.whatsapp   || p.phone || "",
+              profession: p.profession || "",
+              avatar:     p.avatar_url || "",
+            };
+          }
+        }
+      } catch (e) {
+        console.warn("[Razorpay] Supabase room fetch failed, trying MOCK fallback", e);
+      }
 
-        // Record the contact unlock in Supabase interests table
-        if (userId && userId !== "guest") {
-          await supabaseAdmin.from("interests").upsert({
-            room_id:    roomId,
-            user_id:    userId,
-            payment_id: razorpay_payment_id,
-            order_id:   razorpay_order_id,
-            amount:     500,
-            status:     "paid",
-            paid_at:    new Date().toISOString(),
-          }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
+      // ── MOCK_ROOMS fallback (for test/demo rooms) ─────────────────────────
+      if (!contact) {
+        try {
+          const { MOCK_ROOMS } = await import("@/data/mock");
+          const mock = MOCK_ROOMS.find((r: any) => r.id === roomId);
+          if (mock?.postedBy) {
+            contact = {
+              name:       mock.postedBy.name      || "Room Poster",
+              phone:      mock.postedBy.phone     || "",
+              whatsapp:   mock.postedBy.whatsapp  || mock.postedBy.phone || "",
+              profession: mock.postedBy.profession || "",
+              avatar:     mock.postedBy.avatar    || "",
+            };
+          }
+        } catch (e) {
+          console.warn("[Razorpay] MOCK fallback also failed", e);
         }
       }
     }
 
-    // Fallback if room not in DB
+    // ── 4. Persist unlock to Supabase (non-blocking — don't crash on failure) ─
+    if (userId && userId !== "guest" && roomId) {
+      try {
+        await supabaseAdmin.from("interests").upsert({
+          room_id:    roomId,
+          user_id:    userId,
+          payment_id: razorpay_payment_id,
+          order_id:   razorpay_order_id,
+          amount:     500,
+          status:     "paid",
+          paid_at:    new Date().toISOString(),
+        }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
+      } catch (e) {
+        console.warn("[Razorpay] interests upsert failed (table may not exist yet):", e);
+        // Non-fatal — contact still returned below
+      }
+    }
+
+    // ── 5. Final fallback contact ──────────────────────────────────────────────
     if (!contact) {
       contact = {
         name:       "Room Poster",
-        phone:      "Will be shared via WhatsApp",
+        phone:      "",
         whatsapp:   "",
         profession: "",
         avatar:     "",
       };
     }
 
-    console.log("[Razorpay] ✅ Payment verified & contact unlocked", {
-      paymentId: razorpay_payment_id,
-      roomId,
-      userId,
-    });
+    console.log("[Razorpay] ✅ Payment verified — contact unlocked", { paymentId: razorpay_payment_id, roomId, userId, contactName: contact.name });
 
     return NextResponse.json({
-      success:    true,
-      verified:   true,
-      paymentId:  razorpay_payment_id,
-      orderId:    razorpay_order_id,
+      success:   true,
+      verified:  true,
+      paymentId: razorpay_payment_id,
+      orderId:   razorpay_order_id,
       contact,
-      message:    "Payment verified. Contact unlocked successfully.",
+      message:   "Payment verified. Contact unlocked successfully.",
     });
 
   } catch (error: any) {
     console.error("[Razorpay] verify error:", error);
-    return NextResponse.json(
-      { error: "Verification failed. Please contact support." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Verification failed. Please contact support." }, { status: 500 });
   }
 }

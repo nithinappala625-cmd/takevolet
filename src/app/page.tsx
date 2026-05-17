@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -23,8 +23,37 @@ const howItWorks = [
 export default function LandingPage() {
   const featuredRooms = MOCK_ROOMS.slice(0, 3);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Takevolet",
+    url: "https://takevolet.online",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://takevolet.online/rooms?location={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  };
+
+  const localBusinessJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    name: "Takevolet",
+    image: "https://takevolet.online/logo.png",
+    description: "Zero brokerage platform for bachelor room handovers in Hyderabad.",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Hyderabad",
+      addressRegion: "Telangana",
+      addressCountry: "IN",
+    },
+    url: "https://takevolet.online",
+  };
+
   return (
     <div className="flex flex-col w-full bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }} />
 
       {/* ━━━ HERO ━━━ */}
       <section className="relative min-h-screen flex items-center pt-24 overflow-hidden">

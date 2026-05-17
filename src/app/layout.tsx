@@ -19,11 +19,25 @@ export const metadata: Metadata = {
     default: "Takevolet | Bachelor Room Handovers in Hyderabad — Zero Brokerage",
     template: "%s | Takevolet",
   },
-  description: "Bachelors leaving rooms post here. Bachelors searching find rooms here. Browse by area, budget, members. Sell furniture & earn commission. Zero brokerage platform for Hyderabad.",
-  keywords: ["bachelor rooms hyderabad", "room handover", "zero brokerage rooms", "pg rooms hyderabad", "flat handover hyderabad", "takevolet"],
+  description: "Takevolet is Hyderabad's #1 zero brokerage platform for bachelor room handovers. Leaving your room? Post it here. Searching? Find 2BHKs, 3BHKs, PGs without brokers. Direct contact, earn commission.",
+  keywords: [
+    "bachelor rooms hyderabad",
+    "room handover hyderabad",
+    "zero brokerage rooms hyderabad",
+    "pg rooms hyderabad",
+    "flat handover hyderabad",
+    "bachelor flat rent hyderabad",
+    "no broker rooms hyderabad",
+    "takevolet",
+    "buy sell furniture hyderabad",
+    "used furniture for bachelors"
+  ],
   authors: [{ name: "Takevolet Technologies" }],
   creator: "Takevolet Technologies",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.online"),
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",
@@ -34,20 +48,36 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.online",
     siteName: "Takevolet",
-    title: "Takevolet | Bachelor Room Handovers in Hyderabad",
-    description: "Zero brokerage bachelor room handover platform. Post your room, find a room, sell furniture & earn commission.",
-    images: [{ url: "/logo.png", width: 512, height: 512, alt: "Takevolet Logo" }],
+    title: "Takevolet | Zero Brokerage Bachelor Room Handovers in Hyderabad",
+    description: "The fastest way to find or handover bachelor rooms in Hyderabad without brokers. Direct contact. Zero brokerage. Sell your old furniture.",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Takevolet - Hyderabad Room Handovers",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Takevolet | Bachelor Room Handovers",
-    description: "Zero brokerage room handovers in Hyderabad. Direct contact. Earn commission.",
+    description: "Zero brokerage room handovers in Hyderabad. Find rooms without brokers, contact directly, and earn commission.",
     images: ["/logo.png"],
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: "RYGrWuGKRpiY8LOpxxyguVGJEoZSZuC2gCn1QGBT5f0", 
   },
 };
 
