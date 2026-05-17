@@ -41,19 +41,24 @@ export async function POST(request: Request) {
       try {
         const { data: room } = await supabaseAdmin
           .from("rooms")
-          .select("user_id, title, profiles(full_name, phone, whatsapp, avatar_url, profession)")
+          .select("user_id, title")
           .eq("id", roomId)
           .single();
 
-        if (room?.profiles) {
-          const p = Array.isArray(room.profiles) ? room.profiles[0] : room.profiles as any;
-          if (p?.full_name || p?.phone) {
+        if (room?.user_id) {
+          const { data: profile } = await supabaseAdmin
+            .from("profiles")
+            .select("full_name, phone, whatsapp, avatar_url, profession")
+            .eq("id", room.user_id)
+            .single();
+
+          if (profile && (profile.full_name || profile.phone)) {
             contact = {
-              name:       p.full_name  || "Room Poster",
-              phone:      p.phone      || "",
-              whatsapp:   p.whatsapp   || p.phone || "",
-              profession: p.profession || "",
-              avatar:     p.avatar_url || "",
+              name:       profile.full_name  || "Room Poster",
+              phone:      profile.phone      || "",
+              whatsapp:   profile.whatsapp   || profile.phone || "",
+              profession: profile.profession || "",
+              avatar:     profile.avatar_url || "",
             };
           }
         }

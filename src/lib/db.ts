@@ -120,21 +120,45 @@ export async function isProfileComplete(userId: string): Promise<boolean> {
 export async function getAllRooms(): Promise<Room[]> {
   const { data, error } = await supabase
     .from("rooms")
-    .select("*, profiles(full_name, phone, whatsapp, avatar_url, profession)")
+    .select("*")
     .eq("is_available", true)
     .order("created_at", { ascending: false });
   if (error) { console.error("getAllRooms:", error); return []; }
-  return (data as Room[]) || [];
+  
+  // Manually attach profiles to ensure no FK join issues
+  const rooms = data as any[];
+  for (const room of rooms) {
+    if (room.user_id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone, whatsapp, avatar_url, profession")
+        .eq("id", room.user_id)
+        .single();
+      room.profiles = profile || null;
+    }
+  }
+  return rooms as Room[];
 }
 
 /** Fetch a single room by ID */
 export async function getRoomById(id: string): Promise<Room | null> {
   const { data, error } = await supabase
     .from("rooms")
-    .select("*, profiles(full_name, phone, whatsapp, avatar_url, profession)")
+    .select("*")
     .eq("id", id)
     .single();
-  if (error) return null;
+  if (error || !data) return null;
+
+  // Manually fetch profile
+  if (data.user_id) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, phone, whatsapp, avatar_url, profession")
+      .eq("id", data.user_id)
+      .single();
+    data.profiles = profile || null;
+  }
+  
   return data as Room;
 }
 
