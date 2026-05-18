@@ -41,6 +41,9 @@ export async function POST(request: Request) {
     if (!roomId || !userId) {
       return NextResponse.json({ error: "roomId and userId required" }, { status: 400 });
     }
+    if (userId === "guest") {
+      return NextResponse.json({ error: "Authentication required to create a payment order" }, { status: 401 });
+    }
 
     // Check not already interested
     const alreadyInterested = global._rr_interests.find(
@@ -147,6 +150,10 @@ export async function POST(request: Request) {
     // ── Create ₹1,000 handover confirmation order ───────────────────────────
     const body = await request.json();
     const { roomId, userId, interestId } = body;
+
+    if (!userId || userId === "guest") {
+      return NextResponse.json({ error: "Authentication required to create a handover order" }, { status: 401 });
+    }
 
     const interest = global._rr_interests.find((i: any) => i.id === interestId && i.userId === userId);
     if (!interest) {

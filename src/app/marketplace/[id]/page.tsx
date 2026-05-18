@@ -4,12 +4,13 @@ import { motion } from "framer-motion";
 import { MOCK_ITEMS } from "@/data/mock";
 import { IndianRupee, MapPin, Tag, Phone, Repeat, CheckCircle2, ChevronLeft, Calendar } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useUser } from "@/hooks/useUser";
 
 export default function MarketplaceItemPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const item = MOCK_ITEMS.find((i) => i.id === id);
   const { user } = useUser();
@@ -107,7 +108,8 @@ export default function MarketplaceItemPage() {
                   <button 
                     onClick={() => {
                       if (!user || user.id === "guest") {
-                        alert("Please login to view seller contact");
+                        alert("Please sign in to continue with this.");
+                        router.push("/auth");
                         return;
                       }
                       setUnlocked(true);

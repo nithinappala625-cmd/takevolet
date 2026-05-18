@@ -33,6 +33,9 @@ export async function POST(request: Request) {
     if (!roomId) {
       return NextResponse.json({ error: "roomId is required" }, { status: 400 });
     }
+    if (!userId || userId === "guest") {
+      return NextResponse.json({ error: "Authentication required to create a payment order" }, { status: 401 });
+    }
     if (!KEY_ID || !KEY_SECRET) {
       return NextResponse.json({ error: "Payment gateway not configured. Please set Razorpay keys." }, { status: 503 });
     }

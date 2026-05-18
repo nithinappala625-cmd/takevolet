@@ -10,7 +10,7 @@ import {
   BedDouble, ShieldCheck, AlertCircle, Loader2
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { fetchRoomByIdAction, checkRoomUnlockStatusAction } from "@/lib/server-actions";
 import type { Room } from "@/lib/db";
 import { useUser } from "@/hooks/useUser";
@@ -51,6 +51,7 @@ function mockToRoom(m: any): Room {
 
 export default function RoomDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const [room, setRoom] = useState<Room | null>(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -163,6 +164,12 @@ export default function RoomDetailPage() {
 
   // ── Real Razorpay Payment Flow ────────────────────────────────────────────
   const handlePay = async () => {
+    if (userId === "guest") {
+      alert("Please sign in to continue with this.");
+      router.push("/auth");
+      return;
+    }
+
     setPayError(null);
     setPaying(true);
 
@@ -274,6 +281,12 @@ export default function RoomDetailPage() {
 
   // ── STEP 1: Pay ₹500 — I’m Interested (unlock full address) ────────────
   const handleInterest = async () => {
+    if (userId === "guest") {
+      alert("Please sign in to continue with this.");
+      router.push("/auth");
+      return;
+    }
+
     setFlowError(null);
     setInterestPaying(true);
     try {
@@ -330,6 +343,12 @@ export default function RoomDetailPage() {
 
   // ── STEP 2: Pay ₹1,000 — Confirm Handover (poster earns commission) ────
   const handleHandover = async () => {
+    if (userId === "guest") {
+      alert("Please sign in to continue with this.");
+      router.push("/auth");
+      return;
+    }
+
     setFlowError(null);
     setHandoverPaying(true);
     try {
