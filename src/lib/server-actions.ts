@@ -104,3 +104,22 @@ export async function fetchFlatmateByIdAction(id: string) {
   }
   return data;
 }
+
+export async function fetchUserFlatmatesAction(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("flatmates")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+  return (data as any[]) || [];
+}
+
+export async function deleteFlatmateAction(id: string) {
+  const { error } = await supabaseAdmin
+    .from("flatmates")
+    .delete()
+    .eq("id", id);
+  return { error };
+}

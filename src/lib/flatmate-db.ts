@@ -8,7 +8,25 @@ function getLocalFlatmates(): Flatmate[] {
   if (typeof window === "undefined") return [];
   try {
     const data = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    const list = JSON.parse(data);
+    if (Array.isArray(list)) {
+      const STALE_TITLES = [
+        "1rk super vacant",
+        "1 roommate vacant",
+        "1 room vanacy",
+        "3bhk room for vacant",
+      ];
+      const filtered = list.filter((item: any) => {
+        const title = (item.title || "").toLowerCase().trim();
+        return !STALE_TITLES.includes(title);
+      });
+      if (filtered.length !== list.length) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(filtered));
+      }
+      return filtered;
+    }
+    return [];
   } catch (err) {
     console.error("Error reading local flatmates:", err);
     return [];
@@ -172,4 +190,39 @@ export async function insertFlatmate(
     saveLocalFlatmate(newFlatmate);
     return { data: newFlatmate, error: null };
   }
+}
+import { fetchUserFlatmatesAction, deleteFlatmateAction } from "./server-actions";
+
+/**
+ * Fetch all flatmate listings posted by a specific user
+ */
+export async function getUserFlatmates(userId: string): Promise<Flatmate[]> {
+  try {
+    const dbData = await fetchUserFlatmatesAction(userId);
+    const dbFlatmates = dbData.map((record: any) => mapDbToFlatmate(record));
+    const localFlatmates = getLocalFlatmates().filter((f) => f.userId === userId);
+    return [...localFlatmates, ...dbFlatmates];
+  } catch (err) {
+    console.error("getUserFlatmates error:", err);
+    // Fallback: filter localStorage
+    return getLocalFlatmates().filter((f) => f.userId === userId);
+  }
+}
+
+/**
+ * Delete a flatmate listing by ID (from DB and localStorage)
+ */
+export async function deleteUserFlatmate(id: string): Promise<{ error: any }> {
+  // Remove from localStorage if present
+  if (typeof window !== "undefined") {
+    try {
+      const existing = getLocalFlatmates();
+      const updated = existing.filter((f) => f.id !== id);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+    } catch (err) {
+      console.error("Error removing local flatmate:", err);
+    }
+  }
+  // Delete from DB
+  return deleteFlatmateAction(id);
 }

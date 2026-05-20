@@ -37,7 +37,7 @@ export default function FlatmatesPage() {
   const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
 
   useEffect(() => {
-    // Cleanup the 2 specific local flatmate listings if they exist
+    // Cleanup specific stale local flatmate listings stored in browser
     if (typeof window !== "undefined") {
       try {
         const localKey = "takevolet_local_flatmates";
@@ -45,9 +45,15 @@ export default function FlatmatesPage() {
         if (localData) {
           const list = JSON.parse(localData);
           if (Array.isArray(list)) {
+            const STALE_TITLES = [
+              "1rk super vacant",
+              "1 roommate vacant",
+              "1 room vanacy",
+              "3bhk room for vacant",
+            ];
             const filtered = list.filter((item: any) => {
               const title = (item.title || "").toLowerCase().trim();
-              return title !== "1rk super vacant" && title !== "1 roommate vacant";
+              return !STALE_TITLES.includes(title);
             });
             if (filtered.length !== list.length) {
               localStorage.setItem(localKey, JSON.stringify(filtered));

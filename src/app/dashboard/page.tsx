@@ -33,12 +33,15 @@ import {
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { getUserRooms, getUserEarnings, getUserPayouts, deleteRoom, type Room, type Earning, type PayoutRequest } from "@/lib/db";
+import { getUserFlatmates, deleteUserFlatmate } from "@/lib/flatmate-db";
+import type { Flatmate as FlatmateType } from "@/data/mock";
 
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading, logout } = useUser();
   const [myRooms, setMyRooms] = useState<Room[]>([]);
+  const [myFlatmates, setMyFlatmates] = useState<FlatmateType[]>([]);
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "listings" | "earnings" | "payout" | "profile">(
@@ -68,10 +71,17 @@ function DashboardContent() {
 
   useEffect(() => {
     if (user) {
-      // Load rooms from Supabase
+      // Load rooms and flatmates concurrently
       setRoomsLoading(true);
-      getUserRooms(user.id).then(rooms => {
+      Promise.all([
+        getUserRooms(user.id),
+        getUserFlatmates(user.id)
+      ]).then(([rooms, flatmates]) => {
         setMyRooms(rooms);
+        setMyFlatmates(flatmates);
+        setRoomsLoading(false);
+      }).catch(err => {
+        console.error("Error loading dashboard listings:", err);
         setRoomsLoading(false);
       });
       // Load earnings from Supabase
@@ -103,7 +113,7 @@ function DashboardContent() {
   const summary = [
     { icon: Wallet,      label: "Total Earned",  value: `₹${total.toLocaleString("en-IN")}`,  color: "text-green-600" },
     { icon: Clock,       label: "Pending",        value: `₹${pending.toLocaleString("en-IN")}`, color: "text-yellow-600" },
-    { icon: Home,        label: "My Listings",    value: myRooms.length.toString(),              color: "text-primary" },
+    { icon: Home,        label: "My Listings",    value: (myRooms.length + myFlatmates.length).toString(),              color: "text-primary" },
     { icon: TrendingUp,  label: "Completed",      value: completed.toString(),                   color: "text-muted-foreground" },
   ];
 
@@ -111,6 +121,12 @@ function DashboardContent() {
     if (!confirm("Delete this listing?")) return;
     await deleteRoom(id);
     setMyRooms(prev => prev.filter(r => r.id !== id));
+  };
+
+  const handleDeleteFlatmate = async (id: string) => {
+    if (!confirm("Delete this flatmate listing?")) return;
+    await deleteUserFlatmate(id);
+    setMyFlatmates(prev => prev.filter(f => f.id !== id));
   };
 
   // ── Save payout details ───────────────────────────────────────────────────
@@ -179,6 +195,16 @@ function DashboardContent() {
       setPayoutSubmitting(false);
     }
   };
+
+  const combinedRecent = [
+    ...myRooms.map(r => ({ ...r, type: "room" as const, date: r.created_at })),
+    ...myFlatmates.map(f => ({ ...f, type: "flatmate" as const, date: f.createdAt }))
+  ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+
+  const combinedListings = [
+    ...myRooms.map(r => ({ ...r, type: "room" as const, date: r.created_at })),
+    ...myFlatmates.map(f => ({ ...f, type: "flatmate" as const, date: f.createdAt }))
+  ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
 
   return (
     <div className="pt-36 pb-20 min-h-screen">
@@ -282,42 +308,64 @@ function DashboardContent() {
 
             {/* My Recent Listings */}
             <h3 className="text-sm uppercase tracking-widest font-bold mb-5">My Recent Listings</h3>
-            {myRooms.length === 0 ? (
+            {combinedRecent.length === 0 ? (
               <div className="border border-dashed border-border p-12 text-center">
                 <Home size={28} className="mx-auto text-muted-foreground mb-3" />
                 <p className="font-semibold mb-1">No listings yet</p>
-                <p className="text-sm text-muted-foreground mb-5">Post your first room and start earning.</p>
-                <Link href="/post/room" className="bg-primary text-primary-foreground px-6 py-3 text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-all inline-flex items-center gap-2">
-                  <Plus size={13} /> Post My Room
-                </Link>
+                <p className="text-sm text-muted-foreground mb-5">Post your first room or flatmate listing and start earning.</p>
+                <div className="flex justify-center gap-3">
+                  <Link href="/post/room" className="bg-primary text-primary-foreground px-5 py-2.5 text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-all inline-flex items-center gap-1.5">
+                    <Plus size={13} /> Post My Room
+                  </Link>
+                  <Link href="/post/flatmate" className="bg-primary text-primary-foreground px-5 py-2.5 text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-all inline-flex items-center gap-1.5">
+                    <Users size={13} /> Post Flatmate
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
-                {myRooms.slice(0, 3).map(room => (
-                  <div key={room.id} className="border border-border p-4 flex items-center gap-4">
-                    <div className="w-16 h-16 bg-secondary shrink-0 overflow-hidden">
-                      {(room.images || [])[0] ? <img src={(room.images || [])[0]} alt="" className="w-full h-full object-cover" /> : <Home size={20} className="text-muted-foreground m-auto mt-4" />}
+                {combinedRecent.slice(0, 3).map(item => {
+                  const isRoom = item.type === "room";
+                  const image = isRoom ? (item.images || [])[0] : (item.images || [])[0];
+                  const rentStr = isRoom ? `₹${item.rent.toLocaleString("en-IN")}/mo` : `₹${item.rentShare.toLocaleString("en-IN")}/mo`;
+                  const locationStr = `${item.colony}, ${item.location}`;
+                  const isActive = isRoom ? item.is_available : item.isAvailable;
+                  const detailHref = isRoom ? `/rooms/${item.id}` : `/flatmates/${item.id}`;
+                  const deleteFn = isRoom ? () => handleDelete(item.id) : () => handleDeleteFlatmate(item.id);
+
+                  return (
+                    <div key={item.id} className="border border-border p-4 flex items-center gap-4">
+                      <div className="w-16 h-16 bg-secondary shrink-0 overflow-hidden relative">
+                        {image ? (
+                          <img src={image} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          isRoom ? <Home size={20} className="text-muted-foreground m-auto mt-4" /> : <Users size={20} className="text-muted-foreground m-auto mt-4" />
+                        )}
+                        <span className="absolute top-0.5 left-0.5 text-[8px] font-bold uppercase px-1 py-0.2 bg-background border border-border">
+                          {isRoom ? "🏠 Room" : "👥 Flatmate"}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{item.title}</p>
+                        <p className="text-xs text-muted-foreground">{locationStr} · {rentStr}</p>
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 mt-1 ${isActive ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
+                          {isActive ? <CheckCircle2 size={9} /> : <Clock size={9} />} {isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Link href={detailHref} className="w-8 h-8 border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all">
+                          <Eye size={13} />
+                        </Link>
+                        <button onClick={deleteFn} className="w-8 h-8 border border-border flex items-center justify-center hover:border-red-400 hover:text-red-500 transition-all">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm truncate">{room.title}</p>
-                      <p className="text-xs text-muted-foreground">{room.colony}, {room.location} · ₹{room.rent.toLocaleString("en-IN")}/mo</p>
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 mt-1 ${room.is_available ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
-                        {room.is_available ? <CheckCircle2 size={9} /> : <Clock size={9} />} {room.is_available ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Link href={`/rooms/${room.id}`} className="w-8 h-8 border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-all">
-                        <Eye size={13} />
-                      </Link>
-                      <button onClick={() => handleDelete(room.id)} className="w-8 h-8 border border-border flex items-center justify-center hover:border-red-400 hover:text-red-500 transition-all">
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {myRooms.length > 3 && (
+                  );
+                })}
+                {combinedRecent.length > 3 && (
                   <button onClick={() => setActiveTab("listings")} className="text-xs text-primary font-bold uppercase tracking-wider hover:underline">
-                    View all {myRooms.length} listings →
+                    View all {combinedRecent.length} listings →
                   </button>
                 )}
               </div>
@@ -329,7 +377,7 @@ function DashboardContent() {
         {activeTab === "listings" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-sm uppercase tracking-widest font-bold">My Listings ({myRooms.length})</h2>
+              <h2 className="text-sm uppercase tracking-widest font-bold">My Listings ({combinedListings.length})</h2>
               <div className="relative">
                 <button 
                   onClick={() => setShowAddDropdown(!showAddDropdown)}
@@ -355,47 +403,87 @@ function DashboardContent() {
                 )}
               </div>
             </div>
-            {myRooms.length === 0 ? (
+            {roomsLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : combinedListings.length === 0 ? (
               <div className="border border-dashed border-border p-16 text-center">
                 <Home size={32} className="mx-auto text-muted-foreground mb-4" />
                 <p className="font-semibold mb-2">No listings yet</p>
-                <Link href="/list" className="bg-primary text-primary-foreground px-6 py-3 text-xs uppercase tracking-wider font-bold hover:opacity-90 inline-flex items-center gap-2">
-                  <Plus size={13} /> Create First Listing
-                </Link>
+                <div className="flex justify-center gap-3">
+                  <Link href="/post/room" className="bg-primary text-primary-foreground px-5 py-2.5 text-xs uppercase tracking-wider font-bold hover:opacity-90 inline-flex items-center gap-1.5">
+                    <Plus size={13} /> Post My Room
+                  </Link>
+                  <Link href="/post/flatmate" className="bg-primary text-primary-foreground px-5 py-2.5 text-xs uppercase tracking-wider font-bold hover:opacity-90 inline-flex items-center gap-1.5">
+                    <Users size={13} /> Post Flatmate
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
-                {myRooms.map((room, i) => (
-                  <motion.div key={room.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    className="border border-border p-5 flex flex-col md:flex-row gap-4">
-                    <div className="w-full md:w-32 h-24 bg-secondary shrink-0 overflow-hidden">
-                      {(room.images || [])[0] ? <img src={(room.images || [])[0]} alt="" className="w-full h-full object-cover" /> : <Home size={24} className="text-muted-foreground m-auto mt-8" />}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${room.is_available ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
-                          {room.is_available ? "Active" : "Inactive"}
+                {combinedListings.map((item, i) => {
+                  const isRoom = item.type === "room";
+                  const image = isRoom ? (item.images || [])[0] : (item.images || [])[0];
+                  const isActive = isRoom ? item.is_available : item.isAvailable;
+                  const detailHref = isRoom ? `/rooms/${item.id}` : `/flatmates/${item.id}`;
+                  const deleteFn = isRoom ? () => handleDelete(item.id) : () => handleDeleteFlatmate(item.id);
+
+                  return (
+                    <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                      className="border border-border p-5 flex flex-col md:flex-row gap-4">
+                      <div className="w-full md:w-32 h-24 bg-secondary shrink-0 overflow-hidden relative">
+                        {image ? (
+                          <img src={image} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          isRoom ? <Home size={24} className="text-muted-foreground m-auto mt-8" /> : <Users size={24} className="text-muted-foreground m-auto mt-8" />
+                        )}
+                        <span className="absolute top-1 left-1 text-[9px] font-bold uppercase px-2 py-0.5 bg-background border border-border">
+                          {isRoom ? "🏠 Room" : "👥 Flatmate"}
                         </span>
-                        <span className="text-[10px] font-medium uppercase px-2 py-0.5 bg-secondary">{room.furnishing}</span>
                       </div>
-                      <h3 className="font-bold mb-1">{room.title}</h3>
-                      <p className="text-xs text-muted-foreground mb-2">{room.colony}, {room.location} · ₹{room.rent.toLocaleString("en-IN")}/mo · {room.members_allowed || 2} members</p>
-                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><Eye size={11} /> {room.enquiries || 0} enquiries</span>
-                        <span className="flex items-center gap-1"><Phone size={11} /> {room.contact_unlocks || 0} contact unlocks</span>
-                        <span className="flex items-center gap-1 text-green-600 font-semibold"><IndianRupee size={11} /> ₹{(room.earnings || 0).toLocaleString("en-IN")} earned</span>
+                      <div className="flex-1">
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${isActive ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
+                            {isActive ? "Active" : "Inactive"}
+                          </span>
+                          {!isRoom && <span className="text-[10px] font-medium uppercase px-2 py-0.5 bg-secondary">Vacancy: {item.vacancyCount}</span>}
+                          {isRoom && <span className="text-[10px] font-medium uppercase px-2 py-0.5 bg-secondary">{item.furnishing}</span>}
+                        </div>
+                        <h3 className="font-bold mb-1">{item.title}</h3>
+                        {isRoom ? (
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {item.colony}, {item.location} · ₹{item.rent.toLocaleString("en-IN")}/mo · {item.members_allowed || 2} members
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {item.colony}, {item.location} · Rent Share: ₹{item.rentShare.toLocaleString("en-IN")}/mo · Profession Pref: {item.professionPref}
+                          </p>
+                        )}
+                        {isRoom ? (
+                          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1"><Eye size={11} /> {item.enquiries || 0} enquiries</span>
+                            <span className="flex items-center gap-1"><Phone size={11} /> {item.contact_unlocks || 0} contact unlocks</span>
+                            <span className="flex items-center gap-1 text-green-600 font-semibold"><IndianRupee size={11} /> ₹{(item.earnings || 0).toLocaleString("en-IN")} earned</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1"><Eye size={11} /> View Catalog</span>
+                            <span className="flex items-center gap-1"><Users size={11} /> Gender Pref: {item.genderPref}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div className="flex md:flex-col gap-2 shrink-0">
-                      <Link href={`/rooms/${room.id}`} className="flex-1 md:flex-none border border-border px-3 py-2 text-xs uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-1">
-                        <Eye size={11} /> View
-                      </Link>
-                      <button onClick={() => handleDelete(room.id)} className="flex-1 md:flex-none border border-border px-3 py-2 text-xs uppercase tracking-wider font-semibold hover:border-red-400 hover:text-red-500 transition-all flex items-center justify-center gap-1">
-                        <Trash2 size={11} /> Delete
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="flex md:flex-col gap-2 shrink-0">
+                        <Link href={detailHref} className="flex-1 md:flex-none border border-border px-3 py-2 text-xs uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-1">
+                          <Eye size={11} /> View
+                        </Link>
+                        <button onClick={deleteFn} className="flex-1 md:flex-none border border-border px-3 py-2 text-xs uppercase tracking-wider font-semibold hover:border-red-400 hover:text-red-500 transition-all flex items-center justify-center gap-1">
+                          <Trash2 size={11} /> Delete
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </motion.div>
