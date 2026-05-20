@@ -61,3 +61,46 @@ export async function checkRoomUnlockStatusAction(roomId: string, userId: string
     avatar:     p.avatar_url || "",
   };
 }
+
+export async function fetchAllFlatmatesAction() {
+  const { data, error } = await supabaseAdmin
+    .from("flatmates")
+    .select("*")
+    .eq("is_available", true)
+    .order("created_at", { ascending: false });
+  
+  if (error) return null;
+  
+  const records = data as any[];
+  for (const record of records) {
+    if (record.user_id) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, phone, whatsapp, avatar_url, profession")
+        .eq("id", record.user_id)
+        .single();
+      record.profile = profile || null;
+    }
+  }
+  return records;
+}
+
+export async function fetchFlatmateByIdAction(id: string) {
+  const { data, error } = await supabaseAdmin
+    .from("flatmates")
+    .select("*")
+    .eq("id", id)
+    .single();
+    
+  if (error || !data) return null;
+  
+  if (data.user_id) {
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name, phone, whatsapp, avatar_url, profession")
+      .eq("id", data.user_id)
+      .single();
+    data.profile = profile || null;
+  }
+  return data;
+}

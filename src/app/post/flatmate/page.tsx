@@ -135,8 +135,8 @@ export default function PostFlatmatePage() {
     setStep((prev) => prev - 1);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e?.preventDefault) e.preventDefault();
     if (step < 3) {
       handleNextStep();
       return;
@@ -258,7 +258,7 @@ export default function PostFlatmatePage() {
         </div>
 
         {/* Wizard Form */}
-        <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && e.target instanceof HTMLInputElement) e.preventDefault(); }} className="space-y-8">
+        <div className="space-y-8">
           
           {/* STEP 1: Details & Media */}
           {step === 1 && (
@@ -584,7 +584,8 @@ export default function PostFlatmatePage() {
               </button>
             ) : (
               <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={submitting}
                 className="w-2/3 bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(212,175,55,0.2)]"
               >
@@ -599,7 +600,7 @@ export default function PostFlatmatePage() {
             )}
           </div>
 
-        </form>
+        </div>
 
       </div>
     </div>

@@ -117,8 +117,8 @@ export default function PostRoomPage() {
     setVideoPreviews(prev => prev.filter((_, idx) => idx !== i));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e?.preventDefault) e.preventDefault();
     setError(null);
 
     if (!title.trim())    return setError("Room title is required.");
@@ -221,7 +221,7 @@ export default function PostRoomPage() {
           <p className="text-muted-foreground text-sm">Fill in the details below. Seekers will see colony/area only — house number is revealed after ₹500 unlock.</p>
         </div>
 
-        <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && e.target instanceof HTMLInputElement) e.preventDefault(); }} className="space-y-8">
+        <div className="space-y-8">
 
           {/* ── TITLE & DESCRIPTION ─────────────────────────── */}
           <div className="border border-border p-6 space-y-4">
@@ -233,6 +233,7 @@ export default function PostRoomPage() {
                 Listing Title <span className="text-red-500">*</span>
               </label>
               <input
+                type="text"
                 value={title} onChange={e => setTitle(e.target.value)}
                 placeholder="e.g. 2BHK Semi-Furnished in Kondapur — Bachelors Welcome"
                 className="w-full border border-border px-4 py-3 text-sm focus:border-primary focus:outline-none"
@@ -495,7 +496,7 @@ export default function PostRoomPage() {
             )}
           </button>
 
-        </form>
+        </div>
       </div>
     </div>
   );

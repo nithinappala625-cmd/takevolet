@@ -55,18 +55,16 @@ function mapDbToFlatmate(dbRecord: any, profile?: any): Flatmate {
   };
 }
 
+import { fetchAllFlatmatesAction, fetchFlatmateByIdAction } from "./server-actions";
+
 /**
  * Fetch all available flatmates (with fallback to mock data & localStorage)
  */
 export async function getAllFlatmates(): Promise<Flatmate[]> {
   try {
-    const { data: dbData, error } = await supabase
-      .from("flatmates")
-      .select("*")
-      .eq("is_available", true)
-      .order("created_at", { ascending: false });
+    const dbData = await fetchAllFlatmatesAction();
 
-    if (error || !dbData) {
+    if (!dbData) {
       // Graceful fallback to Mock + LocalStorage
       return [...getLocalFlatmates(), ...MOCK_FLATMATES];
     }
@@ -74,16 +72,7 @@ export async function getAllFlatmates(): Promise<Flatmate[]> {
     // If database exists and works, fetch profiles to enrich the list
     const enrichedFlatmates: Flatmate[] = [];
     for (const record of dbData) {
-      let profile = null;
-      if (record.user_id) {
-        const { data: profData } = await supabase
-          .from("profiles")
-          .select("full_name, phone, whatsapp, avatar_url, profession")
-          .eq("id", record.user_id)
-          .single();
-        profile = profData;
-      }
-      enrichedFlatmates.push(mapDbToFlatmate(record, profile));
+      enrichedFlatmates.push(mapDbToFlatmate(record, record.profile));
     }
 
     // Merge with any local listings created by the user on this browser session
@@ -109,25 +98,11 @@ export async function getFlatmateById(id: string): Promise<Flatmate | null> {
 
   // 3. Query from Supabase
   try {
-    const { data: dbData, error } = await supabase
-      .from("flatmates")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const dbData = await fetchFlatmateByIdAction(id);
 
-    if (error || !dbData) return null;
+    if (!dbData) return null;
 
-    let profile = null;
-    if (dbData.user_id) {
-      const { data: profData } = await supabase
-        .from("profiles")
-        .select("full_name, phone, whatsapp, avatar_url, profession")
-        .eq("id", dbData.user_id)
-        .single();
-      profile = profData;
-    }
-
-    return mapDbToFlatmate(dbData, profile);
+    return mapDbToFlatmate(dbData, dbData.profile);
   } catch (err) {
     console.error("getFlatmateById error:", err);
     return null;
