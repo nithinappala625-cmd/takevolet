@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { insertFlatmate } from "@/lib/flatmate-db";
-import { getProfile, isProfileComplete, type Profile } from "@/lib/db";
+import { uploadRoomMedia, getProfile, isProfileComplete, type Profile } from "@/lib/db";
 import { LOCATIONS, getColonies } from "@/data/locations";
 import {
   Users, Upload, X, CheckCircle2, AlertCircle,
@@ -59,6 +59,8 @@ export default function PostFlatmatePage() {
   const [professionPref, setProfessionPref] = useState("Any");
   const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState("");
 
   const colonies = location ? getColonies(location) : [];
 
@@ -105,6 +107,7 @@ export default function PostFlatmatePage() {
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
+    setPhotoFiles((prev) => [...prev, ...files].slice(0, 4));
     
     // Convert to object URLs for fast local preview
     const urls = files.map((file) => URL.createObjectURL(file));
@@ -113,6 +116,7 @@ export default function PostFlatmatePage() {
 
   const removePhoto = (idx: number) => {
     setPhotoPreviews((prev) => prev.filter((_, i) => i !== idx));
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleNextStep = () => {
@@ -147,8 +151,17 @@ export default function PostFlatmatePage() {
 
     setSubmitting(true);
 
-    // If no images uploaded, attach default premium stock room photos
-    const finalImages = photoPreviews.length > 0 ? photoPreviews : [MOCK_FLAT_PHOTOS[Math.floor(Math.random() * MOCK_FLAT_PHOTOS.length)]];
+    const imageUrls: string[] = [];
+    if (photoFiles.length > 0) {
+      for (let i = 0; i < photoFiles.length; i++) {
+        setUploadProgress(`Uploading photo ${i + 1} of ${photoFiles.length}…`);
+        const { url, error: upErr } = await uploadRoomMedia(user.id, photoFiles[i], "image");
+        if (upErr) { setError("Photo upload failed."); setSubmitting(false); return; }
+        if (url) imageUrls.push(url);
+      }
+    }
+
+    const finalImages = imageUrls.length > 0 ? imageUrls : [MOCK_FLAT_PHOTOS[Math.floor(Math.random() * MOCK_FLAT_PHOTOS.length)]];
 
     const flatmateData = {
       userId: user.id,
@@ -323,8 +336,10 @@ export default function PostFlatmatePage() {
                       onClick={() => photoRef.current?.click()}
                       className="aspect-square border border-dashed border-border hover:border-primary flex flex-col items-center justify-center cursor-pointer bg-secondary/10 hover:bg-secondary/20 transition-all"
                     >
-                      <Upload size={18} className="text-muted-foreground" />
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase mt-2">Add Photo</span>
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <Upload size={18} className="text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground mt-1">Add</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -336,9 +351,7 @@ export default function PostFlatmatePage() {
                   onChange={handlePhotoSelect}
                   className="hidden"
                 />
-                <p className="text-[11px] text-muted-foreground font-light">
-                  Upload up to 4 high-quality photos. If none added, we will attach premium default stock mock images automatically.
-                </p>
+                <p className="text-[11px] text-muted-foreground">JPG, PNG, WebP — max 4 photos</p>
               </div>
             </motion.div>
           )}
@@ -591,10 +604,12 @@ export default function PostFlatmatePage() {
               >
                 {submitting ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" /> Publishing...
+                    <Loader2 size={16} className="animate-spin" /> {uploadProgress || "Publishing…"}
                   </>
                 ) : (
-                  <>Publish Flatmate Posting</>
+                  <>
+                    Publish Listing <Sparkles size={16} />
+                  </>
                 )}
               </button>
             )}

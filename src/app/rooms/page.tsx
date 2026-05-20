@@ -165,14 +165,9 @@ export default function RoomsPage() {
               className="group border border-border overflow-hidden hover:border-primary/30 transition-all duration-500">
 
               <Link href={`/rooms/${room.id}`}>
-                <div className="relative h-64 overflow-hidden bg-black/95 cursor-pointer flex items-center justify-center">
-                  {/* Backdrop Ambient Blur */}
-                  <img src={(room.images || [])[0] || ""} alt="" aria-hidden="true" loading="lazy"
-                    className="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-110" />
-                  
-                  {/* Crisp Foreground (Uncropped) */}
+                <div className="relative aspect-[16/9] overflow-hidden bg-secondary/20 shrink-0 border-b border-border">
                   <img src={(room.images || [])[0] || ""} alt={room.title} loading="lazy"
-                    className="relative z-10 max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-700 mx-auto" />
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
 
                   <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-2">
                     <span className="bg-background/90 backdrop-blur-sm px-3 py-1 text-[11px] uppercase tracking-wider font-semibold flex items-center gap-1">

@@ -238,3 +238,37 @@ create policy "Users can upload own KYC docs"
 create policy "Users can view own KYC docs"
   on storage.objects for select
   using (bucket_id = 'kyc-docs' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ─── 7. FLATMATES ───────────────────────────────────────────
+create table if not exists public.flatmates (
+  id                text primary key,
+  user_id           uuid references public.profiles(id) on delete cascade not null,
+  title             text not null,
+  description       text,
+  rent_share        int not null,
+  advance_share     int default 0,
+  location          text not null,
+  colony            text not null,
+  vacancy_count     int default 1,
+  profession_pref   text default 'Any',
+  gender_pref       text default 'Any',
+  lifestyle_habits  text[] default '{}',
+  images            text[] default '{}',
+  is_available      boolean default true,
+  created_at        timestamptz default now()
+);
+
+alter table public.flatmates enable row level security;
+
+create policy "Anyone can view available flatmates"
+  on public.flatmates for select using (is_available = true);
+
+create policy "Users can insert own flatmates"
+  on public.flatmates for insert with check (auth.uid() = user_id);
+
+create policy "Users can update own flatmates"
+  on public.flatmates for update using (auth.uid() = user_id);
+
+create policy "Users can delete own flatmates"
+  on public.flatmates for delete using (auth.uid() = user_id);
+
