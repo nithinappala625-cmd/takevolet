@@ -11,9 +11,13 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedType, setSelectedType] = useState<"" | "sell" | "rent" | "both">("");
   const [items, setItems] = useState<MarketplaceItemType[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getAllItems().then(setItems);
+    getAllItems().then(data => {
+      setItems(data);
+      setLoading(false);
+    });
   }, []);
 
   const filteredItems = items.filter(item => {
@@ -81,71 +85,78 @@ export default function MarketplacePage() {
         </p>
 
         {/* Items Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredItems.map((item, i) => (
-            <Link href={`/marketplace/${item.id}`} key={item.id} className="block group">
-              <motion.div
-                initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                className="border border-border overflow-hidden hover:border-primary/30 transition-all duration-500 h-full flex flex-col">
-                
-                <div className="relative aspect-square overflow-hidden shrink-0">
-                <img src={item.image || ""} alt={item.title} loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
-                
-                <div className="absolute top-3 left-3 flex gap-1.5">
-                  <span className="bg-background/90 backdrop-blur-sm px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold text-primary">
-                    {item.category}
-                  </span>
-                </div>
-
-                {(item.listing_type === "rent" || item.listing_type === "both") && (
-                  <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold flex items-center gap-1">
-                    <Repeat size={10} /> Rent Available
+        {loading ? (
+          <div className="text-center py-20 border border-border">
+            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-muted-foreground font-light">Loading items...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredItems.map((item, i) => (
+              <Link href={`/marketplace/${item.id}`} key={item.id} className="block group">
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                  className="border border-border overflow-hidden hover:border-primary/30 transition-all duration-500 h-full flex flex-col">
+                  
+                  <div className="relative aspect-square overflow-hidden shrink-0">
+                  <img src={item.image || ""} alt={item.title} loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
+                  
+                  <div className="absolute top-3 left-3 flex gap-1.5">
+                    <span className="bg-background/90 backdrop-blur-sm px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold text-primary">
+                      {item.category}
+                    </span>
                   </div>
-                )}
 
-                <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.user_id || "User"}`} alt="" className="w-6 h-6 rounded-full border border-background" loading="lazy" />
-                  <span className="text-[10px] font-semibold text-white drop-shadow-lg">Seller</span>
-                </div>
-              </div>
+                  {(item.listing_type === "rent" || item.listing_type === "both") && (
+                    <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold flex items-center gap-1">
+                      <Repeat size={10} /> Rent Available
+                    </div>
+                  )}
 
-              <div className="p-4">
-                <h3 className="font-bold text-sm mb-1 line-clamp-1 tracking-tight">{item.title}</h3>
-                <p className="text-[11px] text-muted-foreground font-light mb-3 line-clamp-2">{item.description}</p>
-                
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-3">
-                  <MapPin size={10} /> {item.location}
-                  <span className="mx-1">•</span>
-                  <span className="text-primary font-semibold">{item.condition}</span>
-                </div>
-
-                <div className="flex items-center justify-between pt-3 border-t border-border">
-                  <div>
-                    {item.price > 0 && (
-                      <span className="text-base font-bold flex items-center">
-                        <IndianRupee size={14} />{item.price.toLocaleString("en-IN")}
-                      </span>
-                    )}
-                    {item.rent_price && (
-                      <span className="text-[11px] text-primary font-semibold">
-                        Rent: ₹{item.rent_price}/mo
-                      </span>
-                    )}
+                  <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.user_id || "User"}`} alt="" className="w-6 h-6 rounded-full border border-background" loading="lazy" />
+                    <span className="text-[10px] font-semibold text-white drop-shadow-lg">Seller</span>
                   </div>
-                  <button className="w-9 h-9 border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all">
-                    <Phone size={14} />
+                </div>
+
+                <div className="p-4 flex flex-col flex-1">
+                  <h3 className="font-bold text-sm mb-1 line-clamp-1 tracking-tight">{item.title}</h3>
+                  <p className="text-[11px] text-muted-foreground font-light mb-3 line-clamp-2">{item.description}</p>
+                  
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-3">
+                    <MapPin size={10} /> {item.location}
+                    <span className="mx-1">•</span>
+                    <span className="text-primary font-semibold">{item.condition}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border mt-auto">
+                    <div>
+                      {item.price > 0 && (
+                        <span className="text-base font-bold flex items-center">
+                          <IndianRupee size={14} />{item.price.toLocaleString("en-IN")}
+                        </span>
+                      )}
+                      {item.rent_price && (
+                        <span className="text-[11px] text-primary font-semibold">
+                          Rent: ₹{item.rent_price}/mo
+                        </span>
+                      )}
+                    </div>
+                    <button className="w-9 h-9 border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all shrink-0">
+                      <Phone size={14} />
                     </button>
                   </div>
                 </div>
-              </motion.div>
-            </Link>
-          ))}
-        </div>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        )}
 
-        {filteredItems.length === 0 && (
-          <div className="text-center py-20 border border-border">
+        {!loading && filteredItems.length === 0 && (
+          <div className="text-center py-20 border border-border mt-6">
             <p className="text-2xl font-light mb-2">No items found</p>
             <p className="text-muted-foreground font-light">Try a different category or listing type.</p>
           </div>
