@@ -9,7 +9,7 @@ import { uploadRoomMedia, getProfile, isProfileComplete, type Profile } from "@/
 import { LOCATIONS, getColonies } from "@/data/locations";
 import {
   Users, Upload, X, CheckCircle2, AlertCircle,
-  Loader2, Plus, IndianRupee, Sparkles, ChevronDown, ChevronRight, ChevronLeft, MapPin
+  Loader2, Plus, IndianRupee, Sparkles, ChevronDown, ChevronRight, ChevronLeft, MapPin, Video
 } from "lucide-react";
 import Link from "next/link";
 
@@ -40,6 +40,7 @@ export default function PostFlatmatePage() {
   const router = useRouter();
   const { user, loading } = useUser();
   const photoRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -60,6 +61,8 @@ export default function PostFlatmatePage() {
   const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState("");
 
   const colonies = location ? getColonies(location) : [];
@@ -119,6 +122,19 @@ export default function PostFlatmatePage() {
     setPhotoFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    setVideoFiles((prev) => [...prev, ...files].slice(0, 2));
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setVideoPreviews((prev) => [...prev, ...urls].slice(0, 2));
+  };
+
+  const removeVideo = (idx: number) => {
+    setVideoPreviews((prev) => prev.filter((_, i) => i !== idx));
+    setVideoFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const handleNextStep = () => {
     setError(null);
     if (step === 1) {
@@ -163,6 +179,16 @@ export default function PostFlatmatePage() {
 
     const finalImages = imageUrls.length > 0 ? imageUrls : [MOCK_FLAT_PHOTOS[Math.floor(Math.random() * MOCK_FLAT_PHOTOS.length)]];
 
+    const videoUrls: string[] = [];
+    if (videoFiles.length > 0) {
+      for (let i = 0; i < videoFiles.length; i++) {
+        setUploadProgress(`Uploading video ${i + 1} of ${videoFiles.length}…`);
+        const { url, error: upErr } = await uploadRoomMedia(user.id, videoFiles[i], "video");
+        if (upErr) { setError("Video upload failed."); setSubmitting(false); return; }
+        if (url) videoUrls.push(url);
+      }
+    }
+
     const flatmateData = {
       userId: user.id,
       title: title.trim(),
@@ -176,6 +202,7 @@ export default function PostFlatmatePage() {
       genderPref,
       lifestyleHabits: selectedHabits.length > 0 ? selectedHabits : ["Veg/Non-Veg Friendly", "Chill Workspace", "Non-Smoker Preferred"],
       images: finalImages,
+      videos: videoUrls,
       postedBy: {
         name: dbProfile?.full_name || user.name,
         phone: dbProfile?.phone || user.phone || "+91 98765 43210",
@@ -352,6 +379,48 @@ export default function PostFlatmatePage() {
                   className="hidden"
                 />
                 <p className="text-[11px] text-muted-foreground">JPG, PNG, WebP — max 4 photos</p>
+              </div>
+
+              {/* Videos */}
+              <div className="border border-border p-6 bg-background">
+                <p className="text-xs uppercase tracking-widest font-bold text-primary mb-4 flex items-center gap-2">
+                  <Video size={12} /> Flat Video Tour (up to 2)
+                </p>
+                
+                <div className="flex gap-4 mb-4">
+                  {videoPreviews.map((src, i) => (
+                    <div key={i} className="relative w-32 h-24 border border-border">
+                      <video src={src} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeVideo(i)}
+                        className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full p-1 hover:scale-105 transition-transform"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                  {videoPreviews.length < 2 && (
+                    <div
+                      onClick={() => videoRef.current?.click()}
+                      className="w-32 h-24 border border-dashed border-border hover:border-primary flex flex-col items-center justify-center cursor-pointer bg-secondary/10 hover:bg-secondary/20 transition-all"
+                    >
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <Upload size={18} className="text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground mt-1">Add Video</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={videoRef}
+                  type="file"
+                  accept="video/*"
+                  multiple
+                  onChange={handleVideoSelect}
+                  className="hidden"
+                />
+                <p className="text-[11px] text-muted-foreground">MP4, WebM, OGG — max 2 videos</p>
               </div>
             </motion.div>
           )}

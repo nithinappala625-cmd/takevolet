@@ -42,6 +42,7 @@ function mapDbToFlatmate(dbRecord: any, profile?: any): Flatmate {
     genderPref: dbRecord.gender_pref || "Any",
     lifestyleHabits: dbRecord.lifestyle_habits || [],
     images: dbRecord.images || [],
+    videos: dbRecord.videos || [],
     isAvailable: dbRecord.is_available ?? true,
     postedBy: {
       name: profile?.full_name || "Owner",
@@ -139,6 +140,7 @@ export async function insertFlatmate(
       gender_pref: flatmateData.genderPref,
       lifestyle_habits: flatmateData.lifestyleHabits,
       images: flatmateData.images,
+      videos: flatmateData.videos || [],
       is_available: true,
     };
 

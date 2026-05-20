@@ -519,6 +519,7 @@ export type Flatmate = {
   genderPref: string;
   lifestyleHabits: string[];
   images: string[];
+  videos?: string[];
   isAvailable: boolean;
   postedBy: {
     name: string;

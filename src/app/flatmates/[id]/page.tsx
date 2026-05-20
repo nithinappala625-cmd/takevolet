@@ -70,14 +70,18 @@ export default function FlatmateDetailPage() {
     );
   }
 
-  const images = flatmate.images || [];
+  const images = flatmate?.images || [];
+  const videos = flatmate?.videos || [];
+  const allMedia = [...images, ...videos];
 
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev + 1) % allMedia.length);
   };
 
-  const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev - 1 + allMedia.length) % allMedia.length);
   };
 
   const handleSimulatedUnlock = () => {
@@ -125,33 +129,53 @@ export default function FlatmateDetailPage() {
             <div className="relative aspect-[16/10] bg-black overflow-hidden group border border-border flex items-center justify-center cursor-pointer" onClick={() => setLightboxOpen(true)}>
               {/* Layer 1: Blurred Ambient Background */}
               <AnimatePresence mode="wait">
-                <motion.img
-                  key={`bg-${currentImageIndex}`}
-                  src={images[currentImageIndex]}
-                  alt=""
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.4 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 select-none pointer-events-none"
-                />
+                {allMedia[currentImageIndex] && !allMedia[currentImageIndex].match(/\.(mp4|webm|ogg)$/i) && (
+                  <motion.img
+                    key={`bg-${currentImageIndex}`}
+                    src={allMedia[currentImageIndex]}
+                    alt=""
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.4 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 select-none pointer-events-none"
+                  />
+                )}
               </AnimatePresence>
 
-              {/* Layer 2: Crystal Clear Foreground Image */}
+              {/* Layer 2: Crystal Clear Foreground Media */}
               <AnimatePresence mode="wait">
-                <motion.img
-                  key={`fg-${currentImageIndex}`}
-                  src={images[currentImageIndex]}
-                  alt={`Flat View ${currentImageIndex + 1}`}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-full h-full object-contain relative z-10"
-                />
+                {allMedia[currentImageIndex] ? (
+                  allMedia[currentImageIndex].match(/\.(mp4|webm|ogg)$/i) ? (
+                    <motion.video
+                      key={`fg-video-${currentImageIndex}`}
+                      src={allMedia[currentImageIndex]}
+                      controls
+                      playsInline
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-full h-full object-contain relative z-10"
+                    />
+                  ) : (
+                    <motion.img
+                      key={`fg-${currentImageIndex}`}
+                      src={allMedia[currentImageIndex]}
+                      alt={`Flat View ${currentImageIndex + 1}`}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-full h-full object-contain relative z-10"
+                    />
+                  )
+                ) : (
+                  <div className="text-muted-foreground text-sm relative z-10">No media available</div>
+                )}
               </AnimatePresence>
 
-              {images.length > 1 && (
+              {allMedia.length > 1 && (
                 <>
                   <button
                     onClick={handlePrevImage}
@@ -170,7 +194,7 @@ export default function FlatmateDetailPage() {
 
               {/* Counter Badge */}
               <div className="absolute bottom-4 right-4 bg-black/70 px-3 py-1 text-xs font-semibold text-white tracking-widest uppercase z-20">
-                {currentImageIndex + 1} / {images.length}
+                {currentImageIndex + 1} / {allMedia.length}
               </div>
             </div>
 

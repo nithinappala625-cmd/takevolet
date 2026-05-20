@@ -254,6 +254,7 @@ create table if not exists public.flatmates (
   gender_pref       text default 'Any',
   lifestyle_habits  text[] default '{}',
   images            text[] default '{}',
+  videos            text[] default '{}',
   is_available      boolean default true,
   created_at        timestamptz default now()
 );
