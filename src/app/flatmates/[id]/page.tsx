@@ -147,7 +147,7 @@ export default function FlatmateDetailPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
-                  className="max-w-full max-h-full w-auto h-auto object-contain relative z-10"
+                  className="w-full h-full object-contain relative z-10"
                 />
               </AnimatePresence>
 

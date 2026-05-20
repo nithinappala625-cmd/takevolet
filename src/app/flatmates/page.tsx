@@ -327,11 +327,18 @@ export default function FlatmatesPage() {
                 className="border border-border bg-background hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-primary/45 transition-all overflow-hidden flex flex-col group"
               >
                 {/* Images Banner */}
-                <div className="relative h-64 overflow-hidden bg-secondary/20 shrink-0 flex items-center justify-center border-b border-border">
+                <div className="relative h-64 overflow-hidden bg-black shrink-0 flex items-center justify-center border-b border-border">
+                  {/* Ambient Blur */}
+                  <img
+                    src={fm.images[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-110 pointer-events-none transition-transform duration-500 group-hover:scale-125"
+                  />
+                  {/* Clear Foreground */}
                   <img
                     src={fm.images[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"}
                     alt={fm.title}
-                    className="relative z-10 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 mx-auto"
+                    className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mx-auto"
                   />
                   {/* Absolute overlays */}
                   <div className="absolute top-4 left-4 z-20 bg-background/90 backdrop-blur-md px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary border border-primary/20 flex items-center gap-1.5">
