@@ -492,9 +492,9 @@ export default function RoomDetailPage() {
               {currentImageIndex + 1} / {allMedia.length}
             </div>
           )}
-          {/* Title & Location */}
+        </div>
 
-            {/* Title & Location */}
+        {/* Title & Location */}
             <div>
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className="bg-primary/10 text-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider">{room.furnishing || "Semi-Furnished"}</span>

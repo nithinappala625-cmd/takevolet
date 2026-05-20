@@ -37,6 +37,28 @@ export default function FlatmatesPage() {
   const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
 
   useEffect(() => {
+    // Cleanup the 2 specific local flatmate listings if they exist
+    if (typeof window !== "undefined") {
+      try {
+        const localKey = "takevolet_local_flatmates";
+        const localData = localStorage.getItem(localKey);
+        if (localData) {
+          const list = JSON.parse(localData);
+          if (Array.isArray(list)) {
+            const filtered = list.filter((item: any) => {
+              const title = (item.title || "").toLowerCase().trim();
+              return title !== "1rk super vacant" && title !== "1 roommate vacant";
+            });
+            if (filtered.length !== list.length) {
+              localStorage.setItem(localKey, JSON.stringify(filtered));
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error cleaning up local flatmates:", err);
+      }
+    }
+
     async function loadData() {
       setLoading(true);
       try {
