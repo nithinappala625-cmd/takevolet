@@ -123,3 +123,51 @@ export async function deleteFlatmateAction(id: string) {
     .eq("id", id);
   return { error };
 }
+
+// ─── MARKETPLACE ITEMS ────────────────────────────────────────────────────────
+
+export async function fetchAllItemsAction() {
+  const { data, error } = await supabaseAdmin
+    .from("items")
+    .select("*")
+    .eq("is_available", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("fetchAllItemsAction:", error);
+    return [];
+  }
+
+  const items = data as any[];
+  for (const item of items) {
+    if (item.user_id) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, phone, whatsapp, avatar_url, profession, is_verified")
+        .eq("id", item.user_id)
+        .single();
+      item.seller_profile = profile || null;
+    }
+  }
+  return items;
+}
+
+export async function fetchItemByIdAction(id: string) {
+  const { data, error } = await supabaseAdmin
+    .from("items")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+
+  if (data.user_id) {
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name, phone, whatsapp, avatar_url, profession, is_verified")
+      .eq("id", data.user_id)
+      .single();
+    data.seller_profile = profile || null;
+  }
+  return data;
+}
