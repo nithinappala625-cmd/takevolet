@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
 import { isProfileComplete } from "@/lib/db";
-import { saveLocalItem, MarketplaceItemType } from "@/lib/item-db";
+import { saveItem, MarketplaceItemType } from "@/lib/item-db";
 
 export default function PostItemPage() {
   const router = useRouter();
@@ -74,29 +74,27 @@ export default function PostItemPage() {
     await new Promise(r => setTimeout(r, 1000));
     
     const newItem: MarketplaceItemType = {
-      id: "item-" + Date.now(),
+      user_id: user?.id,
       title: form.title,
       description: form.description,
       category: form.category,
       condition: form.condition,
       price: Number(form.price) || 0,
-      rentPrice: Number(form.rentPrice) || undefined,
+      rent_price: Number(form.rentPrice) || undefined,
       location: form.location,
       image: uploadedFiles.length > 0 ? uploadedFiles[0].preview : "https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80",
       images: uploadedFiles.length > 0 ? uploadedFiles.map(f => f.preview) : ["https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80"],
-      listingType,
-      postedBy: {
-        name: user?.name || "You",
-        avatar: user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=You",
-      },
-      createdAt: new Date().toISOString(),
-      userId: user?.id
+      listing_type: listingType,
     };
 
-    saveLocalItem(newItem);
+    const { error } = await saveItem(newItem);
     
     setSubmitting(false);
-    setSubmitted(true);
+    if (!error) {
+      setSubmitted(true);
+    } else {
+      alert("Failed to publish item: " + error.message);
+    }
   };
 
   if (loading || profileChecking) {

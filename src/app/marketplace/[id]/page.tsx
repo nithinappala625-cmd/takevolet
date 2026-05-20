@@ -95,11 +95,11 @@ export default function MarketplaceItemPage() {
                     </p>
                   </div>
                 )}
-                {item.rentPrice && (
+                {item.rent_price && (
                   <div className="border border-border p-4 bg-background w-full sm:w-auto min-w-[200px]">
                     <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1">Rent Price</p>
                     <p className="text-2xl font-bold flex items-center text-primary">
-                      <IndianRupee size={22} /> {item.rentPrice.toLocaleString("en-IN")}
+                      <IndianRupee size={22} /> {item.rent_price.toLocaleString("en-IN")}
                       <span className="text-sm text-muted-foreground font-normal ml-1">/mo</span>
                     </p>
                   </div>
@@ -118,9 +118,9 @@ export default function MarketplaceItemPage() {
               <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-4">Posted By</p>
               <div className="flex items-center justify-between p-4 border border-border bg-secondary/20">
                 <div className="flex items-center gap-3">
-                  <img src={item.postedBy.avatar} alt={item.postedBy.name} className="w-12 h-12 rounded-full object-cover border-2 border-background" />
+                  <img src={item.profiles?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=User"} alt={item.profiles?.full_name} className="w-12 h-12 rounded-full object-cover border-2 border-background" />
                   <div>
-                    <p className="font-bold text-sm">{item.postedBy.name}</p>
+                    <p className="font-bold text-sm">{item.profiles?.full_name || "User"}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <CheckCircle2 size={12} className="text-green-500" /> Verified Seller
                     </p>
@@ -129,7 +129,7 @@ export default function MarketplaceItemPage() {
 
                 {unlocked ? (
                   <div className="text-right">
-                    <p className="font-bold text-primary flex items-center gap-1.5"><Phone size={14}/> +91 98765 43210</p>
+                    <p className="font-bold text-primary flex items-center gap-1.5"><Phone size={14}/> +91 {item.profiles?.phone || "98765 43210"}</p>
                   </div>
                 ) : (
                   <button 

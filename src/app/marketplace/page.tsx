@@ -18,7 +18,7 @@ export default function MarketplacePage() {
 
   const filteredItems = items.filter(item => {
     const matchesCategory = !selectedCategory || item.category === selectedCategory;
-    const matchesType = !selectedType || item.listingType === selectedType || item.listingType === "both";
+    const matchesType = !selectedType || item.listing_type === selectedType || item.listing_type === "both";
     return matchesCategory && matchesType;
   });
 
@@ -99,15 +99,15 @@ export default function MarketplacePage() {
                   </span>
                 </div>
 
-                {(item.listingType === "rent" || item.listingType === "both") && (
+                {(item.listing_type === "rent" || item.listing_type === "both") && (
                   <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold flex items-center gap-1">
                     <Repeat size={10} /> Rent Available
                   </div>
                 )}
 
                 <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                  <img src={item.postedBy.avatar} alt="" className="w-6 h-6 rounded-full border border-background" loading="lazy" />
-                  <span className="text-[10px] font-semibold text-white drop-shadow-lg">{item.postedBy.name}</span>
+                  <img src={item.profiles?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=User"} alt="" className="w-6 h-6 rounded-full border border-background" loading="lazy" />
+                  <span className="text-[10px] font-semibold text-white drop-shadow-lg">{item.profiles?.full_name || "User"}</span>
                 </div>
               </div>
 
@@ -128,9 +128,9 @@ export default function MarketplacePage() {
                         <IndianRupee size={14} />{item.price.toLocaleString("en-IN")}
                       </span>
                     )}
-                    {item.rentPrice && (
+                    {item.rent_price && (
                       <span className="text-[11px] text-primary font-semibold">
-                        Rent: ₹{item.rentPrice}/mo
+                        Rent: ₹{item.rent_price}/mo
                       </span>
                     )}
                   </div>

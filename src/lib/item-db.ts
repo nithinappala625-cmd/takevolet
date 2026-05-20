@@ -1,74 +1,82 @@
-import { MOCK_ITEMS } from "@/data/mock";
+import { supabase } from "@/lib/supabase";
 
-// Define the type so we don't need to import from mock if it changes
 export type MarketplaceItemType = {
-  id: string;
+  id?: string; // Supabase uses UUID, optional before insert
+  user_id?: string;
   title: string;
   description: string;
   price: number;
-  rentPrice?: number;
+  rent_price?: number;
   category: string;
   condition: string;
   location: string;
   image: string;
   images: string[];
-  listingType: "sell" | "rent" | "both";
-  postedBy: {
-    name: string;
-    avatar: string;
+  listing_type: "sell" | "rent" | "both";
+  created_at?: string;
+  
+  // Joined fields
+  profiles?: {
+    full_name: string;
+    avatar_url: string;
     phone?: string;
   };
-  createdAt: string;
-  userId?: string;
 };
 
 /**
- * Save an item to localStorage.
+ * Save an item to Supabase
  */
-export function saveLocalItem(item: MarketplaceItemType) {
-  if (typeof window === "undefined") return;
-  const existingStr = localStorage.getItem("my_items");
-  const existing: MarketplaceItemType[] = existingStr ? JSON.parse(existingStr) : [];
-  existing.push(item);
-  localStorage.setItem("my_items", JSON.stringify(existing));
+export async function saveItem(item: MarketplaceItemType): Promise<{ data: MarketplaceItemType | null; error: any }> {
+  const { data, error } = await supabase
+    .from("items")
+    .insert([item])
+    .select()
+    .single();
+    
+  return { data: data as MarketplaceItemType, error };
 }
 
 /**
- * Get all items from localStorage
- */
-export function getLocalItems(): MarketplaceItemType[] {
-  if (typeof window === "undefined") return [];
-  const existingStr = localStorage.getItem("my_items");
-  if (!existingStr) return [];
-  try {
-    return JSON.parse(existingStr) as MarketplaceItemType[];
-  } catch (e) {
-    return [];
-  }
-}
-
-/**
- * Get ALL marketplace items, combining mock and local items.
+ * Get all available marketplace items
  */
 export async function getAllItems(): Promise<MarketplaceItemType[]> {
-  const localItems = getLocalItems();
-  // We place local items first so they appear at the top
-  return [...localItems, ...(MOCK_ITEMS as MarketplaceItemType[])];
+  const { data, error } = await supabase
+    .from("items")
+    .select("*, profiles(full_name, avatar_url, phone)")
+    .eq("is_available", true)
+    .order("created_at", { ascending: false });
+    
+  if (error) {
+    console.error("Error fetching items:", error);
+    return [];
+  }
+  return data as MarketplaceItemType[];
 }
 
 /**
  * Get a specific item by ID
  */
 export async function getItemById(id: string): Promise<MarketplaceItemType | null> {
-  const all = await getAllItems();
-  return all.find((i) => i.id === id) || null;
+  const { data, error } = await supabase
+    .from("items")
+    .select("*, profiles(full_name, avatar_url, phone)")
+    .eq("id", id)
+    .single();
+    
+  if (error || !data) return null;
+  return data as MarketplaceItemType;
 }
 
 /**
  * Get items posted by a specific user ID
  */
 export async function getUserItems(userId: string): Promise<MarketplaceItemType[]> {
-  const localItems = getLocalItems();
-  // Filter local items by userId if applicable
-  return localItems.filter(item => item.userId === userId);
+  const { data, error } = await supabase
+    .from("items")
+    .select("*, profiles(full_name, avatar_url, phone)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+    
+  if (error) return [];
+  return data as MarketplaceItemType[];
 }
