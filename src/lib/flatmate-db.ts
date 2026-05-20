@@ -126,6 +126,7 @@ export async function insertFlatmate(
   try {
     // Attempt Supabase insert
     const dbPayload = {
+      id: generatedId,
       user_id: flatmateData.userId,
       title: flatmateData.title,
       description: flatmateData.description,
@@ -148,6 +149,7 @@ export async function insertFlatmate(
       .single();
 
     if (error) {
+      console.error("Supabase insert error:", error);
       // Save locally as fallback
       saveLocalFlatmate(newFlatmate);
       return { data: newFlatmate, error: null };
