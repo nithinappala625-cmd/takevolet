@@ -221,7 +221,7 @@ export default function PostRoomPage() {
           <p className="text-muted-foreground text-sm">Fill in the details below. Seekers will see colony/area only — house number is revealed after ₹500 unlock.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && e.target instanceof HTMLInputElement) e.preventDefault(); }} className="space-y-8">
 
           {/* ── TITLE & DESCRIPTION ─────────────────────────── */}
           <div className="border border-border p-6 space-y-4">

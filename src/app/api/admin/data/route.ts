@@ -26,12 +26,13 @@ export async function GET(request: Request) {
   }
 
   // Fetch all data in parallel
-  const [payoutsRes, interestsRes, handoversRes, profilesRes, roomsRes] = await Promise.all([
+  const [payoutsRes, interestsRes, handoversRes, profilesRes, roomsRes, flatmatesRes] = await Promise.all([
     supabaseAdmin.from("payouts").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("interests").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("handovers").select("*").order("confirmed_at", { ascending: false }),
     supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("rooms").select("*").order("created_at", { ascending: false }),
+    supabaseAdmin.from("flatmates").select("*").order("created_at", { ascending: false }),
   ]);
 
   const payouts   = payoutsRes.data   || [];
@@ -39,6 +40,7 @@ export async function GET(request: Request) {
   const handovers = handoversRes.data || [];
   const profiles  = profilesRes.data  || [];
   const rooms     = roomsRes.data     || [];
+  const flatmates = flatmatesRes.data || [];
 
   // Revenue calculation
   const interestRevenue = interests
@@ -114,10 +116,31 @@ export async function GET(request: Request) {
       location:   r.location,
       colony:     r.colony,
       rent:       r.rent,
+      advance:    r.advance,
       user_id:    r.user_id,
       is_available: r.is_available,
       created_at: r.created_at,
       images:     r.images || [],
+      videos:     r.videos || [],
+      description: r.description || "",
+      furnishing:  r.furnishing || "",
+      gender_preference: r.gender_preference || "Any Gender",
+    })),
+    flatmates: flatmates.map((f: any) => ({
+      id:           f.id,
+      title:        f.title,
+      location:     f.location,
+      colony:       f.colony,
+      rentShare:    f.rent_share,
+      advanceShare: f.advance_share,
+      user_id:      f.user_id,
+      isAvailable:  f.is_available,
+      created_at:   f.created_at,
+      images:       f.images || [],
+      videos:       f.videos || [],
+      description:  f.description || "",
+      genderPref:   f.gender_pref || "Any",
+      professionPref: f.profession_pref || "Any",
     })),
   });
 }
@@ -162,4 +185,122 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ success: true, payout: data });
+}
+
+// ─── DELETE /api/admin/data ───────────────────────────────────────────────────
+export async function DELETE(request: Request) {
+  if (!verifyAdmin(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get("type");
+  const id = searchParams.get("id");
+
+  if (!type || !id) {
+    return NextResponse.json({ error: "type and id are required" }, { status: 400 });
+  }
+
+  let error = null;
+  if (type === "room") {
+    const res = await supabaseAdmin.from("rooms").delete().eq("id", id);
+    error = res.error;
+  } else if (type === "flatmate") {
+    const res = await supabaseAdmin.from("flatmates").delete().eq("id", id);
+    error = res.error;
+  } else if (type === "marketplace" || type === "item") {
+    // Marketplace is mock-only, so we just return success
+    return NextResponse.json({ success: true });
+  }
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+
+// ─── PUT /api/admin/data ──────────────────────────────────────────────────────
+export async function PUT(request: Request) {
+  if (!verifyAdmin(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const {
+    type,
+    id,
+    title,
+    rent,
+    advance,
+    rentShare,
+    advanceShare,
+    location,
+    colony,
+    description,
+    furnishing,
+    genderPreference,
+    genderPref,
+    professionPref,
+    images,
+    videos,
+  } = body;
+
+  if (!type || !id) {
+    return NextResponse.json({ error: "type and id are required" }, { status: 400 });
+  }
+
+  let data = null;
+  let error = null;
+
+  if (type === "room") {
+    const res = await supabaseAdmin
+      .from("rooms")
+      .update({
+        title,
+        rent: Number(rent),
+        advance: Number(advance || 0),
+        location,
+        colony,
+        description,
+        furnishing,
+        gender_preference: genderPreference,
+        images,
+        videos,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+    data = res.data;
+    error = res.error;
+  } else if (type === "flatmate") {
+    const res = await supabaseAdmin
+      .from("flatmates")
+      .update({
+        title,
+        rent_share: Number(rentShare || rent),
+        advance_share: Number(advanceShare || advance || 0),
+        location,
+        colony,
+        description,
+        gender_pref: genderPref || genderPreference,
+        profession_pref: professionPref,
+        images,
+        videos,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+    data = res.data;
+    error = res.error;
+  } else if (type === "marketplace" || type === "item") {
+    // Marketplace is mock-only, so we just return success
+    return NextResponse.json({ success: true, data: body });
+  }
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, data });
 }

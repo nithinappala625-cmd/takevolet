@@ -327,31 +327,42 @@ export default function FlatmatesPage() {
                 className="border border-border bg-background hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-primary/45 transition-all overflow-hidden flex flex-col group"
               >
                 {/* Images Banner */}
-                <div className="relative h-64 overflow-hidden bg-muted shrink-0">
+                <div className="relative h-64 overflow-hidden bg-black/95 shrink-0 flex items-center justify-center">
+                  {/* Backdrop Ambient Blur */}
+                  <img
+                    src={fm.images[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-110"
+                  />
+                  {/* Crisp Foreground (Uncropped) */}
                   <img
                     src={fm.images[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"}
                     alt={fm.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="relative z-10 max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500 mx-auto"
                   />
                   {/* Absolute overlays */}
-                  <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-md px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary border border-primary/20 flex items-center gap-1.5">
+                  <div className="absolute top-4 left-4 z-20 bg-background/90 backdrop-blur-md px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary border border-primary/20 flex items-center gap-1.5">
                     <Award size={12} /> Vacancies: {fm.vacancyCount}
                   </div>
-                  <div className="absolute top-4 right-4 bg-foreground text-background px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+                  <div className="absolute top-4 right-4 z-20 bg-foreground text-background px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
                     {fm.genderPref}
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 to-transparent p-6 pt-12 text-white">
-                    <p className="text-xs font-semibold tracking-wider uppercase opacity-85 mb-1.5 flex items-center gap-1">
-                      <MapPin size={12} className="text-primary" /> {fm.location} — {fm.colony}
-                    </p>
-                    <h3 className="text-lg font-bold line-clamp-1">{fm.title}</h3>
                   </div>
                 </div>
 
                 {/* Listing Details */}
                 <div className="p-6 flex-1 flex flex-col justify-between">
                   <div>
+                    {/* Title & Location details (moved below image container) */}
+                    <div className="mb-4">
+                      <Link href={`/flatmates/${fm.id}`}>
+                        <h3 className="text-lg font-bold tracking-tight mb-1 line-clamp-1 hover:text-primary transition-colors">{fm.title}</h3>
+                      </Link>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin size={10} className="text-primary" /> {fm.colony}, {fm.location}
+                      </p>
+                    </div>
+
                     {/* Financial stats */}
                     <div className="grid grid-cols-2 gap-4 border-b border-border pb-4 mb-4">
                       <div>

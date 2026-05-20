@@ -165,11 +165,16 @@ export default function RoomsPage() {
               className="group border border-border overflow-hidden hover:border-primary/30 transition-all duration-500">
 
               <Link href={`/rooms/${room.id}`}>
-                <div className="relative h-56 overflow-hidden cursor-pointer">
+                <div className="relative h-64 overflow-hidden bg-black/95 cursor-pointer flex items-center justify-center">
+                  {/* Backdrop Ambient Blur */}
+                  <img src={(room.images || [])[0] || ""} alt="" aria-hidden="true" loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-110" />
+                  
+                  {/* Crisp Foreground (Uncropped) */}
                   <img src={(room.images || [])[0] || ""} alt={room.title} loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
-                  <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                    className="relative z-10 max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-700 mx-auto" />
+
+                  <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-2">
                     <span className="bg-background/90 backdrop-blur-sm px-3 py-1 text-[11px] uppercase tracking-wider font-semibold flex items-center gap-1">
                       <MapPin size={12} className="text-primary" /> {room.location}
                     </span>
@@ -180,21 +185,21 @@ export default function RoomsPage() {
                     )}
                   </div>
                   {(room.commission || 0) > 0 && (
-                    <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-[11px] uppercase tracking-wider font-bold">
+                    <div className="absolute top-4 right-4 z-20 bg-primary text-primary-foreground px-3 py-1 text-[11px] uppercase tracking-wider font-bold">
                       ₹{room.commission} reward
                     </div>
                   )}
                   {room.user_id !== "mock" && (
-                    <div className="absolute bottom-4 left-4 bg-green-500 text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                    <div className="absolute bottom-4 left-4 z-20 bg-green-500 text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                       New · Just Posted
                     </div>
                   )}
                   {(room.images || []).length > 1 && (
-                    <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-2 py-1 text-[11px] font-semibold flex items-center gap-1">
+                    <div className="absolute bottom-4 right-4 z-20 bg-background/80 backdrop-blur-sm px-2 py-1 text-[11px] font-semibold flex items-center gap-1">
                       <Eye size={12} /> {(room.images || []).length} photos
                     </div>
                   )}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                  <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
                     <span className="bg-background/90 backdrop-blur-sm px-4 py-2 text-xs font-bold uppercase tracking-wider">View Details</span>
                   </div>
                 </div>

@@ -1,67 +1,5 @@
 // Comprehensive Hyderabad locations — major areas + smaller sub-areas
 
-// ─── For dropdowns (profile complete + post room forms) ───────────────────────
-export const LOCATIONS: { value: string; label: string }[] = [
-  { value: "Hitech City", label: "Hitech City / Madhapur" },
-  { value: "Gachibowli", label: "Gachibowli / Nanakramguda" },
-  { value: "Kondapur", label: "Kondapur / Serilingampally" },
-  { value: "Kukatpally", label: "Kukatpally / KPHB" },
-  { value: "Banjara Hills", label: "Banjara Hills" },
-  { value: "Jubilee Hills", label: "Jubilee Hills / Film Nagar" },
-  { value: "Ameerpet", label: "Ameerpet / SR Nagar" },
-  { value: "Begumpet", label: "Begumpet / Prakash Nagar" },
-  { value: "Secunderabad", label: "Secunderabad" },
-  { value: "Uppal", label: "Uppal / Nacharam" },
-  { value: "LB Nagar", label: "LB Nagar / Saroor Nagar" },
-  { value: "Dilsukhnagar", label: "Dilsukhnagar / Kothapet" },
-  { value: "Himayatnagar", label: "Himayatnagar / Narayanguda" },
-  { value: "Somajiguda", label: "Somajiguda / Rajbhavan Rd" },
-  { value: "Tolichowki", label: "Tolichowki / Mehdipatnam" },
-  { value: "Attapur", label: "Attapur / Rajendranagar" },
-  { value: "Miyapur", label: "Miyapur / Chandanagar" },
-  { value: "Bachupally", label: "Bachupally / Nizampet" },
-  { value: "Kompally", label: "Kompally / Jeedimetla" },
-  { value: "Alwal", label: "Alwal / Malkajgiri" },
-  { value: "Sainikpuri", label: "Sainikpuri / AS Rao Nagar" },
-  { value: "Manikonda", label: "Manikonda / Kokapet" },
-  { value: "Financial District", label: "Financial District / Raidurgam" },
-  { value: "Boduppal", label: "Boduppal / Peerzadiguda" },
-  { value: "Hayathnagar", label: "Hayathnagar / Vanasthalipuram" },
-];
-
-const COLONIES_MAP: Record<string, string[]> = {
-  "Hitech City":        ["Madhapur", "Kavuri Hills", "Ayyappa Society", "Vittal Rao Nagar", "Jubilee Enclave", "Silicon Valley"],
-  "Gachibowli":         ["Gachibowli Village", "Nanakramguda", "Serilingampally", "Botanical Garden Rd", "DLF Cybercity"],
-  "Kondapur":           ["Kondapur Main Rd", "Laxmi Nagar", "Surya Nagar", "Sri Ram Nagar", "Prashant Hills"],
-  "Kukatpally":         ["KPHB Phase 1", "KPHB Phase 2", "KPHB Phase 3", "KPHB Phase 4", "Nizampet Road", "Moosapet", "Balanagar"],
-  "Banjara Hills":      ["Road No 1", "Road No 2", "Road No 3", "Road No 10", "Road No 12", "Road No 14"],
-  "Jubilee Hills":      ["Check Post", "Road No 36", "Road No 45", "Road No 78", "Film Nagar", "Madina Colony"],
-  "Ameerpet":           ["SR Nagar", "Panjagutta", "Greenlands", "Nagarjuna Hills", "Erragadda", "Punjagutta Circle"],
-  "Begumpet":           ["Prakash Nagar", "Ramnagar", "SD Road", "Chilkalguda", "Clock Tower"],
-  "Secunderabad":       ["MG Road", "Paradise", "Trimulgherry", "Karkhana", "Bowenpally", "East Marredpally", "West Marredpally"],
-  "Uppal":              ["Uppal Ring Road", "Nacharam", "Habsiguda", "Ramanthapur", "Mallapur", "Ghatkesar"],
-  "LB Nagar":           ["Saroor Nagar", "Champapet", "Mansoorabad", "Chaitanyapuri", "Kothapet"],
-  "Dilsukhnagar":       ["Malakpet", "Moosarambagh", "Tilak Nagar", "Keshavnagar", "Pillar No 147"],
-  "Himayatnagar":       ["Narayanguda", "Basheerbagh", "Nallakunta", "Vidyanagar", "Musheerabad", "RTC X Roads"],
-  "Somajiguda":         ["Rajbhavan Road", "Padmarao Nagar", "Saifabad", "Lakdikapool", "Khairatabad"],
-  "Tolichowki":         ["Mehdipatnam", "Rethibowli", "Langar House", "Shaikpet", "Masab Tank"],
-  "Attapur":            ["Rajendranagar", "Kishanbagh", "Shamshabad Road", "Golconda", "Nanalnagar"],
-  "Miyapur":            ["Chandanagar", "Ramachandra Puram", "Hafeezpet", "Bharat Nagar", "BHEL Township"],
-  "Bachupally":         ["Nizampet", "Pragati Nagar", "Bollaram", "IDA Bollaram", "Bhagyanagar Colony"],
-  "Kompally":           ["Quthbullapur", "Jeedimetla", "Dundigal", "IDA Jeedimetla", "Suchitra Circle"],
-  "Alwal":              ["Malkajgiri", "Neredmet", "Tarnaka", "Ramnagar Gundu", "Yapral"],
-  "Sainikpuri":         ["AS Rao Nagar", "Kapra", "ECIL", "Neredmet", "Habsiguda", "Kushaiguda"],
-  "Manikonda":          ["Puppalaguda", "Narsingi", "Kokapet", "Gandipet", "Gowlidoddi"],
-  "Financial District": ["Nanakramguda", "Khajaguda", "Raidurgam", "Radial Road No 3"],
-  "Boduppal":           ["Peerzadiguda", "Nagaram", "Ghatkesar", "Medipally", "Pocharam"],
-  "Hayathnagar":        ["Vanasthalipuram", "Saroornagar", "Meerpet", "Nagole", "LB Nagar Extension"],
-};
-
-export function getColonies(location: string): string[] {
-  return COLONIES_MAP[location] || [];
-}
-
-
 export const HYDERABAD_AREAS = [
   // IT Corridor
   "Madhapur",
@@ -157,6 +95,76 @@ export const HYDERABAD_AREAS = [
   "Medchal",
   "Shamirpet",
 ];
+
+// ─── For dropdowns (profile complete + post room forms) ───────────────────────
+export const LOCATIONS: { value: string; label: string }[] = [...new Set(HYDERABAD_AREAS)]
+  .sort((a, b) => a.localeCompare(b))
+  .map(area => ({
+    value: area,
+    label: area
+  }));
+
+
+const COLONIES_MAP: Record<string, string[]> = {
+  "Madhapur":           ["Madhapur Main Rd", "Kavuri Hills", "Ayyappa Society", "Vittal Rao Nagar", "Jubilee Enclave", "Silicon Valley"],
+  "Hitech City":        ["Hitech City Metro", "Cyber Towers Colony", "L&T Infocity", "Mindspace Area", "Phases 1 & 2"],
+  "Gachibowli":         ["Gachibowli Village", "Botanical Garden Rd", "DLF Cybercity", "Indira Nagar", "Telecom Nagar"],
+  "Nanakramguda":       ["Financial District Rd", "Nanakramguda Village", "Wipro Circle Area", "One West Area"],
+  "Kondapur":           ["Kondapur Main Rd", "Laxmi Nagar", "Surya Nagar", "Sri Ram Nagar", "Prashant Hills", "Raghavendra Colony"],
+  "Kukatpally":         ["KPHB Phase 1", "KPHB Phase 2", "KPHB Phase 3", "KPHB Phase 4", "Moosapet", "Balanagar", "Vivekananda Nagar"],
+  "Banjara Hills":      ["Road No 1", "Road No 2", "Road No 3", "Road No 10", "Road No 12", "Road No 14", "Mithila Nagar"],
+  "Jubilee Hills":      ["Check Post", "Road No 36", "Road No 45", "Road No 78", "Film Nagar", "Madina Colony"],
+  "Ameerpet":           ["Ameerpet Metro", "Maitrivanam", "Satyam Theatre Rd", "Dharam Karan Rd", "Aditya Enclave", "Greenlands"],
+  "SR Nagar":           ["SR Nagar Metro", "Sanjeeva Reddy Nagar", "BK Guda", "Umesh Chandra Statue", "Community Hall", "Erragadda"],
+  "Yousufguda":         ["Yousufguda Basti", "Krishna Nagar", "Madhura Nagar", "Jawahar Nagar", "Sriram Nagar", "Moti Nagar"],
+  "Begumpet":           ["Prakash Nagar", "Ramnagar", "SD Road", "Chilkalguda", "Clock Tower", "Mayur Marg"],
+  "Somajiguda":         ["Rajbhavan Road", "Padmarao Nagar", "Saifabad", "Lakdikapool", "Khairatabad", "Yashoda Hospital Rd"],
+  "Secunderabad":       ["MG Road", "Paradise", "Trimulgherry", "Karkhana", "Bowenpally", "East Marredpally", "West Marredpally"],
+  "Uppal":              ["Uppal Ring Road", "Nacharam", "Ramanthapur", "Mallapur", "Ghatkesar"],
+  "Habsiguda":          ["Habsiguda Street No 8", "Street No 1", "Kakatiya Nagar", "Ravindra Nagar"],
+  "Tarnaka":            ["Tarnaka Metro", "Osmania University Rd", "Kimtee Colony", "Vijayapuri Colony"],
+  "LB Nagar":           ["Saroor Nagar", "Champapet", "Mansoorabad", "Chaitanyapuri", "Kothapet"],
+  "Dilsukhnagar":       ["Malakpet", "Moosarambagh", "Tilak Nagar", "Keshavnagar", "Pillar No 147"],
+  "Himayatnagar":       ["Narayanguda", "Basheerbagh", "Nallakunta", "Vidyanagar", "Musheerabad", "RTC X Roads"],
+  "Panjagutta":         ["Nagarjuna Hills", "Punjagutta Circle", "Dwarakapuri Colony", "Model House Lane"],
+  "Mehdipatnam":        ["Mehdipatnam Bus Depot", "Rethibowli", "Langar House", "Masab Tank", "Pillar No 20"],
+  "Tolichowki":         ["Shaikpet", "Masab Tank", "Nizam Colony", "Meridian School Rd"],
+  "Attapur":            ["Rajendranagar", "Kishanbagh", "Shamshabad Road", "Golconda", "Nanalnagar"],
+  "Miyapur":            ["Hafeezpet", "Bharat Nagar", "BHEL Township", "Miyapur Metro Stn"],
+  "Chandanagar":        ["Chandanagar Station Rd", "Deepti Sri Nagar", "Gangaram", "HUDA Colony"],
+  "Nallagandla":        ["Nallagandla Bypass Rd", "Aparna Sarovar Area", "Citizen Hospital Rd", "HUDA Layout"],
+  "Tellapur":           ["Tellapur Road", "Visions Villa Area", "Radha Krishna Colony"],
+  "Nizampet":           ["Nizampet Road", "Pragati Nagar Rd", "Kolanu Narayana Reddy Colony"],
+  "Bachupally":         ["Bachupally X Roads", "Bollaram", "IDA Bollaram", "Bhagyanagar Colony"],
+  "Pragathi Nagar":     ["Pragathi Nagar Lake Rd", "Kakatiya Hills", "Mithila Nagar"],
+  "Kompally":           ["Quthbullapur", "Jeedimetla", "Dundigal", "IDA Jeedimetla", "Suchitra Circle"],
+  "Alwal":              ["Malkajgiri", "Neredmet", "Tarnaka", "Yapral"],
+  "Malkajgiri":         ["Safilguda", "Anandbagh", "Vimal Theatre Rd", "Gautham Nagar"],
+  "Sainikpuri":         ["AS Rao Nagar", "Kapra", "ECIL", "Kushaiguda"],
+  "Manikonda":          ["Puppalaguda", "Narsingi", "Kokapet", "Gandipet", "Gowlidoddi"],
+  "Puppalaguda":        ["Alkapur Township", "Puppalaguda Main Rd", "Golden Temple Rd"],
+  "Narsingi":           ["Narsingi Junction", "Outer Ring Road Area", "Gandipet Rd"],
+  "Kokapet":            ["Kokapet SEZ", "Golden Mile Layout", "Kokapet Village"],
+  "Financial District": ["Nanakramguda", "Khajaguda", "Raidurgam", "Radial Road No 3"],
+  "Boduppal":           ["Peerzadiguda", "Nagaram", "Medipally", "Pocharam"],
+  "Hayathnagar":        ["Vanasthalipuram", "Saroornagar", "Meerpet", "Nagole", "LB Nagar Extension"],
+};
+
+export function getColonies(location: string): string[] {
+  if (COLONIES_MAP[location]) {
+    return COLONIES_MAP[location];
+  }
+  // Smart dynamic colony fallback generator
+  return [
+    `${location} Main Road`,
+    `${location} Colony`,
+    `Sector 1, ${location}`,
+    `Phase 1, ${location}`,
+    `Near Metro Station, ${location}`,
+    `Greenwood Area, ${location}`
+  ];
+}
+
 
 export const CATEGORIES = [
   "Furniture",

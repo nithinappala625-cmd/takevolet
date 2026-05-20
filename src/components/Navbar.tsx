@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Home, ShoppingBag, Handshake, User, LayoutDashboard, LogOut, Shield, Users } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { isProfileComplete } from "@/lib/db";
 
 // ─── Smart Avatar: shows photo or gold initials fallback ──────────────────────
@@ -52,6 +52,7 @@ const Navbar = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const { user, logout } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const [profileDone, setProfileDone] = useState(false);
 
   useEffect(() => {
@@ -140,12 +141,21 @@ const Navbar = () => {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center space-x-8">
-          {navLinks.map((link) => (
-            <Link key={link.name} href={link.href}
-              className="text-sm uppercase tracking-widest font-medium text-foreground/70 hover:text-primary transition-colors relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300">
-              {link.name}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href || 
+                             pathname.startsWith(link.href + "/") || 
+                             (link.href !== "/" && pathname.startsWith(link.href));
+            return (
+              <Link key={link.name} href={link.href}
+                className={`inline-block py-1 text-sm uppercase tracking-widest transition-all duration-300 border-b-2 font-bold ${
+                  isActive
+                    ? "text-primary border-primary"
+                    : "text-foreground/75 border-transparent hover:text-primary hover:border-primary/50"
+                }`}>
+                {link.name}
+              </Link>
+            );
+          })}
 
           {/* List Space Dropdown */}
           <div className="relative"
@@ -253,12 +263,17 @@ const Navbar = () => {
                   </div>
                 </div>
               )}
-              {navLinks.map((link) => (
-                <Link key={link.name} href={link.href} onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors">
-                  {link.name}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+                return (
+                  <Link key={link.name} href={link.href} onClick={() => setIsMobileMenuOpen(false)}
+                    className={`text-base uppercase tracking-widest transition-colors ${
+                      isActive ? "text-primary font-bold" : "text-foreground/75 font-medium hover:text-primary"
+                    }`}>
+                    {link.name}
+                  </Link>
+                );
+              })}
               <hr className="border-border" />
               <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">List Your Space</p>
               {postOptions.map((opt) => (

@@ -258,7 +258,7 @@ export default function PostFlatmatePage() {
         </div>
 
         {/* Wizard Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && e.target instanceof HTMLInputElement) e.preventDefault(); }} className="space-y-8">
           
           {/* STEP 1: Details & Media */}
           {step === 1 && (
