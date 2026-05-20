@@ -411,8 +411,14 @@ export default function RoomDetailPage() {
         </Link>
       </div>
 
-      {/* Main Image Gallery */}
-      <div className="container mx-auto px-6 md:px-12 mb-8">
+      {/* Content and Media Grid */}
+      <div className="container mx-auto px-6 md:px-12">
+        <div className="grid lg:grid-cols-3 gap-10">
+
+          {/* LEFT COLUMN */}
+          <div className="lg:col-span-2 space-y-10">
+            
+            {/* Main Image Gallery */}
         <div className="relative aspect-[16/10] bg-black overflow-hidden group border border-border flex items-center justify-center cursor-pointer" onClick={() => openLightbox(currentImageIndex)}>
           
           {/* Background Layer: Ambient Blur (only for images) */}
@@ -486,15 +492,7 @@ export default function RoomDetailPage() {
               {currentImageIndex + 1} / {allMedia.length}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="container mx-auto px-6 md:px-12">
-        <div className="grid lg:grid-cols-3 gap-10">
-
-          {/* LEFT — Details */}
-          <div className="lg:col-span-2 space-y-10">
+          {/* Title & Location */}
 
             {/* Title & Location */}
             <div>
