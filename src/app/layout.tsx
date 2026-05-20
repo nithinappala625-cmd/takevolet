@@ -40,10 +40,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", sizes: "any" },
       { url: "/icon.svg", type: "image/svg+xml" },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: "/icon.png",
     apple: "/logo.png",
   },
   openGraph: {

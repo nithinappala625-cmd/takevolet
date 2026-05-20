@@ -1,17 +1,22 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MOCK_ITEMS } from "@/data/mock";
 import { CATEGORIES, ITEM_CONDITIONS } from "@/data/locations";
 import { IndianRupee, ArrowUpRight, Tag, MapPin, Phone, Repeat } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getAllItems, MarketplaceItemType } from "@/lib/item-db";
 
 export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedType, setSelectedType] = useState<"" | "sell" | "rent" | "both">("");
+  const [items, setItems] = useState<MarketplaceItemType[]>([]);
 
-  const filteredItems = MOCK_ITEMS.filter(item => {
+  useEffect(() => {
+    getAllItems().then(setItems);
+  }, []);
+
+  const filteredItems = items.filter(item => {
     const matchesCategory = !selectedCategory || item.category === selectedCategory;
     const matchesType = !selectedType || item.listingType === selectedType || item.listingType === "both";
     return matchesCategory && matchesType;

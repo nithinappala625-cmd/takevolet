@@ -1,20 +1,36 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MOCK_ITEMS } from "@/data/mock";
 import { IndianRupee, MapPin, Tag, Phone, Repeat, CheckCircle2, ChevronLeft, Calendar } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getItemById, MarketplaceItemType } from "@/lib/item-db";
 import { useUser } from "@/hooks/useUser";
 
 export default function MarketplaceItemPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const item = MOCK_ITEMS.find((i) => i.id === id);
+  const [item, setItem] = useState<MarketplaceItemType | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getItemById(id).then(res => {
+      setItem(res);
+      setLoading(false);
+    });
+  }, [id]);
   const { user } = useUser();
   const [unlocked, setUnlocked] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="pt-32 pb-20 min-h-screen text-center flex flex-col items-center justify-center">
+        <p>Loading item details...</p>
+      </div>
+    );
+  }
 
   if (!item) {
     return (
