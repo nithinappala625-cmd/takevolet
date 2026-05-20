@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Home, ShoppingBag, Handshake, User, LayoutDashboard, LogOut, Shield, Users } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
+import { isProfileComplete } from "@/lib/db";
 
 // ─── Smart Avatar: shows photo or gold initials fallback ──────────────────────
 function Avatar({ src, name, size = 9 }: { src?: string; name: string; size?: number }) {
@@ -51,6 +52,19 @@ const Navbar = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const { user, logout } = useUser();
   const router = useRouter();
+  const [profileDone, setProfileDone] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      isProfileComplete(user.id).then((complete) => {
+        setProfileDone(complete);
+      }).catch((err) => {
+        console.error("Error checking profile in Navbar:", err);
+      });
+    } else {
+      setProfileDone(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -188,9 +202,11 @@ const Navbar = () => {
                       <p className="text-sm font-bold">{user.name}</p>
                       <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
-                    <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors text-sm font-medium">
-                      <LayoutDashboard size={14} /> My Dashboard
-                    </Link>
+                    {profileDone && (
+                      <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors text-sm font-medium">
+                        <LayoutDashboard size={14} /> My Dashboard
+                      </Link>
+                    )}
                     <Link href="/post/room" className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors text-sm font-medium">
                       <Home size={14} /> Post a Room
                     </Link>
@@ -254,9 +270,11 @@ const Navbar = () => {
               <hr className="border-border" />
               {user ? (
                 <>
-                  <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
-                    <LayoutDashboard size={15} /> My Dashboard
-                  </Link>
+                  {profileDone && (
+                    <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
+                      <LayoutDashboard size={15} /> My Dashboard
+                    </Link>
+                  )}
                   {user.email === "nithinappala625@gmail.com" && (
                     <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
                       <Shield size={15} className="text-primary" /> Admin Panel

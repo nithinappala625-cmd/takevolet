@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { insertFlatmate } from "@/lib/flatmate-db";
-import { getProfile, type Profile } from "@/lib/db";
+import { getProfile, isProfileComplete, type Profile } from "@/lib/db";
 import { LOCATIONS, getColonies } from "@/data/locations";
 import {
   Users, Upload, X, CheckCircle2, AlertCircle,
@@ -62,12 +62,24 @@ export default function PostFlatmatePage() {
 
   const colonies = location ? getColonies(location) : [];
 
+  const [profileChecking, setProfileChecking] = useState(true);
+
   useEffect(() => {
-    if (!loading && !user) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("post_login_redirect", "/post/flatmate");
+    if (!loading) {
+      if (!user) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("post_login_redirect", "/post/flatmate");
+        }
+        router.replace("/auth");
+      } else {
+        isProfileComplete(user.id).then((complete) => {
+          if (!complete) {
+            router.replace("/profile/complete?redirect=/post/flatmate");
+          } else {
+            setProfileChecking(false);
+          }
+        });
       }
-      router.replace("/auth");
     }
   }, [user, loading, router]);
 
@@ -125,6 +137,10 @@ export default function PostFlatmatePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (step < 3) {
+      handleNextStep();
+      return;
+    }
     setError(null);
 
     if (!user) return;
@@ -178,7 +194,7 @@ export default function PostFlatmatePage() {
     }
   };
 
-  if (loading) {
+  if (loading || profileChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-36">
         <Loader2 size={32} className="animate-spin text-primary" />

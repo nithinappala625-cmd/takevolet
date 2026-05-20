@@ -1,12 +1,37 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { HYDERABAD_AREAS, CATEGORIES, ITEM_CONDITIONS } from "@/data/locations";
 import { IndianRupee, MapPin, Camera, CheckCircle2, ArrowLeft, X, Upload, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useUser } from "@/hooks/useUser";
+import { useRouter } from "next/navigation";
+import { isProfileComplete } from "@/lib/db";
 
 export default function PostItemPage() {
+  const router = useRouter();
+  const { user, loading } = useUser();
+  const [profileChecking, setProfileChecking] = useState(true);
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("post_login_redirect", "/post/item");
+        }
+        router.replace("/auth");
+      } else {
+        isProfileComplete(user.id).then((complete) => {
+          if (!complete) {
+            router.replace("/profile/complete?redirect=/post/item");
+          } else {
+            setProfileChecking(false);
+          }
+        });
+      }
+    }
+  }, [user, loading, router]);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{ file: File; preview: string }[]>([]);
@@ -47,6 +72,14 @@ export default function PostItemPage() {
     setSubmitting(false);
     setSubmitted(true);
   };
+
+  if (loading || profileChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-36">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (submitted) {
     return (

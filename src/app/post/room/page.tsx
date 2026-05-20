@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
-import { insertRoom, uploadRoomMedia, getProfile } from "@/lib/db";
+import { insertRoom, uploadRoomMedia, getProfile, isProfileComplete } from "@/lib/db";
 import { LOCATIONS, getColonies } from "@/data/locations";
 import {
   Home, Upload, X, CheckCircle2, AlertCircle,
@@ -56,24 +56,32 @@ export default function PostRoomPage() {
   const [videoFiles, setVideoFiles]   = useState<File[]>([]);
   const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (!loading && !user) { router.replace("/auth"); return; }
-  }, [user, loading, router]);
+  const [profileChecking, setProfileChecking] = useState(true);
 
-  // Check profile completion
   useEffect(() => {
-    if (user) {
-      getProfile(user.id).then(profile => {
-        if (!profile?.phone || !profile?.location) {
-          router.replace("/profile/complete?redirect=/post/room");
-        } else {
-          // Pre-fill location from profile
-          if (profile.location) setLocation(profile.location);
-          if (profile.colony) setColony(profile.colony);
+    if (!loading) {
+      if (!user) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("post_login_redirect", "/post/room");
         }
-      });
+        router.replace("/auth");
+      } else {
+        isProfileComplete(user.id).then((complete) => {
+          if (!complete) {
+            router.replace("/profile/complete?redirect=/post/room");
+          } else {
+            getProfile(user.id).then((profile) => {
+              if (profile) {
+                if (profile.location) setLocation(profile.location);
+                if (profile.colony) setColony(profile.colony);
+              }
+              setProfileChecking(false);
+            });
+          }
+        });
+      }
     }
-  }, [user, router]);
+  }, [user, loading, router]);
 
   const toggleAmenity = (a: string) =>
     setSelectedAmenities(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
@@ -184,7 +192,7 @@ export default function PostRoomPage() {
     setTimeout(() => router.push(`/rooms/${newRoom?.id}`), 2000);
   };
 
-  if (loading) return (
+  if (loading || profileChecking) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 size={24} className="animate-spin text-primary" />
     </div>

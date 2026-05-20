@@ -16,18 +16,54 @@ const partnerBenefits = [
   "₹0 platform fee for the first 3 months",
 ];
 
+import { isProfileComplete } from "@/lib/db";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
+
 export default function ListPage() {
   const router = useRouter();
   const { user, loading } = useUser();
+  const [profileChecking, setProfileChecking] = useState(true);
 
-  const handleProtectedLink = (href: string) => {
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        isProfileComplete(user.id).then((complete) => {
+          if (!complete) {
+            router.replace(`/profile/complete?redirect=/list`);
+          } else {
+            setProfileChecking(false);
+          }
+        });
+      } else {
+        setProfileChecking(false);
+      }
+    }
+  }, [user, loading, router]);
+
+  const handleProtectedLink = async (href: string) => {
     if (!user) {
       setPostLoginRedirect(href);
       router.push(`/auth`);
     } else {
-      router.push(href);
+      setProfileChecking(true);
+      const complete = await isProfileComplete(user.id);
+      if (!complete) {
+        router.replace(`/profile/complete?redirect=${encodeURIComponent(href)}`);
+      } else {
+        router.push(href);
+      }
+      setProfileChecking(false);
     }
   };
+
+  if (loading || profileChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-36">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="pt-36 pb-20 min-h-screen">

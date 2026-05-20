@@ -122,18 +122,32 @@ export default function FlatmateDetailPage() {
           <div className="lg:col-span-8 space-y-8">
             
             {/* Swiper Visual Gallery */}
-            <div className="relative aspect-[16/10] bg-black overflow-hidden group border border-border">
+            <div className="relative aspect-[16/10] bg-black overflow-hidden group border border-border flex items-center justify-center cursor-pointer" onClick={() => setLightboxOpen(true)}>
+              {/* Layer 1: Blurred Ambient Background */}
               <AnimatePresence mode="wait">
                 <motion.img
-                  key={currentImageIndex}
+                  key={`bg-${currentImageIndex}`}
                   src={images[currentImageIndex]}
-                  alt={`Flat View ${currentImageIndex + 1}`}
+                  alt=""
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  animate={{ opacity: 0.4 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="w-full h-full object-cover cursor-pointer"
-                  onClick={() => setLightboxOpen(true)}
+                  className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 select-none pointer-events-none"
+                />
+              </AnimatePresence>
+
+              {/* Layer 2: Crystal Clear Foreground Image */}
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={`fg-${currentImageIndex}`}
+                  src={images[currentImageIndex]}
+                  alt={`Flat View ${currentImageIndex + 1}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="max-w-full max-h-full w-auto h-auto object-contain relative z-10"
                 />
               </AnimatePresence>
 
@@ -141,13 +155,13 @@ export default function FlatmateDetailPage() {
                 <>
                   <button
                     onClick={handlePrevImage}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 border border-white/20 bg-black/60 text-white flex items-center justify-center hover:bg-primary hover:border-primary transition-all rounded-full"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 border border-white/20 bg-black/60 text-white flex items-center justify-center hover:bg-primary hover:border-primary transition-all rounded-full z-20"
                   >
                     <ChevronLeft size={20} />
                   </button>
                   <button
                     onClick={handleNextImage}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 border border-white/20 bg-black/60 text-white flex items-center justify-center hover:bg-primary hover:border-primary transition-all rounded-full"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 border border-white/20 bg-black/60 text-white flex items-center justify-center hover:bg-primary hover:border-primary transition-all rounded-full z-20"
                   >
                     <ChevronRight size={20} />
                   </button>
@@ -155,7 +169,7 @@ export default function FlatmateDetailPage() {
               )}
 
               {/* Counter Badge */}
-              <div className="absolute bottom-4 right-4 bg-black/70 px-3 py-1 text-xs font-semibold text-white tracking-widest uppercase">
+              <div className="absolute bottom-4 right-4 bg-black/70 px-3 py-1 text-xs font-semibold text-white tracking-widest uppercase z-20">
                 {currentImageIndex + 1} / {images.length}
               </div>
             </div>

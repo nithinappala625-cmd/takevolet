@@ -35,8 +35,19 @@ export default function MarketplaceItemPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
           {/* Image */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="aspect-square bg-secondary rounded-sm overflow-hidden border border-border sticky top-32">
-              <img src={item.image || ""} alt={item.title} className="w-full h-full object-cover" />
+            <div className="aspect-square bg-black rounded-sm overflow-hidden border border-border sticky top-32 relative flex items-center justify-center">
+              {/* Background Layer: Ambient Blur */}
+              <img
+                src={item.image || ""}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 select-none pointer-events-none z-0"
+              />
+              {/* Foreground Layer: Crystal Clear Uncropped */}
+              <img
+                src={item.image || ""}
+                alt={item.title}
+                className="max-w-full max-h-full w-auto h-auto object-contain relative z-10 mx-auto"
+              />
             </div>
           </motion.div>
 

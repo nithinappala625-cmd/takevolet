@@ -409,19 +409,47 @@ export default function RoomDetailPage() {
       <div className="container mx-auto px-6 md:px-12 mb-8">
         <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[420px] md:h-[520px]">
           {/* Main large image */}
-          <div className="col-span-4 md:col-span-2 row-span-2 relative overflow-hidden cursor-pointer group" onClick={() => openLightbox(0)}>
-            {images[0] ? <img src={images[0]} alt={room.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" /> : <div className="w-full h-full bg-secondary flex items-center justify-center"><span className="text-muted-foreground text-sm">No photo</span></div>}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
-            <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+          <div className="col-span-4 md:col-span-2 row-span-2 relative bg-black overflow-hidden cursor-pointer group flex items-center justify-center border border-border" onClick={() => openLightbox(0)}>
+            {images[0] ? (
+              <>
+                {/* Background Layer: Ambient Blur */}
+                <img
+                  src={images[0]}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 select-none pointer-events-none z-0 transition-transform duration-700 group-hover:scale-115"
+                />
+                {/* Foreground Layer: Crystal Clear Uncropped */}
+                <img
+                  src={images[0]}
+                  alt={room.title}
+                  className="max-w-full max-h-full w-auto h-auto object-contain relative z-10 mx-auto transition-transform duration-700 group-hover:scale-102"
+                />
+              </>
+            ) : (
+              <div className="w-full h-full bg-secondary flex items-center justify-center z-10"><span className="text-muted-foreground text-sm">No photo</span></div>
+            )}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all z-20" />
+            <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 z-20">
               <Eye size={12} /> View All Photos
             </div>
           </div>
           {/* Thumbnails */}
           {images.slice(1, 5).map((img, i) => (
-            <div key={i} className="col-span-2 md:col-span-1 relative overflow-hidden cursor-pointer group" onClick={() => openLightbox(i + 1)}>
-              <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            <div key={i} className="col-span-2 md:col-span-1 relative bg-black overflow-hidden cursor-pointer group flex items-center justify-center border border-border" onClick={() => openLightbox(i + 1)}>
+              {/* Background Layer: Ambient Blur */}
+              <img
+                src={img}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 select-none pointer-events-none z-0 transition-transform duration-500 group-hover:scale-115"
+              />
+              {/* Foreground Layer: Crystal Clear Uncropped */}
+              <img
+                src={img}
+                alt=""
+                className="max-w-full max-h-full w-auto h-auto object-contain relative z-10 mx-auto transition-transform duration-500 group-hover:scale-102"
+              />
               {i === 3 && images.length > 5 && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
                   <span className="text-white font-bold text-xl">+{images.length - 4}</span>
                 </div>
               )}
