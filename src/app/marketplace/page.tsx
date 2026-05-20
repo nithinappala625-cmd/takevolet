@@ -106,8 +106,8 @@ export default function MarketplacePage() {
                 )}
 
                 <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                  <img src={item.profiles?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=User"} alt="" className="w-6 h-6 rounded-full border border-background" loading="lazy" />
-                  <span className="text-[10px] font-semibold text-white drop-shadow-lg">{item.profiles?.full_name || "User"}</span>
+                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.user_id || "User"}`} alt="" className="w-6 h-6 rounded-full border border-background" loading="lazy" />
+                  <span className="text-[10px] font-semibold text-white drop-shadow-lg">Seller</span>
                 </div>
               </div>
 
