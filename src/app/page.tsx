@@ -35,12 +35,45 @@ export default function LandingPage() {
     },
   };
 
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://takevolet.online/#organization",
+    name: "Takevolet Technologies",
+    alternateName: "Takevolet",
+    url: "https://takevolet.online",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://takevolet.online/logo.png",
+      width: "1024",
+      height: "1024"
+    },
+    description: "Takevolet Technologies is the official owner and operator of Takevolet (takevolet.online), the premier zero brokerage bachelor room handover platform in Hyderabad.",
+    founder: {
+      "@type": "Person",
+      name: "Nithin Patel",
+      jobTitle: "Founder & CEO",
+      sameAs: [
+        "https://wa.me/917981994870",
+        "tel:+917981994870"
+      ]
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+917981994870",
+      contactType: "customer service",
+      email: "hello@takevolet.online",
+      availableLanguage: ["English", "Telugu", "Hindi"]
+    }
+  };
+
   const localBusinessJsonLd = {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
+    "@id": "https://takevolet.online/#localbusiness",
     name: "Takevolet",
     image: "https://takevolet.online/logo.png",
-    description: "Zero brokerage platform for bachelor room handovers in Hyderabad.",
+    description: "Zero brokerage platform for bachelor room handovers in Hyderabad. Owned and operated exclusively by Takevolet Technologies.",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Hyderabad",
@@ -48,11 +81,18 @@ export default function LandingPage() {
       addressCountry: "IN",
     },
     url: "https://takevolet.online",
+    telephone: "+917981994870",
+    parentOrganization: {
+      "@type": "Organization",
+      "@id": "https://takevolet.online/#organization",
+      name: "Takevolet Technologies"
+    }
   };
 
   return (
     <div className="flex flex-col w-full bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }} />
 
       {/* ━━━ HERO ━━━ */}
