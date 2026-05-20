@@ -44,6 +44,8 @@ function DashboardContent() {
   const [activeTab, setActiveTab] = useState<"overview" | "listings" | "earnings" | "payout" | "profile">(
     (searchParams.get("tab") as "overview" | "listings" | "earnings" | "payout" | "profile") || "overview"
   );
+  const [showPostDropdown, setShowPostDropdown] = useState(false);
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ── Payout state ───────────────────────────────────────────────────────────
   const [payoutMethod, setPayoutMethod] = useState<"upi" | "bank">("upi");
@@ -199,9 +201,30 @@ function DashboardContent() {
             </div>
           </div>
           <div className="flex gap-3">
-            <Link href="/post/room" className="bg-primary text-primary-foreground px-5 py-2.5 text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center gap-1.5">
-              <Plus size={13} /> Post Room
-            </Link>
+            <div className="relative">
+              <button 
+                onClick={() => setShowPostDropdown(!showPostDropdown)}
+                className="bg-primary text-primary-foreground px-5 py-2.5 text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center gap-1.5"
+              >
+                <Plus size={13} /> Post Listing <ChevronDown size={12} className={`transition-transform ${showPostDropdown ? "rotate-180" : ""}`} />
+              </button>
+              {showPostDropdown && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowPostDropdown(false)} />
+                  <div className="absolute right-0 mt-2 w-48 bg-background border border-border shadow-xl z-20 py-1.5">
+                    <Link href="/post/room" onClick={() => setShowPostDropdown(false)} className="flex items-center gap-2 px-4 py-2.5 text-xs uppercase tracking-wider font-bold hover:bg-secondary transition-colors text-left w-full text-foreground border-b border-border/50">
+                      <Home size={12} className="text-primary" /> Post Room
+                    </Link>
+                    <Link href="/post/flatmate" onClick={() => setShowPostDropdown(false)} className="flex items-center gap-2 px-4 py-2.5 text-xs uppercase tracking-wider font-bold hover:bg-secondary transition-colors text-left w-full text-foreground border-b border-border/50">
+                      <Users size={12} className="text-primary" /> Post Flatmate
+                    </Link>
+                    <Link href="/post/item" onClick={() => setShowPostDropdown(false)} className="flex items-center gap-2 px-4 py-2.5 text-xs uppercase tracking-wider font-bold hover:bg-secondary transition-colors text-left w-full text-foreground">
+                      <ShoppingBag size={12} className="text-primary" /> Sell/Rent Item
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
             <button onClick={async () => { await logout(); router.push("/"); }}
               className="border border-border px-4 py-2.5 text-xs uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all flex items-center gap-1.5">
               <LogOut size={13} /> Logout
@@ -234,19 +257,25 @@ function DashboardContent() {
             </div>
 
             {/* Quick actions */}
-            <div className="grid md:grid-cols-3 gap-4 mb-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
               {[
                 { icon: Home, label: "Post a Room", sub: "Leaving your flat? List it now", href: "/post/room", primary: true },
-                { icon: ShoppingBag, label: "Sell / Rent Items", sub: "Furniture, electronics & more", href: "/post/item", primary: false },
+                { icon: Users, label: "Post Flatmate", sub: "Have a vacancy? Match now", href: "/post/flatmate", primary: true },
+                { icon: ShoppingBag, label: "Sell / Rent Items", sub: "Furniture, electronics & appliances", href: "/post/item", primary: false },
                 { icon: Settings, label: "Edit Profile", sub: "Update your info anytime", href: "/profile/edit", primary: false },
               ].map((a, i) => (
                 <Link key={i} href={a.href}
-                  className={`p-5 border flex justify-between items-center group transition-all ${a.primary ? "border-primary bg-primary/5 hover:bg-primary/10" : "border-border hover:border-primary"}`}>
-                  <div>
-                    <p className="font-bold text-sm">{a.label}</p>
-                    <p className="text-xs text-muted-foreground">{a.sub}</p>
+                  className={`p-5 border flex flex-col justify-between items-start gap-4 group transition-all h-full ${a.primary ? "border-primary bg-primary/5 hover:bg-primary/10" : "border-border hover:border-primary"}`}>
+                  <div className="w-10 h-10 border border-primary/20 flex items-center justify-center bg-background shrink-0">
+                    <a.icon size={18} className="text-primary" />
                   </div>
-                  <ArrowUpRight size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="flex-1">
+                    <p className="font-bold text-sm mb-1">{a.label}</p>
+                    <p className="text-xs text-muted-foreground leading-normal">{a.sub}</p>
+                  </div>
+                  <div className="w-full flex justify-end mt-2">
+                    <ArrowUpRight size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
                 </Link>
               ))}
             </div>
@@ -301,16 +330,37 @@ function DashboardContent() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-sm uppercase tracking-widest font-bold">My Listings ({myRooms.length})</h2>
-              <Link href="/post/room" className="bg-primary text-primary-foreground px-4 py-2 text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center gap-1.5">
-                <Plus size={12} /> Add New
-              </Link>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowAddDropdown(!showAddDropdown)}
+                  className="bg-primary text-primary-foreground px-4 py-2 text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center gap-1.5"
+                >
+                  <Plus size={12} /> Add New <ChevronDown size={11} className={`transition-transform ${showAddDropdown ? "rotate-180" : ""}`} />
+                </button>
+                {showAddDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowAddDropdown(false)} />
+                    <div className="absolute right-0 mt-2 w-48 bg-background border border-border shadow-xl z-20 py-1.5">
+                      <Link href="/post/room" onClick={() => setShowAddDropdown(false)} className="flex items-center gap-2 px-4 py-2.5 text-xs uppercase tracking-wider font-bold hover:bg-secondary transition-colors text-left w-full text-foreground border-b border-border/50">
+                        <Home size={12} className="text-primary" /> Post Room
+                      </Link>
+                      <Link href="/post/flatmate" onClick={() => setShowAddDropdown(false)} className="flex items-center gap-2 px-4 py-2.5 text-xs uppercase tracking-wider font-bold hover:bg-secondary transition-colors text-left w-full text-foreground border-b border-border/50">
+                        <Users size={12} className="text-primary" /> Post Flatmate
+                      </Link>
+                      <Link href="/post/item" onClick={() => setShowAddDropdown(false)} className="flex items-center gap-2 px-4 py-2.5 text-xs uppercase tracking-wider font-bold hover:bg-secondary transition-colors text-left w-full text-foreground">
+                        <ShoppingBag size={12} className="text-primary" /> Sell/Rent Item
+                      </Link>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             {myRooms.length === 0 ? (
               <div className="border border-dashed border-border p-16 text-center">
                 <Home size={32} className="mx-auto text-muted-foreground mb-4" />
                 <p className="font-semibold mb-2">No listings yet</p>
-                <Link href="/post/room" className="bg-primary text-primary-foreground px-6 py-3 text-xs uppercase tracking-wider font-bold hover:opacity-90 inline-flex items-center gap-2">
-                  <Plus size={13} /> Post My First Room
+                <Link href="/list" className="bg-primary text-primary-foreground px-6 py-3 text-xs uppercase tracking-wider font-bold hover:opacity-90 inline-flex items-center gap-2">
+                  <Plus size={13} /> Create First Listing
                 </Link>
               </div>
             ) : (
