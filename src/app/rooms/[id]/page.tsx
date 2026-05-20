@@ -145,8 +145,14 @@ export default function RoomDetailPage() {
   const videos = room.videos || [];
   const allMedia = [...images, ...videos];
 
-  const handlePrevImage = () => setCurrentImageIndex(i => (i - 1 + images.length) % images.length);
-  const handleNextImage = () => setCurrentImageIndex(i => (i + 1) % images.length);
+  const handlePrevMedia = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex(i => (i - 1 + allMedia.length) % allMedia.length);
+  };
+  const handleNextMedia = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex(i => (i + 1) % allMedia.length);
+  };
 
   const openLightbox = (index: number) => { setLightboxIndex(index); setLightboxOpen(true); };
 
@@ -407,54 +413,79 @@ export default function RoomDetailPage() {
 
       {/* Main Image Gallery */}
       <div className="container mx-auto px-6 md:px-12 mb-8">
-        <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[420px] md:h-[520px]">
-          {/* Main large image */}
-          <div className="col-span-4 md:col-span-2 row-span-2 relative bg-black overflow-hidden cursor-pointer group flex items-center justify-center border border-border" onClick={() => openLightbox(0)}>
-            {images[0] ? (
-              <>
-                {/* Background Layer: Ambient Blur */}
-                <img
-                  src={images[0]}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 select-none pointer-events-none z-0 transition-transform duration-700 group-hover:scale-115"
-                />
-                {/* Foreground Layer: Crystal Clear Uncropped */}
-                <img
-                  src={images[0]}
-                  alt={room.title}
-                  className="max-w-full max-h-full w-auto h-auto object-contain relative z-10 mx-auto transition-transform duration-700 group-hover:scale-102"
-                />
-              </>
-            ) : (
-              <div className="w-full h-full bg-secondary flex items-center justify-center z-10"><span className="text-muted-foreground text-sm">No photo</span></div>
+        <div className="relative aspect-[16/10] bg-black overflow-hidden group border border-border flex items-center justify-center cursor-pointer" onClick={() => openLightbox(currentImageIndex)}>
+          
+          {/* Background Layer: Ambient Blur (only for images) */}
+          <AnimatePresence mode="wait">
+            {allMedia[currentImageIndex] && !allMedia[currentImageIndex].match(/\.(mp4|webm|ogg)$/i) && (
+              <motion.img
+                key={`bg-${currentImageIndex}`}
+                src={allMedia[currentImageIndex]}
+                alt=""
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 select-none pointer-events-none"
+              />
             )}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all z-20" />
-            <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 z-20">
-              <Eye size={12} /> View All Photos
+          </AnimatePresence>
+
+          {/* Foreground Layer: Crystal Clear Uncropped */}
+          <AnimatePresence mode="wait">
+            {allMedia[currentImageIndex] ? (
+              allMedia[currentImageIndex].match(/\.(mp4|webm|ogg)$/i) ? (
+                <motion.video
+                  key={`fg-video-${currentImageIndex}`}
+                  src={allMedia[currentImageIndex]}
+                  controls
+                  playsInline
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="max-w-full max-h-full w-auto h-auto object-contain relative z-10"
+                />
+              ) : (
+                <motion.img
+                  key={`fg-${currentImageIndex}`}
+                  src={allMedia[currentImageIndex]}
+                  alt={`Room View ${currentImageIndex + 1}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="max-w-full max-h-full w-auto h-auto object-contain relative z-10"
+                />
+              )
+            ) : (
+              <div className="text-muted-foreground text-sm relative z-10">No media available</div>
+            )}
+          </AnimatePresence>
+
+          {allMedia.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevMedia}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 border border-white/20 bg-black/60 text-white flex items-center justify-center hover:bg-primary hover:border-primary transition-all rounded-full z-20"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={handleNextMedia}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 border border-white/20 bg-black/60 text-white flex items-center justify-center hover:bg-primary hover:border-primary transition-all rounded-full z-20"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+
+          {/* Counter Badge */}
+          {allMedia.length > 0 && (
+            <div className="absolute bottom-4 right-4 bg-black/70 px-3 py-1 text-xs font-semibold text-white tracking-widest uppercase z-20">
+              {currentImageIndex + 1} / {allMedia.length}
             </div>
-          </div>
-          {/* Thumbnails */}
-          {images.slice(1, 5).map((img, i) => (
-            <div key={i} className="col-span-2 md:col-span-1 relative bg-black overflow-hidden cursor-pointer group flex items-center justify-center border border-border" onClick={() => openLightbox(i + 1)}>
-              {/* Background Layer: Ambient Blur */}
-              <img
-                src={img}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 select-none pointer-events-none z-0 transition-transform duration-500 group-hover:scale-115"
-              />
-              {/* Foreground Layer: Crystal Clear Uncropped */}
-              <img
-                src={img}
-                alt=""
-                className="max-w-full max-h-full w-auto h-auto object-contain relative z-10 mx-auto transition-transform duration-500 group-hover:scale-102"
-              />
-              {i === 3 && images.length > 5 && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
-                  <span className="text-white font-bold text-xl">+{images.length - 4}</span>
-                </div>
-              )}
-            </div>
-          ))}
+          )}
         </div>
       </div>
 
