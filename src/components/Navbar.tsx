@@ -87,8 +87,10 @@ const Navbar = () => {
         <div className="animate-ticker inline-block whitespace-nowrap">
           <span className="mx-12">🔥 OFFER FOR BACHELORS: Post 50 rooms & earn ₹500 directly from Takevolet! Grab the offer now! 🔥</span>
           <span className="mx-12">✨ HEY HOUSE OWNERS: Register your house today and get the "Bachelor Verified" badge instantly! ✨</span>
+          <span className="mx-12">🤝 FLATMATES: Find your roommate or flatmate if single or two members looking for vacancy instantly! 🤝</span>
           <span className="mx-12">🔥 OFFER FOR BACHELORS: Post 50 rooms & earn ₹500 directly from Takevolet! Grab the offer now! 🔥</span>
           <span className="mx-12">✨ HEY HOUSE OWNERS: Register your house today and get the "Bachelor Verified" badge instantly! ✨</span>
+          <span className="mx-12">🤝 FLATMATES: Find your roommate or flatmate if single or two members looking for vacancy instantly! 🤝</span>
         </div>
       </div>
 
