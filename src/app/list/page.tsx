@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -58,8 +58,8 @@ export default function ListPage() {
           )}
         </motion.div>
 
-        {/* 3 Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-20">
+        {/* 4 Cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
 
           {/* Post a Room */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -84,6 +84,32 @@ export default function ListPage() {
             <button onClick={() => handleProtectedLink("/post/room")}
               className="w-full bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2">
               {!user ? <><Lock size={13} /> Register & Post My Room</> : <>Post My Room <ArrowRight size={14} /></>}
+            </button>
+          </motion.div>
+
+          {/* Find a Flatmate */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+            className="border border-border p-8 flex flex-col group hover:border-primary/30 transition-all">
+            <div className="w-14 h-14 border border-border flex items-center justify-center mb-6 group-hover:border-primary transition-all">
+              <Users size={24} className="text-foreground group-hover:text-primary transition-colors" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-2">New Feature</p>
+              <h2 className="text-2xl font-bold mb-3">Find a Flatmate</h2>
+              <p className="text-muted-foreground font-light leading-relaxed mb-6 text-sm">
+                Have an extra room or a vacancy in your existing flat? Post it here and match with single bachelors based on profession, area, and lifestyle habits.
+              </p>
+              <ul className="space-y-2.5 mb-8">
+                {["Free to list vacancy", "Filter by profession (IT/Sales)", "Match by lifestyle & age", "Direct safe roommate handover"].map((b, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <CheckCircle2 size={14} className="text-primary mt-0.5 shrink-0" /> {b}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button onClick={() => handleProtectedLink("/post/flatmate")}
+              className="w-full border border-border py-4 text-sm uppercase tracking-wider font-bold hover:bg-foreground hover:text-background hover:border-foreground transition-all flex items-center justify-center gap-2">
+              {!user ? <><Lock size={13} /> Register & Post Vacancy</> : <>Post Vacancy <ArrowRight size={14} /></>}
             </button>
           </motion.div>
 

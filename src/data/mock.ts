@@ -1,4 +1,4 @@
-﻿export type Room = {
+export type Room = {
   id: string;
   title: string;
   description: string;
@@ -504,3 +504,144 @@ export const MOCK_EARNINGS = {
     { id: "8", type: "Contact Unlock Revenue", amount: 1500, date: "2026-05-10", status: "pending", room: "Contact fee — 4BHK Gachibowli" },
   ],
 };
+
+export type Flatmate = {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  rentShare: number;
+  advanceShare: number;
+  location: string;
+  colony: string;
+  vacancyCount: number;
+  professionPref: string;
+  genderPref: string;
+  lifestyleHabits: string[];
+  images: string[];
+  isAvailable: boolean;
+  postedBy: {
+    name: string;
+    phone: string;
+    whatsapp: string;
+    avatar: string;
+    profession: string;
+    age: number;
+  };
+  createdAt: string;
+};
+
+export const MOCK_FLATMATES: Flatmate[] = [
+  {
+    id: "f1",
+    userId: "u12",
+    title: "1 Room Vacant in Deluxe 3BHK Flat - Madhapur",
+    description: "We are 2 working professionals in Oracle and TCS. One of our flatmates got transferred, so we have a fully private room with attached washroom available. The flat has a modular kitchen, fridge, high-speed WiFi, water purifier, and a spacious living room with sofa. We are chill, respects personal space, but down to grab dinner together occasionally.",
+    rentShare: 6500,
+    advanceShare: 13000,
+    location: "Madhapur",
+    colony: "Cyber Towers Colony",
+    vacancyCount: 1,
+    professionPref: "Software Professional",
+    genderPref: "Male Bachelors Only",
+    lifestyleHabits: ["Non-smoker preferred", "No drinking inside", "Veg/Non-Veg friendly", "Quiet hours after 11 PM", "Bike Parking"],
+    images: [
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=800&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&h=800&fit=crop&q=80",
+    ],
+    isAvailable: true,
+    postedBy: {
+      name: "Rahul Verma",
+      phone: "+91 98765 43210",
+      whatsapp: "+919876543210",
+      avatar: "https://i.pravatar.cc/150?img=12",
+      profession: "Software Engineer at TCS",
+      age: 24,
+    },
+    createdAt: "2026-05-18T10:00:00.000Z",
+  },
+  {
+    id: "f2",
+    userId: "u22",
+    title: "Looking for Roommate for 2BHK flat near DLF - Gachibowli",
+    description: "I am a Data Analyst at Amazon looking for a roommate to share my premium 2BHK flat in Rajiv Gandhi Nagar, right next to DLF Cybercity. Fully air-conditioned bedrooms, geyser, microwave, washing machine, and automatic water motor. Looking for a neat and clean IT professional.",
+    rentShare: 9000,
+    advanceShare: 18000,
+    location: "Gachibowli",
+    colony: "DLF Cybercity",
+    vacancyCount: 1,
+    professionPref: "Working Professional",
+    genderPref: "Male Bachelors Only",
+    lifestyleHabits: ["Smoking allowed in balcony", "Night Owl", "Visitor friendly", "Non-Veg friendly", "Car Parking"],
+    images: [
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&h=800&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=1200&h=800&fit=crop&q=80",
+    ],
+    isAvailable: true,
+    postedBy: {
+      name: "Aditya Sharma",
+      phone: "+91 65432 10987",
+      whatsapp: "+916543210987",
+      avatar: "https://i.pravatar.cc/150?img=22",
+      profession: "Product Manager at Deloitte",
+      age: 25,
+    },
+    createdAt: "2026-05-19T08:30:00.000Z",
+  },
+  {
+    id: "f3",
+    userId: "u25",
+    title: "1 Room Available in fully loaded 3BHK - Kondapur",
+    description: "Looking for a female flatmate to join our fully furnished flat in Laxmi Nagar, Kondapur. We currently have 2 girls (both software engineers). We have a cook who prepares home-cooked vegetarian meals daily. The available room is airy, has a double bed, private wardrobe, and a dedicated balcony.",
+    rentShare: 7500,
+    advanceShare: 15000,
+    location: "Kondapur",
+    colony: "Laxmi Nagar",
+    vacancyCount: 1,
+    professionPref: "Working Professional or Student",
+    genderPref: "Female Bachelors Only",
+    lifestyleHabits: ["Veg Only preferred", "Early Bird", "No Smoking", "No Alcohol", "Quiet Hours (10PM-6AM)"],
+    images: [
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&h=800&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200&h=800&fit=crop&q=80",
+    ],
+    isAvailable: true,
+    postedBy: {
+      name: "Sneha Reddy",
+      phone: "+91 88776 55443",
+      whatsapp: "+918877655443",
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&q=80",
+      profession: "QA Lead at Infosys",
+      age: 23,
+    },
+    createdAt: "2026-05-20T04:15:00.000Z",
+  },
+  {
+    id: "f4",
+    userId: "u35",
+    title: "Spacious Room Vacancy for UPSC/Govt Exam Aspirants - SR Nagar",
+    description: "I am preparing for UPSC exams and am looking for a roommate to share my single room flat in SR Nagar. The environment is extremely study-friendly and quiet. No disturbances, minimal visitors. Full books shelf, study table, and proper water supply included.",
+    rentShare: 4000,
+    advanceShare: 8000,
+    location: "SR Nagar",
+    colony: "Rajiv Nagar Colony",
+    vacancyCount: 1,
+    professionPref: "Aspirant / Student preferred",
+    genderPref: "Male Bachelors Only",
+    lifestyleHabits: ["Quiet Study Environment", "Early Bird", "No Smoking", "No Alcohol", "No visitors"],
+    images: [
+      "https://images.unsplash.com/photo-1505693314120-0d443867891c?w=1200&h=800&fit=crop&q=80",
+    ],
+    isAvailable: true,
+    postedBy: {
+      name: "Harsha Vardhan",
+      phone: "+91 21098 76543",
+      whatsapp: "+912109876543",
+      avatar: "https://i.pravatar.cc/150?img=35",
+      profession: "UPSC Aspirant",
+      age: 22,
+    },
+    createdAt: "2026-05-20T06:45:00.000Z",
+  },
+];
+

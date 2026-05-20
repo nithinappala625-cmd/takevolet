@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronDown, Home, ShoppingBag, Handshake, User, LayoutDashboard, LogOut, Shield } from "lucide-react";
+import { Menu, X, ChevronDown, Home, ShoppingBag, Handshake, User, LayoutDashboard, LogOut, Shield, Users } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
 
@@ -60,12 +60,14 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Rooms", href: "/rooms" },
+    { name: "Flatmates", href: "/flatmates" },
     { name: "Marketplace", href: "/marketplace" },
     { name: "Refer & Earn", href: "/refer" },
   ];
 
   const postOptions = [
     { icon: Home, name: "Post a Room", desc: "Leaving your flat? List it", href: "/post/room" },
+    { icon: Users, name: "Find a Flatmate", desc: "Have a vacancy? Get roommate", href: "/post/flatmate" },
     { icon: ShoppingBag, name: "Sell / Rent Items", desc: "Furniture, electronics & more", href: "/post/item" },
     { icon: Handshake, name: "Become a Partner", desc: "PG / multiple properties", href: "/post/partner" },
   ];
