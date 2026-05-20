@@ -18,7 +18,7 @@ export default function MarketplacePage() {
   });
 
   return (
-    <div className="pt-28 pb-20 min-h-screen">
+    <div className="pt-36 pb-20 min-h-screen">
       <div className="container mx-auto px-6 md:px-12">
 
         {/* Header */}

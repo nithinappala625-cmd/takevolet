@@ -180,7 +180,7 @@ export default function PostFlatmatePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24">
+      <div className="min-h-screen flex items-center justify-center pt-36">
         <Loader2 size={32} className="animate-spin text-primary" />
       </div>
     );
@@ -207,7 +207,7 @@ export default function PostFlatmatePage() {
   }
 
   return (
-    <div className="pt-24 pb-20 min-h-screen">
+    <div className="pt-36 pb-20 min-h-screen">
       <div className="container mx-auto px-6 md:px-12 max-w-2xl">
         
         {/* Progress Stepper Header */}

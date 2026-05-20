@@ -118,7 +118,7 @@ export default function RoomDetailPage() {
 
   if (roomLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24">
+      <div className="min-h-screen flex items-center justify-center pt-36">
         <Loader2 size={28} className="animate-spin text-primary" />
       </div>
     );
@@ -126,7 +126,7 @@ export default function RoomDetailPage() {
 
   if (!room) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24">
+      <div className="min-h-screen flex items-center justify-center pt-36">
         <div className="text-center">
           <p className="text-2xl font-light mb-4">Room not found</p>
           <Link href="/rooms" className="text-primary hover:underline">← Back to Rooms</Link>
@@ -397,7 +397,7 @@ export default function RoomDetailPage() {
   const parkingIcon = parking.includes("Car") ? Car : parking.includes("Bike") ? Bike : null;
 
   return (
-    <div className="pt-20 pb-20 min-h-screen">
+    <div className="pt-36 pb-20 min-h-screen">
       {/* Back */}
       <div className="container mx-auto px-6 md:px-12 mb-6 pt-6">
         <Link href="/rooms" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">

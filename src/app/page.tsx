@@ -2,9 +2,9 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Star, Zap, MapPin, Users, ChevronRight, IndianRupee, Calendar, Sofa, ShoppingBag, Wallet } from "lucide-react";
+import { ArrowRight, ShieldCheck, Star, Zap, MapPin, Users, ChevronRight, IndianRupee, Calendar, Sofa, ShoppingBag, Wallet, Home } from "lucide-react";
 import { HYDERABAD_AREAS } from "@/data/locations";
-import { MOCK_ROOMS } from "@/data/mock";
+import { MOCK_ROOMS, MOCK_FLATMATES } from "@/data/mock";
 
 const stats = [
   { value: "5,200+", label: "Bachelors Registered" },
@@ -197,9 +197,9 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-px bg-border">
             {[
-              { icon: Users, title: "For Leaving Bachelors", desc: "Post your room with photos, leaving date, rent, advance, members allowed, and furnishing details. Reach thousands of bachelors searching in your area." },
-              { icon: MapPin, title: "For Searching Bachelors", desc: "Filter by 90+ Hyderabad areas, budget, members (1-6), furnishing type, and gender. View profiles, photos, and call directly — zero brokerage." },
-              { icon: Wallet, title: "Earn Commission", desc: "When someone takes over your room through Takevolet, you earn ₹500–₹1,000 as a referral reward. Track earnings in your dashboard." },
+              { icon: Home, title: "Rooms Handover", desc: "Relay your room directly to the next bachelor when leaving, or browse rooms in 90+ Hyderabad areas with direct poster contact and zero brokerage fee." },
+              { icon: Users, title: "Flatmate Matchmaking", desc: "Have a vacancy in your flat or looking to share? Connect directly with compatible single bachelors in Hyderabad based on age, profession, and lifestyle." },
+              { icon: ShoppingBag, title: "Bachelors Marketplace", desc: "Moving out or setting up? Don't carry it or buy brand new. List and shop for furniture, appliances, and electronics directly to/from nearby bachelors." },
             ].map((f, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="bg-background p-10 group hover:bg-secondary/50 transition-colors">
@@ -355,6 +355,97 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ━━━ FEATURED FLATMATES / ROOMMATE MATCHMAKING ━━━ */}
+      <section className="py-28 bg-secondary/15 border-t border-border">
+        <div className="container mx-auto px-6 md:px-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Premium Roommate Matchmaking</p>
+              <h2 className="text-4xl font-light">Find compatible <span className="font-bold">Flatmates</span></h2>
+              <p className="text-muted-foreground font-light mt-3 max-w-xl text-sm leading-relaxed">
+                Connect with verified bachelors in Hyderabad who have a vacancy in their flat. Filter by budget, professional background, and lifestyle habits.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <Link href="/flatmates" className="text-xs bg-foreground text-background px-6 py-3.5 uppercase tracking-wider font-bold hover:bg-primary hover:text-primary-foreground transition-all">
+                Browse Flatmates
+              </Link>
+              <Link href="/post/flatmate" className="text-xs border border-border px-6 py-3.5 uppercase tracking-wider font-bold hover:border-primary hover:text-primary transition-all">
+                Post a Vacancy +
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {MOCK_FLATMATES.slice(0, 3).map((fm, i) => (
+              <motion.div key={fm.id} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                className="border border-border bg-background overflow-hidden group hover:border-primary/45 transition-all flex flex-col justify-between shadow-sm">
+                
+                <div className="relative h-56 overflow-hidden bg-muted">
+                  <img src={fm.images[0]} alt={fm.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute top-3 left-3 bg-background/90 backdrop-blur-md px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold text-primary border border-primary/20">
+                    Vacancy: {fm.vacancyCount}
+                  </div>
+                  <div className="absolute top-3 right-3 bg-foreground text-background px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold">
+                    {fm.genderPref}
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 to-transparent p-5 pt-10 text-white">
+                    <p className="text-[10px] font-semibold tracking-wider uppercase opacity-85 mb-1 flex items-center gap-1">
+                      <MapPin size={10} className="text-primary" /> {fm.location}
+                    </p>
+                    <h3 className="font-bold text-sm line-clamp-1">{fm.title}</h3>
+                  </div>
+                </div>
+
+                <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    {/* Price and host summary */}
+                    <div className="flex justify-between items-center border-b border-border pb-3">
+                      <div>
+                        <span className="block text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Rent Share /mo</span>
+                        <span className="font-bold text-lg text-primary flex items-center"><IndianRupee size={14} strokeWidth={2.5} /> {fm.rentShare.toLocaleString("en-IN")}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <img src={fm.postedBy.avatar} alt={fm.postedBy.name} className="w-8 h-8 rounded-full object-cover border border-primary/20" />
+                        <div className="text-right">
+                          <p className="text-[10px] font-bold leading-none">{fm.postedBy.name}</p>
+                          <p className="text-[9px] text-muted-foreground leading-none mt-1">{fm.postedBy.age} y/o • {fm.postedBy.profession.split(" at ")[0]}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs font-light text-muted-foreground line-clamp-2 leading-relaxed">
+                      {fm.description}
+                    </p>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1">
+                      {fm.lifestyleHabits.slice(0, 2).map((tag, idx) => (
+                        <span key={idx} className="bg-secondary/40 border border-border px-2 py-0.5 text-[9px] text-foreground/80 rounded-full">
+                          {tag}
+                        </span>
+                      ))}
+                      {fm.lifestyleHabits.length > 2 && (
+                        <span className="bg-secondary/20 border border-border px-2 py-0.5 text-[9px] text-muted-foreground rounded-full">
+                          +{fm.lifestyleHabits.length - 2} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4 mt-4 flex justify-between items-center">
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-light">Prefers: <strong>{fm.professionPref}</strong></span>
+                    <Link href={`/flatmates/${fm.id}`} className="text-xs text-primary font-bold uppercase tracking-wider hover:underline">
+                      Details →
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ━━━ SELL YOUR ITEMS ━━━ */}
       <section className="py-28 bg-secondary/30 border-y border-border">
         <div className="container mx-auto px-6 md:px-12">
@@ -457,7 +548,13 @@ export default function LandingPage() {
             <div>
               <h4 className="text-[10px] uppercase tracking-widest font-bold mb-3">Platform</h4>
               <div className="flex flex-col gap-2">
-                {[["Browse Rooms", "/rooms"], ["Marketplace", "/marketplace"], ["Post Your Room", "/list"], ["My Dashboard", "/dashboard"]].map(([label, href]) => (
+                {[
+                  ["Browse Rooms", "/rooms"],
+                  ["Find Flatmates", "/flatmates"],
+                  ["Marketplace", "/marketplace"],
+                  ["Post Your Room", "/list"],
+                  ["My Dashboard", "/dashboard"]
+                ].map(([label, href]) => (
                   <Link key={label} href={href} className="text-xs text-muted-foreground hover:text-primary transition-colors">{label}</Link>
                 ))}
               </div>

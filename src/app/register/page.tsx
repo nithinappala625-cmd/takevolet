@@ -122,7 +122,7 @@ function RegisterContent() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-6">
+    <div className="min-h-screen pt-36 pb-16 px-6">
       <div className="max-w-xl mx-auto">
 
         {/* Back */}

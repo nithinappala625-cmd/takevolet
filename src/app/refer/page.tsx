@@ -27,7 +27,7 @@ export default function ReferAndEarnPage() {
   };
 
   return (
-    <div className="pt-32 pb-20 min-h-screen bg-background">
+    <div className="pt-36 pb-20 min-h-screen bg-background">
       <div className="container mx-auto px-6 md:px-12 max-w-4xl">
         
         {/* Header */}

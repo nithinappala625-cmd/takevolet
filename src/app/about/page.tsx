@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -24,7 +24,7 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <div className="pt-24 pb-20 min-h-screen">
+    <div className="pt-36 pb-20 min-h-screen">
 
       {/* Hero */}
       <section className="container mx-auto px-6 md:px-12 mb-24 text-center max-w-4xl">

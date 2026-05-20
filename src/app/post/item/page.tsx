@@ -50,7 +50,7 @@ export default function PostItemPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-20 px-6">
+      <div className="min-h-screen flex items-center justify-center pt-36 px-6">
         <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
           className="text-center p-16 border border-border max-w-lg w-full">
           <div className="w-20 h-20 border-2 border-primary flex items-center justify-center mx-auto mb-8">
@@ -74,7 +74,7 @@ export default function PostItemPage() {
   }
 
   return (
-    <div className="pt-28 pb-20 min-h-screen">
+    <div className="pt-36 pb-20 min-h-screen">
       <div className="container mx-auto px-6 md:px-12 max-w-3xl">
         <div className="mb-12">
           <Link href="/list" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-6">

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
@@ -203,7 +203,7 @@ export default function PostRoomPage() {
   );
 
   return (
-    <div className="pt-24 pb-20 min-h-screen">
+    <div className="pt-36 pb-20 min-h-screen">
       <div className="container mx-auto px-6 md:px-12 max-w-3xl">
 
         {/* Header */}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -103,7 +103,7 @@ const methods = ["UPI (GPay, PhonePe, Paytm, BHIM)", "Credit / Debit Card (Visa,
 
 export default function PricingPage() {
   return (
-    <div className="pt-24 pb-20 min-h-screen">
+    <div className="pt-36 pb-20 min-h-screen">
 
       {/* Hero */}
       <section className="container mx-auto px-6 md:px-12 mb-16 text-center max-w-3xl">

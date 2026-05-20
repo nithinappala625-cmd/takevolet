@@ -47,7 +47,7 @@ export default function FlatmateDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24">
+      <div className="min-h-screen flex items-center justify-center pt-36">
         <Loader2 size={32} className="animate-spin text-primary" />
       </div>
     );
@@ -55,7 +55,7 @@ export default function FlatmateDetailPage() {
 
   if (!flatmate) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24">
+      <div className="min-h-screen flex items-center justify-center pt-36">
         <div className="text-center bg-background border border-border p-12 max-w-md shadow-2xl">
           <AlertCircle size={48} className="mx-auto text-primary mb-4" />
           <h2 className="text-2xl font-light mb-4">Listing Not Found</h2>
@@ -110,7 +110,7 @@ export default function FlatmateDetailPage() {
   const waUrl = `https://wa.me/${flatmate.postedBy.whatsapp.replace(/\+/g, "").replace(/\s/g, "")}?text=${encodeURIComponent(waMessage)}`;
 
   return (
-    <div className="pt-24 pb-20 min-h-screen">
+    <div className="pt-36 pb-20 min-h-screen">
       <div className="container mx-auto px-6 md:px-12">
         {/* Back navigation */}
         <Link href="/flatmates" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">

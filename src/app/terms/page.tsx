@@ -103,7 +103,7 @@ Last Updated: May 16, 2026 | Effective From: January 1, 2026`,
 
 export default function TermsPage() {
   return (
-    <div className="pt-24 pb-20 min-h-screen">
+    <div className="pt-36 pb-20 min-h-screen">
       <div className="container mx-auto px-6 md:px-12 max-w-4xl">
 
         {/* Header */}
