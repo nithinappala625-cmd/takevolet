@@ -3,6 +3,7 @@ import { Outfit, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import NavbarWrapper from "@/components/NavbarWrapper";
+
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
@@ -14,58 +15,69 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.online";
+
 export const metadata: Metadata = {
   title: {
-    default: "Takevolet | Bachelor Room Handovers in Hyderabad — Zero Brokerage",
+    default: "Takevolet — Bachelor Room Handovers, Flatmates & Marketplace in Hyderabad",
     template: "%s | Takevolet",
   },
-  description: "Takevolet is Hyderabad's #1 zero brokerage platform for bachelor room handovers. Leaving your room? Post it here. Searching? Find 2BHKs, 3BHKs, PGs without brokers. Direct contact, earn commission.",
+  description:
+    "Takevolet is Hyderabad's #1 zero-brokerage platform built for bachelors. Find & handover bachelor rooms, discover flatmates, and buy/sell used furniture — all in one place. No brokers. Direct contact. Earn commission.",
   keywords: [
+    "takevolet",
     "bachelor rooms hyderabad",
     "room handover hyderabad",
     "zero brokerage rooms hyderabad",
+    "flatmates hyderabad",
+    "find flatmate hyderabad",
     "pg rooms hyderabad",
     "flat handover hyderabad",
     "bachelor flat rent hyderabad",
     "no broker rooms hyderabad",
-    "takevolet",
+    "used furniture hyderabad bachelors",
     "buy sell furniture hyderabad",
-    "used furniture for bachelors"
+    "bachelor marketplace hyderabad",
+    "room rent ameerpet hyderabad",
+    "bachelor accommodation hyderabad",
   ],
-  authors: [{ name: "Takevolet Technologies" }],
-  creator: "Takevolet Technologies",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.online"),
+  authors: [{ name: "Takevolet" }],
+  creator: "Takevolet",
+  publisher: "Takevolet",
+  metadataBase: new URL(APP_URL),
   alternates: {
     canonical: "/",
   },
   icons: {
     icon: [
-      { url: "/icon.png", sizes: "any" },
       { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", sizes: "any" },
     ],
-    shortcut: "/icon.png",
-    apple: "/logo.png",
+    shortcut: "/icon.svg",
+    apple: "/icon.png",
   },
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.online",
+    url: APP_URL,
     siteName: "Takevolet",
-    title: "Takevolet | Zero Brokerage Bachelor Room Handovers in Hyderabad",
-    description: "The fastest way to find or handover bachelor rooms in Hyderabad without brokers. Direct contact. Zero brokerage. Sell your old furniture.",
+    title: "Takevolet — Zero Brokerage Rooms, Flatmates & Marketplace in Hyderabad",
+    description:
+      "Find or handover bachelor rooms in Hyderabad with zero brokerage. Discover flatmates, buy/sell furniture — a complete platform built for Hyderabad's bachelor community.",
     images: [
       {
         url: "/logo.png",
         width: 1200,
         height: 630,
-        alt: "Takevolet - Hyderabad Room Handovers",
+        alt: "Takevolet — Hyderabad Bachelor Room Handovers",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Takevolet | Bachelor Room Handovers",
-    description: "Zero brokerage room handovers in Hyderabad. Find rooms without brokers, contact directly, and earn commission.",
+    title: "Takevolet — Rooms, Flatmates & Marketplace for Bachelors in Hyderabad",
+    description:
+      "Zero brokerage room handovers, flatmate search, and used furniture marketplace. Built for Hyderabad bachelors.",
     images: ["/logo.png"],
   },
   robots: {
@@ -80,10 +92,53 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "RYGrWuGKRpiY8LOpxxyguVGJEoZSZuC2gCn1QGBT5f0", 
+    google: "RYGrWuGKRpiY8LOpxxyguVGJEoZSZuC2gCn1QGBT5f0",
   },
 };
 
+// JSON-LD structured data — tells Google exactly who Takevolet is
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Takevolet",
+  legalName: "Takevolet",
+  url: APP_URL,
+  logo: `${APP_URL}/logo.png`,
+  description:
+    "Takevolet is Hyderabad's #1 zero-brokerage platform for bachelor room handovers, flatmate discovery, and used furniture marketplace. An independent startup serving Hyderabad's bachelor community.",
+  foundingDate: "2024",
+  areaServed: {
+    "@type": "City",
+    name: "Hyderabad",
+    addressCountry: "IN",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    areaServed: "IN",
+    availableLanguage: ["English", "Telugu", "Hindi"],
+  },
+  sameAs: [
+    "https://www.instagram.com/takevolet",
+  ],
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Takevolet",
+  url: APP_URL,
+  description:
+    "Zero-brokerage bachelor room handovers, flatmates, and marketplace in Hyderabad.",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${APP_URL}/rooms?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
 
 export default function RootLayout({
   children,
@@ -93,6 +148,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Google Analytics */}
         <Script
           strategy="afterInteractive"
           src={`https://www.googletagmanager.com/gtag/js?id=G-ZQS0VKQJJH`}
@@ -109,6 +165,19 @@ export default function RootLayout({
                 page_path: window.location.pathname,
               });
             `,
+          }}
+        />
+        {/* JSON-LD Structured Data — helps Google correctly identify Takevolet */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationSchema),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema),
           }}
         />
       </head>
