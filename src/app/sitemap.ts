@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import { ARTICLES } from '@/data/articles'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://takevolet.online'
@@ -33,6 +34,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(item.created_at || now),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
+  }))
+
+  const articleUrls = ARTICLES.map((article) => ({
+    url: `${baseUrl}/articles/${article.slug}`,
+    lastModified: new Date(article.date),
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
   }))
 
   return [
@@ -114,8 +122,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    {
+      url: `${baseUrl}/articles`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
     ...roomUrls,
     ...flatmateUrls,
     ...itemUrls,
+    ...articleUrls,
   ]
 }

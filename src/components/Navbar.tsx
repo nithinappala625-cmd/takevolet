@@ -77,6 +77,7 @@ const Navbar = () => {
     { name: "Rooms", href: "/rooms" },
     { name: "Flatmates", href: "/flatmates" },
     { name: "Marketplace", href: "/marketplace" },
+    { name: "Articles", href: "/articles" },
     { name: "Refer & Earn", href: "/refer" },
   ];
 
