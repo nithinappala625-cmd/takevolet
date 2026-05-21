@@ -77,6 +77,11 @@ export const metadata: Metadata = {
   verification: {
     google: "RYGrWuGKRpiY8LOpxxyguVGJEoZSZuC2gCn1QGBT5f0",
   },
+  icons: {
+    icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 // JSON-LD structured data — tells Google exactly who Takevolet is
