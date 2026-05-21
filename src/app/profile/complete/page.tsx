@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { upsertProfile, uploadAadhaar } from "@/lib/db";
+import Tesseract from "tesseract.js";
 import {
   User, MapPin, Phone, Briefcase, Users, Camera,
   ArrowRight, CheckCircle2, Upload, AlertCircle, Loader2,
@@ -28,6 +29,7 @@ export default function ProfileCompletePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadingAadhaar, setUploadingAadhaar] = useState(false);
+  const [verifyingAadhaar, setVerifyingAadhaar] = useState(false);
   const [aadhaarPreview, setAadhaarPreview] = useState<string | null>(null);
   const [aadhaarPath, setAadhaarPath] = useState<string | null>(null);
   const [redirect, setRedirect] = useState("/dashboard");
@@ -62,21 +64,57 @@ export default function ProfileCompletePage() {
 
   const handleAadhaar = async (file: File) => {
     if (!user) return;
-    setUploadingAadhaar(true);
-    const preview = URL.createObjectURL(file);
-    setAadhaarPreview(preview);
-    const { url, error } = await uploadAadhaar(user.id, file);
-    if (error) {
-      setError("Failed to upload Aadhaar. Try again.");
-    } else {
-      setAadhaarPath(url);
+    setError(null);
+    setVerifyingAadhaar(true);
+    setAadhaarPreview(null);
+    setAadhaarPath(null);
+    
+    try {
+      // 1. Run OCR check
+      const ocrResult = await Tesseract.recognize(file, "eng");
+      
+      const text = ocrResult.data.text.toLowerCase();
+      
+      // Basic OCR heuristics for Aadhaar
+      // - 12 digit number (e.g., 1234 5678 9012)
+      // - DOB / Year of Birth
+      // - Address / Father name indicator / "GOVERNMENT OF INDIA"
+      const hasAadhaarNumber = /\d{4}\s?\d{4}\s?\d{4}/.test(text);
+      const hasDob = /(dob|date of birth|year of birth|yob|\d{2}\/\d{2}\/\d{4})/i.test(text);
+      const hasAddress = /(address|add|s\/o|d\/o|w\/o|c\/o|government of india)/i.test(text);
+
+      if (!hasAadhaarNumber || !hasDob || !hasAddress) {
+        setError("Rejected: Document does not appear to be a valid Aadhaar card. Please upload a clear photo containing your DOB, Aadhaar Number, and Address.");
+        setVerifyingAadhaar(false);
+        return;
+      }
+
+      // 2. OCR passed, proceed to upload
+      setUploadingAadhaar(true);
+      const preview = URL.createObjectURL(file);
+      setAadhaarPreview(preview);
+      const { url, error } = await uploadAadhaar(user.id, file);
+      if (error) {
+        setError("Failed to upload Aadhaar. Try again.");
+        setAadhaarPreview(null);
+      } else {
+        setAadhaarPath(url);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Rejected: Verification failed. Please try again with a clearer image.");
+    } finally {
+      setUploadingAadhaar(false);
+      setVerifyingAadhaar(false);
     }
-    setUploadingAadhaar(false);
   };
+
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMsg(null);
 
     if (!fullName.trim()) return setError("Full name is required.");
     if (!phone.trim() || phone.length < 10) return setError("Valid 10-digit phone number is required.");
@@ -84,6 +122,7 @@ export default function ProfileCompletePage() {
     if (!colony) return setError("Please select your colony.");
     if (!gender) return setError("Please select your gender.");
     if (!profession) return setError("Please select your profession.");
+    if (!aadhaarPath) return setError("Aadhaar document upload is mandatory.");
 
     if (!user) return;
     setSaving(true);
@@ -104,12 +143,16 @@ export default function ProfileCompletePage() {
       avatar_url: user.avatar,
     });
 
-    setSaving(false);
     if (saveErr) {
       setError("Failed to save profile. Please try again.");
+      setSaving(false);
       return;
     }
-    router.replace(redirect);
+    
+    setSuccessMsg("Registration Successful!");
+    setTimeout(() => {
+      router.replace(redirect);
+    }, 1500);
   };
 
   if (loading) {
@@ -333,13 +376,17 @@ export default function ProfileCompletePage() {
                 </div>
               ) : (
                 <div>
-                  {uploadingAadhaar ? (
+                  {uploadingAadhaar || verifyingAadhaar ? (
                     <Loader2 size={28} className="animate-spin text-primary mx-auto mb-2" />
                   ) : (
                     <Upload size={28} className="text-muted-foreground mx-auto mb-2" />
                   )}
                   <p className="text-sm font-semibold mb-1">
-                    {uploadingAadhaar ? "Uploading…" : "Click to upload Aadhaar photo"}
+                    {verifyingAadhaar 
+                      ? "Verifying Document…" 
+                      : uploadingAadhaar 
+                        ? "Uploading…" 
+                        : "Click to upload Aadhaar photo"}
                   </p>
                   <p className="text-[11px] text-muted-foreground">JPG, PNG, PDF up to 10MB</p>
                 </div>
@@ -352,16 +399,19 @@ export default function ProfileCompletePage() {
                 onChange={e => e.target.files?.[0] && handleAadhaar(e.target.files[0])}
               />
             </div>
-            <p className="text-[10px] text-muted-foreground mt-2">
-              Optional but required for payout withdrawals above ₹10,000.
-            </p>
           </div>
 
-          {/* ── ERROR ─────────────────────────────────────────── */}
           {error && (
             <div className="flex gap-2.5 bg-red-50 border border-red-200 p-3.5 text-sm text-red-700">
               <AlertCircle size={15} className="shrink-0 mt-0.5" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="flex gap-2.5 bg-green-50 border border-green-200 p-3.5 text-sm text-green-700">
+              <CheckCircle2 size={15} className="shrink-0 mt-0.5" />
+              <span>{successMsg}</span>
             </div>
           )}
 
