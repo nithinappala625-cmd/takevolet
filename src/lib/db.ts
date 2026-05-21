@@ -311,3 +311,8 @@ export async function updatePayoutStatus(
     .eq("id", payoutId);
   return { error };
 }
+
+export async function getFlatmateById(id: string): Promise<any | null> {
+  const { data } = await supabase.from('flatmates').select('*, profiles(full_name, phone, whatsapp, avatar_url, profession)').eq('id', id).single();
+  return data;
+}

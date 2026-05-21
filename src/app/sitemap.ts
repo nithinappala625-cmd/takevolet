@@ -1,8 +1,39 @@
 import { MetadataRoute } from 'next'
+import { createClient } from '@supabase/supabase-js'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://takevolet.online'
   const now = new Date()
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = createClient(supabaseUrl, supabaseKey)
+
+  // Fetch dynamic routes
+  const { data: rooms } = await supabase.from('rooms').select('id, created_at').eq('is_available', true)
+  const { data: flatmates } = await supabase.from('flatmates').select('id, created_at')
+  const { data: items } = await supabase.from('items').select('id, created_at')
+
+  const roomUrls = (rooms || []).map((room) => ({
+    url: `${baseUrl}/rooms/${room.id}`,
+    lastModified: new Date(room.created_at || now),
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }))
+
+  const flatmateUrls = (flatmates || []).map((fm) => ({
+    url: `${baseUrl}/flatmates/${fm.id}`,
+    lastModified: new Date(fm.created_at || now),
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }))
+
+  const itemUrls = (items || []).map((item) => ({
+    url: `${baseUrl}/marketplace/${item.id}`,
+    lastModified: new Date(item.created_at || now),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }))
 
   return [
     {
@@ -83,5 +114,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    ...roomUrls,
+    ...flatmateUrls,
+    ...itemUrls,
   ]
 }
