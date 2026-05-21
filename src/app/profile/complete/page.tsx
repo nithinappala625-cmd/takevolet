@@ -356,7 +356,7 @@ export default function ProfileCompletePage() {
           {/* ── AADHAAR / KYC ──────────────────────────────────── */}
           <div className="border border-border p-6">
             <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4 flex items-center gap-2">
-              <CreditCard size={12} className="text-primary" /> Identity Verification (Aadhaar)
+              <CreditCard size={12} className="text-primary" /> Identity Verification (Aadhaar) <span className="text-red-500">*</span>
             </p>
 
             <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
