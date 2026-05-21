@@ -217,22 +217,7 @@ export async function uploadAadhaar(
   file: File
 ): Promise<{ url: string | null; error: any }> {
   const ext = file.name.split(".").pop();
-  const path = `${userId}/aadhaar_front.${ext}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("kyc-docs")
-    .upload(path, file, { cacheControl: "3600", upsert: true });
-
-  if (uploadError) return { url: null, error: uploadError };
-  return { url: path, error: null };
-}
-
-export async function uploadAadhaarBack(
-  userId: string,
-  file: File
-): Promise<{ url: string | null; error: any }> {
-  const ext = file.name.split(".").pop();
-  const path = `${userId}/aadhaar_back.${ext}`;
+  const path = `${userId}/aadhaar.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("kyc-docs")
