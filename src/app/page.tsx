@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Star, Zap, MapPin, Users, ChevronRight, IndianRupee, Calendar, Sofa, ShoppingBag, Wallet, Home, Instagram } from "lucide-react";
+import { ArrowRight, ShieldCheck, Star, Zap, MapPin, Users, ChevronRight, IndianRupee, Calendar, Sofa, ShoppingBag, Wallet, Home } from "lucide-react";
 import { HYDERABAD_AREAS } from "@/data/locations";
 import { MOCK_ROOMS, MOCK_FLATMATES } from "@/data/mock";
 
@@ -537,7 +537,12 @@ export default function LandingPage() {
               <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">Bachelor room handovers &amp; marketplace in Hyderabad. Zero brokerage.</p>
               <div className="flex items-center gap-4 mb-4">
                 <Link href="https://www.instagram.com/take_volet?igsh=MTBxdG1qMWd3MnBrZg==" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-                  <Instagram size={16} /> Instagram
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                  </svg>
+                  Instagram
                 </Link>
               </div>
               <p className="text-xs text-muted-foreground">Made with ❤️ in India · Started 2026</p>
