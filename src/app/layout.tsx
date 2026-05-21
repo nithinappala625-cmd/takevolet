@@ -79,7 +79,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/logo.png", type: "image/png" },
     ],
   },
 };
@@ -91,7 +91,7 @@ const organizationSchema = {
   name: "Takevolet",
   legalName: "Takevolet",
   url: APP_URL,
-  logo: `${APP_URL}/logo.svg`,
+  logo: `${APP_URL}/logo.png`,
   description:
     "Takevolet is Hyderabad's #1 zero-brokerage platform for bachelor room handovers, flatmate discovery, and used furniture marketplace. An independent startup serving Hyderabad's bachelor community.",
   foundingDate: "2024",

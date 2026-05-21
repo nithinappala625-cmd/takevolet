@@ -116,9 +116,9 @@ const Navbar = () => {
         <Link href="/" className="flex items-center gap-2.5 group">
           {/* Inline SVG — transparent, adapts to any bg */}
           <img
-            src="/logo.svg"
+            src="/logo.png"
             alt="Takevolet logo"
-            className="w-10 h-10 group-hover:scale-110 transition-transform duration-300"
+            className="w-10 h-10 group-hover:scale-110 transition-transform duration-300 rounded-sm"
           />
           <span className="text-xl font-bold tracking-widest uppercase text-foreground">
             TAKE<span className="text-primary">VOLET</span>
