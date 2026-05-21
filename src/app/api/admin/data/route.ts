@@ -96,12 +96,22 @@ export async function GET(request: Request) {
     // Map profiles to include computed fields
     users: await Promise.all(profiles.map(async (p: any) => {
       let docUrl = p.aadhaar_url || null;
+      let docBackUrl = p.aadhaar_back_url || null;
+      
       if (docUrl && !docUrl.startsWith("http")) {
         const { data: signed } = await supabaseAdmin.storage.from("kyc-docs").createSignedUrl(docUrl, 3600);
         if (signed?.signedUrl) {
           docUrl = signed.signedUrl;
         }
       }
+      
+      if (docBackUrl && !docBackUrl.startsWith("http")) {
+        const { data: signedBack } = await supabaseAdmin.storage.from("kyc-docs").createSignedUrl(docBackUrl, 3600);
+        if (signedBack?.signedUrl) {
+          docBackUrl = signedBack.signedUrl;
+        }
+      }
+
       return {
         id:            p.id,
         name:          p.full_name || "—",
@@ -113,8 +123,10 @@ export async function GET(request: Request) {
         house_no:      p.house_no || "—",
         profession:    p.profession || "—",
         gender:        p.gender || "—",
+        dob:           p.dob || "—",
         members_count: p.members_count || 1,
         aadhaar_url:   docUrl,
+        aadhaar_back_url: docBackUrl,
         is_verified:   p.is_verified || false,
         created_at:    p.created_at,
       };

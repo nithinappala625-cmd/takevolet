@@ -20,7 +20,9 @@ create table if not exists public.profiles (
   profession    text,
   members_count int default 1,
   gender        text,
-  aadhaar_url   text,          -- Supabase storage path for aadhaar photo
+  dob           text,          -- Date of birth
+  aadhaar_url   text,          -- Supabase storage path for aadhaar photo (front)
+  aadhaar_back_url text,       -- Supabase storage path for aadhaar photo (back)
   is_verified   boolean default false,
   created_at    timestamptz default now(),
   updated_at    timestamptz default now()

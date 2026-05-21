@@ -663,6 +663,7 @@ export default function AdminPage() {
                   <div key={u.id} className="grid grid-cols-12 gap-2 p-4 border-b border-border last:border-0 items-center hover:bg-secondary/10">
                     <div className="col-span-2">
                       <p className="text-sm font-semibold truncate">{u.name}</p>
+                      <p className="text-[10px] text-muted-foreground">DOB: {u.dob}</p>
                       <p className="text-[10px] text-muted-foreground">{fmtDate(u.created_at)}</p>
                     </div>
                     <div className="col-span-2">
@@ -683,13 +684,18 @@ export default function AdminPage() {
                     <div className="col-span-2">
                       <p className="text-xs truncate">{u.profession}</p>
                     </div>
-                    <div className="col-span-1">
+                    <div className="col-span-1 flex gap-1">
                       {u.aadhaar_url ? (
-                        <a href={u.aadhaar_url} target="_blank" rel="noopener noreferrer" className="block w-16 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View Full Document">
-                          <img src={u.aadhaar_url} alt="Aadhaar" className="w-full h-full object-cover" />
+                        <a href={u.aadhaar_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View Front">
+                          <img src={u.aadhaar_url} alt="Front" className="w-full h-full object-cover" />
                         </a>
                       ) : (
-                        <span className="text-[9px] bg-yellow-100 text-yellow-700 font-bold px-1.5 py-0.5">Pending</span>
+                        <span className="text-[9px] bg-yellow-100 text-yellow-700 font-bold px-1 py-0.5">Pend</span>
+                      )}
+                      {u.aadhaar_back_url && (
+                        <a href={u.aadhaar_back_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View Back">
+                          <img src={u.aadhaar_back_url} alt="Back" className="w-full h-full object-cover" />
+                        </a>
                       )}
                     </div>
                   </div>

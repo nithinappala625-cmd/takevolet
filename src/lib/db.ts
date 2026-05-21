@@ -19,7 +19,9 @@ export type Profile = {
   profession?: string;
   members_count?: number;
   gender?: string;
+  dob?: string;
   aadhaar_url?: string;
+  aadhaar_back_url?: string;
   is_verified?: boolean;
   created_at?: string;
 };
@@ -110,7 +112,8 @@ export async function isProfileComplete(userId: string): Promise<boolean> {
     profile.phone &&
     profile.location &&
     profile.colony &&
-    profile.gender
+    profile.gender &&
+    profile.dob
   );
 }
 
@@ -214,15 +217,28 @@ export async function uploadAadhaar(
   file: File
 ): Promise<{ url: string | null; error: any }> {
   const ext = file.name.split(".").pop();
-  const path = `${userId}/aadhaar.${ext}`;
+  const path = `${userId}/aadhaar_front.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("kyc-docs")
     .upload(path, file, { cacheControl: "3600", upsert: true });
 
   if (uploadError) return { url: null, error: uploadError };
+  return { url: path, error: null };
+}
 
-  // Return storage path (not public URL — private bucket)
+export async function uploadAadhaarBack(
+  userId: string,
+  file: File
+): Promise<{ url: string | null; error: any }> {
+  const ext = file.name.split(".").pop();
+  const path = `${userId}/aadhaar_back.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("kyc-docs")
+    .upload(path, file, { cacheControl: "3600", upsert: true });
+
+  if (uploadError) return { url: null, error: uploadError };
   return { url: path, error: null };
 }
 
