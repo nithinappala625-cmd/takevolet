@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Star, Zap, MapPin, Users, ChevronRight, IndianRupee, Calendar, Sofa, ShoppingBag, Wallet, Home } from "lucide-react";
+import { ArrowRight, ShieldCheck, Star, Zap, MapPin, Users, ChevronRight, IndianRupee, Calendar, Sofa, ShoppingBag, Wallet, Home, Instagram } from "lucide-react";
 import { HYDERABAD_AREAS } from "@/data/locations";
 import { MOCK_ROOMS, MOCK_FLATMATES } from "@/data/mock";
 
@@ -527,22 +527,19 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-10 mb-14">
             <div>
               <div className="flex items-center space-x-2.5 mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 100 100"
-                  fill="none"
-                  className="w-8 h-8 text-foreground"
-                  aria-label="Takevolet logo"
-                >
-                  <path d="M50 10 L90 48 H76 V85 H24 V48 H10 Z" fill="currentColor"/>
-                  <rect x="26" y="18" width="11" height="22" fill="currentColor"/>
-                  <rect x="41" y="54" width="18" height="16" fill="white" opacity="0.9"/>
-                  <line x1="50" y1="54" x2="50" y2="70" stroke="currentColor" strokeWidth="2"/>
-                  <line x1="41" y1="62" x2="59" y2="62" stroke="currentColor" strokeWidth="2"/>
-                </svg>
+                <img
+                  src="/logo.png"
+                  alt="Takevolet logo"
+                  className="w-10 h-10 rounded-sm"
+                />
                 <span className="text-base font-bold tracking-[0.2em] uppercase">Take<span className="text-primary">volet</span></span>
               </div>
-              <p className="text-xs text-muted-foreground font-light leading-relaxed mb-2">Bachelor room handovers &amp; marketplace in Hyderabad. Zero brokerage.</p>
+              <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">Bachelor room handovers &amp; marketplace in Hyderabad. Zero brokerage.</p>
+              <div className="flex items-center gap-4 mb-4">
+                <Link href="https://www.instagram.com/take_volet?igsh=MTBxdG1qMWd3MnBrZg==" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                  <Instagram size={16} /> Instagram
+                </Link>
+              </div>
               <p className="text-xs text-muted-foreground">Made with ❤️ in India · Started 2026</p>
             </div>
             <div>

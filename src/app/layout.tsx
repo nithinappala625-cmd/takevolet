@@ -107,7 +107,7 @@ const organizationSchema = {
     availableLanguage: ["English", "Telugu", "Hindi"],
   },
   sameAs: [
-    "https://www.instagram.com/takevolet",
+    "https://www.instagram.com/take_volet?igsh=MTBxdG1qMWd3MnBrZg==",
   ],
 };
 
