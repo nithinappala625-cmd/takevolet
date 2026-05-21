@@ -275,3 +275,6 @@ create policy "Users can update own flatmates"
 create policy "Users can delete own flatmates"
   on public.flatmates for delete using (auth.uid() = user_id);
 
+
+create policy "Users can update own KYC docs" on storage.objects for update using (bucket_id = 'kyc-docs' and auth.uid()::text = (storage.foldername(name))[1]);
+create policy "Users can delete own KYC docs" on storage.objects for delete using (bucket_id = 'kyc-docs' and auth.uid()::text = (storage.foldername(name))[1]);
