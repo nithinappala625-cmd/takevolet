@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
-import { upsertProfile, uploadAadhaar, uploadAadhaarBack } from "@/lib/db";
+import { upsertProfile, uploadAadhaar } from "@/lib/db";
 import Tesseract from "tesseract.js";
 import {
   User, MapPin, Phone, Briefcase, Users, Camera,
