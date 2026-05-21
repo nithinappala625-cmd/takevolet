@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Background circle -->
-  <circle cx="50" cy="50" r="50" fill="#0a0a0a"/>
-  <!-- Gold "T" lettermark for Takevolet -->
-  <rect x="22" y="24" width="56" height="10" rx="3" fill="#D4AF37"/>
-  <rect x="44" y="34" width="12" height="42" rx="3" fill="#D4AF37"/>
-  <!-- Tiny gold dot accent bottom right -->
-  <circle cx="72" cy="72" r="6" fill="#D4AF37" opacity="0.7"/>
-</svg>

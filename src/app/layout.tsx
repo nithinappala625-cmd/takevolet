@@ -48,14 +48,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/icon.png", sizes: "any" },
-    ],
-    shortcut: "/icon.svg",
-    apple: "/icon.png",
-  },
   openGraph: {
     type: "website",
     locale: "en_IN",
@@ -64,21 +56,12 @@ export const metadata: Metadata = {
     title: "Takevolet — Zero Brokerage Rooms, Flatmates & Marketplace in Hyderabad",
     description:
       "Find or handover bachelor rooms in Hyderabad with zero brokerage. Discover flatmates, buy/sell furniture — a complete platform built for Hyderabad's bachelor community.",
-    images: [
-      {
-        url: "/logo.png",
-        width: 1200,
-        height: 630,
-        alt: "Takevolet — Hyderabad Bachelor Room Handovers",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Takevolet — Rooms, Flatmates & Marketplace for Bachelors in Hyderabad",
     description:
       "Zero brokerage room handovers, flatmate search, and used furniture marketplace. Built for Hyderabad bachelors.",
-    images: ["/logo.png"],
   },
   robots: {
     index: true,
@@ -103,7 +86,7 @@ const organizationSchema = {
   name: "Takevolet",
   legalName: "Takevolet",
   url: APP_URL,
-  logo: `${APP_URL}/logo.png`,
+  logo: `${APP_URL}/logo.svg`,
   description:
     "Takevolet is Hyderabad's #1 zero-brokerage platform for bachelor room handovers, flatmate discovery, and used furniture marketplace. An independent startup serving Hyderabad's bachelor community.",
   foundingDate: "2024",
