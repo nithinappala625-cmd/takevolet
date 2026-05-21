@@ -33,12 +33,6 @@ export default function ProfileCompletePage() {
   const [aadhaarPreview, setAadhaarPreview] = useState<string | null>(null);
   const [aadhaarPath, setAadhaarPath] = useState<string | null>(null);
 
-  const aadhaarBackRef = useRef<HTMLInputElement>(null);
-  const [uploadingAadhaarBack, setUploadingAadhaarBack] = useState(false);
-  const [verifyingAadhaarBack, setVerifyingAadhaarBack] = useState(false);
-  const [aadhaarBackPreview, setAadhaarBackPreview] = useState<string | null>(null);
-  const [aadhaarBackPath, setAadhaarBackPath] = useState<string | null>(null);
-
   const [redirect, setRedirect] = useState("/dashboard");
 
   // Form fields
@@ -70,7 +64,7 @@ export default function ProfileCompletePage() {
     }
   }, [user, loading, router]);
 
-  const handleAadhaarFront = async (file: File) => {
+  const handleAadhaar = async (file: File) => {
     if (!user) return;
     setError(null);
 
@@ -89,16 +83,12 @@ export default function ProfileCompletePage() {
       
       const hasAadhaarNumber = /\d{4}\s?\d{4}\s?\d{4}/.test(text);
       
-      // Match name (at least first name)
-      const firstName = fullName.toLowerCase().split(" ")[0];
-      const hasName = text.includes(firstName);
-      
-      // Match DOB (try exact match of YYYY or DD/MM/YYYY)
+      // OCR can be very noisy for names, so we just check if it finds the Year of Birth
       const dobYear = dob.split("-")[0]; // from YYYY-MM-DD
-      const hasDob = text.includes(dobYear) || text.includes(dob.split("-").reverse().join("/"));
+      const hasDob = text.includes(dobYear);
 
-      if (!hasAadhaarNumber || !hasName || !hasDob) {
-        setError("Rejected: Document does not appear to be a valid Aadhaar Front. Ensure the photo is clear and matches your entered Name and DOB.");
+      if (!hasAadhaarNumber || !hasDob) {
+        setError("Rejected: Document does not appear to be a valid Aadhaar. Ensure the photo is clear and contains your Aadhaar Number and Date of Birth.");
         setVerifyingAadhaar(false);
         return;
       }
@@ -108,7 +98,7 @@ export default function ProfileCompletePage() {
       setAadhaarPreview(preview);
       const { url, error: err } = await uploadAadhaar(user.id, file);
       if (err) {
-        setError("Failed to upload Aadhaar Front. Try again.");
+        setError("Failed to upload Aadhaar. Try again.");
         setAadhaarPreview(null);
       } else {
         setAadhaarPath(url);
@@ -119,45 +109,6 @@ export default function ProfileCompletePage() {
     } finally {
       setUploadingAadhaar(false);
       setVerifyingAadhaar(false);
-    }
-  };
-
-  const handleAadhaarBack = async (file: File) => {
-    if (!user) return;
-    setError(null);
-    setVerifyingAadhaarBack(true);
-    setAadhaarBackPreview(null);
-    setAadhaarBackPath(null);
-    
-    try {
-      const ocrResult = await Tesseract.recognize(file, "eng");
-      const text = ocrResult.data.text.toLowerCase();
-      
-      const hasAadhaarNumber = /\d{4}\s?\d{4}\s?\d{4}/.test(text);
-      const hasAddress = /(address|add|s\/o|d\/o|w\/o|c\/o|pin|pincode)/i.test(text);
-
-      if (!hasAadhaarNumber || !hasAddress) {
-        setError("Rejected: Document does not appear to be a valid Aadhaar Back. Ensure the photo is clear and contains your Address.");
-        setVerifyingAadhaarBack(false);
-        return;
-      }
-
-      setUploadingAadhaarBack(true);
-      const preview = URL.createObjectURL(file);
-      setAadhaarBackPreview(preview);
-      const { url, error: err } = await uploadAadhaarBack(user.id, file);
-      if (err) {
-        setError("Failed to upload Aadhaar Back. Try again.");
-        setAadhaarBackPreview(null);
-      } else {
-        setAadhaarBackPath(url);
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Rejected: Verification failed. Please try again with a clearer image.");
-    } finally {
-      setUploadingAadhaarBack(false);
-      setVerifyingAadhaarBack(false);
     }
   };
 
@@ -175,7 +126,7 @@ export default function ProfileCompletePage() {
     if (!dob) return setError("Date of Birth is required.");
     if (!gender) return setError("Please select your gender.");
     if (!profession) return setError("Please select your profession.");
-    if (!aadhaarPath || !aadhaarBackPath) return setError("Aadhaar Front and Back photos are mandatory.");
+    if (!aadhaarPath) return setError("Aadhaar photo is mandatory.");
 
     if (!user) return;
     setSaving(true);
@@ -194,7 +145,6 @@ export default function ProfileCompletePage() {
       gender,
       dob,
       aadhaar_url: aadhaarPath,
-      aadhaar_back_url: aadhaarBackPath,
       avatar_url: user.avatar,
     });
 
@@ -430,82 +380,41 @@ export default function ProfileCompletePage() {
               Upload a photo of your Aadhaar card for identity verification. This is stored securely and only accessible to the Takevolet admin. It will not be shared publicly.
             </p>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              {/* FRONT UPLOAD */}
-              <div
-                onClick={() => aadhaarRef.current?.click()}
-                className={`border-2 border-dashed p-6 text-center cursor-pointer transition-all ${aadhaarPreview ? "border-green-400 bg-green-50" : "border-border hover:border-primary"}`}
-              >
-                {aadhaarPreview ? (
-                  <div>
-                    <img src={aadhaarPreview} alt="Aadhaar Front" className="max-h-32 mx-auto mb-2 object-contain" />
-                    <p className="text-xs text-green-600 font-semibold flex items-center justify-center gap-1">
-                      <CheckCircle2 size={12} /> Aadhaar Front Uploaded
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                    {uploadingAadhaar || verifyingAadhaar ? (
-                      <Loader2 size={24} className="animate-spin text-primary mx-auto mb-2" />
-                    ) : (
-                      <Upload size={24} className="text-muted-foreground mx-auto mb-2" />
-                    )}
-                    <p className="text-sm font-semibold mb-1">
-                      {verifyingAadhaar 
-                        ? "Verifying Document…" 
-                        : uploadingAadhaar 
-                          ? "Uploading…" 
-                          : "Upload Aadhaar Front"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Contains Name & DOB</p>
-                  </div>
-                )}
-                <input
-                  ref={aadhaarRef}
-                  type="file"
-                  accept="image/jpeg,image/png,application/pdf"
-                  className="hidden"
-                  onChange={e => e.target.files?.[0] && handleAadhaarFront(e.target.files[0])}
-                />
-              </div>
-
-              {/* BACK UPLOAD */}
-              <div
-                onClick={() => aadhaarBackRef.current?.click()}
-                className={`border-2 border-dashed p-6 text-center cursor-pointer transition-all ${aadhaarBackPreview ? "border-green-400 bg-green-50" : "border-border hover:border-primary"}`}
-              >
-                {aadhaarBackPreview ? (
-                  <div>
-                    <img src={aadhaarBackPreview} alt="Aadhaar Back" className="max-h-32 mx-auto mb-2 object-contain" />
-                    <p className="text-xs text-green-600 font-semibold flex items-center justify-center gap-1">
-                      <CheckCircle2 size={12} /> Aadhaar Back Uploaded
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                    {uploadingAadhaarBack || verifyingAadhaarBack ? (
-                      <Loader2 size={24} className="animate-spin text-primary mx-auto mb-2" />
-                    ) : (
-                      <Upload size={24} className="text-muted-foreground mx-auto mb-2" />
-                    )}
-                    <p className="text-sm font-semibold mb-1">
-                      {verifyingAadhaarBack 
-                        ? "Verifying Document…" 
-                        : uploadingAadhaarBack 
-                          ? "Uploading…" 
-                          : "Upload Aadhaar Back"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Contains Address</p>
-                  </div>
-                )}
-                <input
-                  ref={aadhaarBackRef}
-                  type="file"
-                  accept="image/jpeg,image/png,application/pdf"
-                  className="hidden"
-                  onChange={e => e.target.files?.[0] && handleAadhaarBack(e.target.files[0])}
-                />
-              </div>
+            <div
+              onClick={() => aadhaarRef.current?.click()}
+              className={`border-2 border-dashed p-8 text-center cursor-pointer transition-all ${aadhaarPreview ? "border-green-400 bg-green-50" : "border-border hover:border-primary"}`}
+            >
+              {aadhaarPreview ? (
+                <div>
+                  <img src={aadhaarPreview} alt="Aadhaar" className="max-h-40 mx-auto mb-2 object-contain" />
+                  <p className="text-xs text-green-600 font-semibold flex items-center justify-center gap-1">
+                    <CheckCircle2 size={12} /> Aadhaar uploaded
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  {uploadingAadhaar || verifyingAadhaar ? (
+                    <Loader2 size={28} className="animate-spin text-primary mx-auto mb-2" />
+                  ) : (
+                    <Upload size={28} className="text-muted-foreground mx-auto mb-2" />
+                  )}
+                  <p className="text-sm font-semibold mb-1">
+                    {verifyingAadhaar 
+                      ? "Verifying Document…" 
+                      : uploadingAadhaar 
+                        ? "Uploading…" 
+                        : "Click to upload Aadhaar photo"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">JPG, PNG, PDF up to 10MB</p>
+                </div>
+              )}
+              <input
+                ref={aadhaarRef}
+                type="file"
+                accept="image/jpeg,image/png,application/pdf"
+                className="hidden"
+                onChange={e => e.target.files?.[0] && handleAadhaar(e.target.files[0])}
+              />
             </div>
           </div>
 
