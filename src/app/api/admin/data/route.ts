@@ -94,21 +94,30 @@ export async function GET(request: Request) {
       confirmedAt: h.confirmed_at,
     })),
     // Map profiles to include computed fields
-    users: profiles.map((p: any) => ({
-      id:            p.id,
-      name:          p.full_name || "—",
-      email:         p.email || "—",
-      phone:         p.phone || "—",
-      whatsapp:      p.whatsapp || "—",
-      location:      p.location || "—",
-      colony:        p.colony || "—",
-      house_no:      p.house_no || "—",
-      profession:    p.profession || "—",
-      gender:        p.gender || "—",
-      members_count: p.members_count || 1,
-      aadhaar_url:   p.aadhaar_url || null,
-      is_verified:   p.is_verified || false,
-      created_at:    p.created_at,
+    users: await Promise.all(profiles.map(async (p: any) => {
+      let docUrl = p.aadhaar_url || null;
+      if (docUrl && !docUrl.startsWith("http")) {
+        const { data: signed } = await supabaseAdmin.storage.from("kyc-docs").createSignedUrl(docUrl, 3600);
+        if (signed?.signedUrl) {
+          docUrl = signed.signedUrl;
+        }
+      }
+      return {
+        id:            p.id,
+        name:          p.full_name || "—",
+        email:         p.email || "—",
+        phone:         p.phone || "—",
+        whatsapp:      p.whatsapp || "—",
+        location:      p.location || "—",
+        colony:        p.colony || "—",
+        house_no:      p.house_no || "—",
+        profession:    p.profession || "—",
+        gender:        p.gender || "—",
+        members_count: p.members_count || 1,
+        aadhaar_url:   docUrl,
+        is_verified:   p.is_verified || false,
+        created_at:    p.created_at,
+      };
     })),
     rooms: rooms.map((r: any) => ({
       id:         r.id,

@@ -685,7 +685,7 @@ export default function AdminPage() {
                     </div>
                     <div className="col-span-1">
                       {u.aadhaar_url ? (
-                        <span className="text-[9px] bg-green-100 text-green-700 font-bold px-1.5 py-0.5">✓ Done</span>
+                        <a href={u.aadhaar_url} target="_blank" rel="noopener noreferrer" className="text-[9px] bg-green-100 text-green-700 font-bold px-1.5 py-0.5 hover:underline flex items-center justify-center gap-1 w-fit cursor-pointer">✓ View Doc</a>
                       ) : (
                         <span className="text-[9px] bg-yellow-100 text-yellow-700 font-bold px-1.5 py-0.5">Pending</span>
                       )}
