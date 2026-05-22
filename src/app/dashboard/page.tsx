@@ -32,7 +32,7 @@ import {
   CreditCard, Building2, AlertCircle, Send, X, ChevronDown
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
-import { getUserRooms, getUserEarnings, getUserPayouts, deleteRoom, type Room, type Earning, type PayoutRequest } from "@/lib/db";
+import { getUserRooms, getUserEarnings, getUserPayouts, deleteRoom, getContactUnlocks, type Room, type Earning, type PayoutRequest, type ContactUnlock } from "@/lib/db";
 import { getUserFlatmates, deleteUserFlatmate } from "@/lib/flatmate-db";
 import type { Flatmate as FlatmateType } from "@/data/mock";
 
@@ -43,6 +43,7 @@ function DashboardContent() {
   const [myRooms, setMyRooms] = useState<Room[]>([]);
   const [myFlatmates, setMyFlatmates] = useState<FlatmateType[]>([]);
   const [earnings, setEarnings] = useState<Earning[]>([]);
+  const [contactUnlocks, setContactUnlocks] = useState<ContactUnlock[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "listings" | "earnings" | "payout" | "profile">(
     (searchParams.get("tab") as "overview" | "listings" | "earnings" | "payout" | "profile") || "overview"
@@ -88,6 +89,8 @@ function DashboardContent() {
       getUserEarnings(user.id).then(setEarnings);
       // Load payout history from Supabase
       getUserPayouts(user.id).then(setPayoutHistory);
+      // Load contact unlocks for this poster
+      getContactUnlocks(user.id).then(setContactUnlocks);
       // Load saved payout details from localStorage (UI preferences only)
       const saved = localStorage.getItem(`payout_${user.id}`);
       if (saved) {
@@ -110,11 +113,12 @@ function DashboardContent() {
   const total    = earnings.filter(e => e.status === "completed").reduce((s, e) => s + e.amount, 0);
   const pending  = earnings.filter(e => e.status === "pending").reduce((s, e) => s + e.amount, 0);
   const completed = earnings.filter(e => e.status === "completed").length;
+  const totalUnlocks = contactUnlocks.length;
   const summary = [
-    { icon: Wallet,      label: "Total Earned",  value: `₹${total.toLocaleString("en-IN")}`,  color: "text-green-600" },
-    { icon: Clock,       label: "Pending",        value: `₹${pending.toLocaleString("en-IN")}`, color: "text-yellow-600" },
-    { icon: Home,        label: "My Listings",    value: (myRooms.length + myFlatmates.length).toString(),              color: "text-primary" },
-    { icon: TrendingUp,  label: "Completed",      value: completed.toString(),                   color: "text-muted-foreground" },
+    { icon: Wallet,      label: "Total Earned",    value: `₹${total.toLocaleString("en-IN")}`,  color: "text-green-600" },
+    { icon: Clock,       label: "Pending",          value: `₹${pending.toLocaleString("en-IN")}`, color: "text-yellow-600" },
+    { icon: Home,        label: "My Listings",      value: (myRooms.length + myFlatmates.length).toString(), color: "text-primary" },
+    { icon: Phone,       label: "Contact Unlocks",  value: totalUnlocks.toString(), color: "text-blue-500" },
   ];
 
   const handleDelete = async (id: string) => {
@@ -370,6 +374,90 @@ function DashboardContent() {
                 )}
               </div>
             )}
+
+            {/* ── WHO UNLOCKED MY CONTACT ── */}
+            <div className="mt-12">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
+                  <Phone size={14} className="text-blue-500" />
+                  Who Unlocked My Contact
+                  {contactUnlocks.length > 0 && (
+                    <span className="ml-2 bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                      {contactUnlocks.length}
+                    </span>
+                  )}
+                </h3>
+                {contactUnlocks.length > 0 && (
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Total earned from unlocks: <strong className="text-green-600">~₹{(contactUnlocks.length * 10).toLocaleString("en-IN")}+</strong>
+                  </span>
+                )}
+              </div>
+
+              {contactUnlocks.length === 0 ? (
+                <div className="border border-dashed border-border p-10 text-center">
+                  <Phone size={24} className="mx-auto text-muted-foreground mb-3" />
+                  <p className="font-semibold mb-1">No contact unlocks yet</p>
+                  <p className="text-sm text-muted-foreground">When a bachelor pays to unlock your contact from your listing, they will appear here instantly.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {contactUnlocks.slice(0, 10).map((unlock, i) => {
+                    const timeAgo = unlock.paid_at ? (() => {
+                      const diff = Date.now() - new Date(unlock.paid_at!).getTime();
+                      const mins = Math.floor(diff / 60000);
+                      const hrs = Math.floor(mins / 60);
+                      const days = Math.floor(hrs / 24);
+                      if (days > 0) return `${days}d ago`;
+                      if (hrs > 0) return `${hrs}h ago`;
+                      if (mins > 0) return `${mins}m ago`;
+                      return "Just now";
+                    })() : "";
+                    return (
+                      <motion.div key={unlock.id}
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                        className="border border-border p-4 flex items-center gap-4 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all">
+                        {/* Avatar */}
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 overflow-hidden">
+                          {unlock.seeker_avatar ? (
+                            <img src={unlock.seeker_avatar} alt={unlock.seeker_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-blue-500 font-black text-sm">
+                              {(unlock.seeker_name || "A").charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-bold text-sm">{unlock.seeker_name || "Anonymous Bachelor"}</p>
+                            {unlock.seeker_profession && (
+                              <span className="text-[9px] bg-secondary px-2 py-0.5 uppercase tracking-wider font-medium">
+                                {unlock.seeker_profession}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Unlocked your contact for <strong className="text-foreground">{unlock.room_title || "your room"}</strong>
+                            {unlock.room_location && <span> · {unlock.room_location}</span>}
+                          </p>
+                        </div>
+                        {/* Right side */}
+                        <div className="text-right shrink-0">
+                          <p className="text-xs font-bold text-blue-500">🔓 Unlocked</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{timeAgo}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                  {contactUnlocks.length > 10 && (
+                    <p className="text-xs text-muted-foreground text-center pt-2">
+                      + {contactUnlocks.length - 10} more unlocks — check Earnings tab for full history
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
 

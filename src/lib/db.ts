@@ -176,6 +176,88 @@ export async function getUserRooms(userId: string): Promise<Room[]> {
   return (data as Room[]) || [];
 }
 
+// ─── CONTACT UNLOCKS ──────────────────────────────────────────────────────────
+
+export type ContactUnlock = {
+  id: string;
+  room_id: string;
+  room_title?: string;
+  room_location?: string;
+  user_id: string;        // the seeker who unlocked
+  seeker_name?: string;   // seeker's name from profiles
+  seeker_avatar?: string;
+  seeker_profession?: string;
+  amount: number;
+  status: string;
+  paid_at?: string;
+  created_at?: string;
+};
+
+/** Fetch all contact unlocks on the poster's rooms (so poster knows who unlocked) */
+export async function getContactUnlocks(posterId: string): Promise<ContactUnlock[]> {
+  // Fetch poster's room IDs first
+  const { data: rooms, error: roomsErr } = await supabase
+    .from("rooms")
+    .select("id, title, location")
+    .eq("user_id", posterId);
+
+  if (roomsErr || !rooms || rooms.length === 0) return [];
+
+  const roomIds = rooms.map((r: any) => r.id);
+  const roomMap: Record<string, { title: string; location: string }> = {};
+  rooms.forEach((r: any) => { roomMap[r.id] = { title: r.title, location: r.location }; });
+
+  // Fetch interests (unlocks) for those rooms
+  const { data: interests, error: intErr } = await supabase
+    .from("interests")
+    .select("id, room_id, user_id, amount, status, paid_at, created_at")
+    .in("room_id", roomIds)
+    .eq("status", "paid")
+    .order("paid_at", { ascending: false });
+
+  if (intErr || !interests) return [];
+
+  // Enrich with seeker profiles
+  const unlocks: ContactUnlock[] = [];
+  for (const interest of interests as any[]) {
+    let seekerName = "Anonymous Bachelor";
+    let seekerAvatar = undefined;
+    let seekerProfession = undefined;
+
+    if (interest.user_id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url, profession")
+        .eq("id", interest.user_id)
+        .single();
+      if (profile) {
+        seekerName = profile.full_name || seekerName;
+        seekerAvatar = profile.avatar_url;
+        seekerProfession = profile.profession;
+      }
+    }
+
+    const room = roomMap[interest.room_id] || {};
+    unlocks.push({
+      id: interest.id,
+      room_id: interest.room_id,
+      room_title: room.title,
+      room_location: room.location,
+      user_id: interest.user_id,
+      seeker_name: seekerName,
+      seeker_avatar: seekerAvatar,
+      seeker_profession: seekerProfession,
+      amount: interest.amount || 0,
+      status: interest.status,
+      paid_at: interest.paid_at,
+      created_at: interest.created_at,
+    });
+  }
+
+  return unlocks;
+}
+
+
 /** Insert a new room */
 export async function insertRoom(room: Omit<Room, "id" | "created_at">): Promise<{ data: Room | null; error: any }> {
   const { data, error } = await supabase
