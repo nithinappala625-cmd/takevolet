@@ -233,83 +233,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ━━━ UNLOCK CONTACT CTA (Razorpay Payment) ━━━ */}
-      <section className="py-20 bg-foreground text-background relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/10 blur-[100px] -z-0" />
-        <div className="container mx-auto px-6 md:px-12 relative z-10">
-
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 border border-primary/30 px-4 py-1.5 rounded-full mb-6">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-xs uppercase tracking-[0.2em] font-medium text-primary">Razorpay Secured · No Brokerage</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-light mb-4 leading-tight">
-              Like a room? Unlock the poster&apos;s contact.<br />
-              <span className="font-bold text-primary">Starting ₹10 only.</span>
-            </h2>
-            <p className="text-background/60 font-light max-w-xl mx-auto">
-              Browse free. Pay only when you want to call or WhatsApp a poster. Choose any plan below.
-            </p>
-          </div>
-
-          {/* Pricing mini grid */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 max-w-4xl mx-auto mb-10">
-            {[
-              { label: "1 Contact",        price: "₹10",  sub: "₹10/contact",   hot: false },
-              { label: "50 Contacts",       price: "₹139", sub: "₹2.78/contact", hot: false },
-              { label: "100 Contacts",      price: "₹280", sub: "₹2.80/contact", hot: true,  badge: "Best Value" },
-              { label: "500 Contacts",      price: "₹400", sub: "₹0.80/contact", hot: false, badge: "Popular" },
-              { label: "Unlimited",         price: "₹500", sub: "₹0/contact",    hot: false, badge: "🔥 Deal" },
-            ].map((p, i) => (
-              <div key={i} className={`border p-4 text-center relative ${p.hot ? "border-primary bg-primary/10" : "border-white/10 bg-white/5"}`}>
-                {p.badge && (
-                  <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 text-[8px] uppercase tracking-wider font-bold whitespace-nowrap ${p.hot ? "bg-primary text-primary-foreground" : "bg-orange-500 text-white"}`}>
-                    {p.badge}
-                  </span>
-                )}
-                <p className={`text-2xl font-black mb-0.5 ${p.hot ? "text-primary" : "text-white"}`}>{p.price}</p>
-                <p className="text-xs text-background/70 mb-1">{p.label}</p>
-                <p className={`text-[10px] font-bold ${p.hot ? "text-primary" : "text-background/40"}`}>{p.sub}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* What you get + CTA */}
-          <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
-            <div className="bg-white/5 border border-white/10 p-5">
-              <p className="text-[10px] uppercase tracking-widest text-background/50 mb-3">Each contact unlock includes</p>
-              <div className="space-y-2">
-                {["Full name of poster", "Direct mobile number (call & SMS)", "WhatsApp number for instant chat", "Profession & verified area", "No brokerage — ever"].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-background/70">
-                    <span className="text-primary">✓</span> {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col justify-between">
-              <div className="space-y-2.5 mb-6">
-                {["Starting at ₹10 per contact — cheapest in Hyderabad", "Instant unlock via Razorpay — UPI, Cards, NetBanking", "No house numbers for privacy — colony/area only", "Use contacts across any room on Takevolet"].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2.5 text-sm text-background/70">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-3">
-                <Link href="/rooms" className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all">
-                  Browse Rooms &amp; Unlock Contact <ArrowRight size={14} />
-                </Link>
-                <Link href="/pricing" className="w-full flex items-center justify-center gap-2 border border-white/20 py-3 text-xs uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all">
-                  View Full Pricing →
-                </Link>
-                <p className="text-center text-[10px] text-background/30">🔒 Secured by Razorpay · UPI · Cards · NetBanking</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
       {/* ━━━ FEATURED ROOMS ━━━ */}
       <section className="py-28">
         <div className="container mx-auto px-6 md:px-12">
@@ -518,6 +441,83 @@ export default function LandingPage() {
               Post Your Room
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ━━━ UNLOCK CONTACT CTA (Razorpay Payment) ━━━ */}
+      <section className="py-20 bg-foreground text-background relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/10 blur-[100px] -z-0" />
+        <div className="container mx-auto px-6 md:px-12 relative z-10">
+
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 border border-primary/30 px-4 py-1.5 rounded-full mb-6">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span className="text-xs uppercase tracking-[0.2em] font-medium text-primary">Razorpay Secured · No Brokerage</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-light mb-4 leading-tight">
+              Like a room? Unlock the poster&apos;s contact.<br />
+              <span className="font-bold text-primary">Starting ₹10 only.</span>
+            </h2>
+            <p className="text-background/60 font-light max-w-xl mx-auto">
+              Browse free. Pay only when you want to call or WhatsApp a poster. Choose any plan below.
+            </p>
+          </div>
+
+          {/* Pricing mini grid */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 max-w-4xl mx-auto mb-10">
+            {[
+              { label: "1 Contact",        price: "₹10",  sub: "₹10/contact",   hot: false },
+              { label: "50 Contacts",       price: "₹139", sub: "₹2.78/contact", hot: false },
+              { label: "100 Contacts",      price: "₹280", sub: "₹2.80/contact", hot: true,  badge: "Best Value" },
+              { label: "500 Contacts",      price: "₹400", sub: "₹0.80/contact", hot: false, badge: "Popular" },
+              { label: "Unlimited",         price: "₹500", sub: "₹0/contact",    hot: false, badge: "🔥 Deal" },
+            ].map((p, i) => (
+              <div key={i} className={`border p-4 text-center relative ${p.hot ? "border-primary bg-primary/10" : "border-white/10 bg-white/5"}`}>
+                {p.badge && (
+                  <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 text-[8px] uppercase tracking-wider font-bold whitespace-nowrap ${p.hot ? "bg-primary text-primary-foreground" : "bg-orange-500 text-white"}`}>
+                    {p.badge}
+                  </span>
+                )}
+                <p className={`text-2xl font-black mb-0.5 ${p.hot ? "text-primary" : "text-white"}`}>{p.price}</p>
+                <p className="text-xs text-background/70 mb-1">{p.label}</p>
+                <p className={`text-[10px] font-bold ${p.hot ? "text-primary" : "text-background/40"}`}>{p.sub}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* What you get + CTA */}
+          <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+            <div className="bg-white/5 border border-white/10 p-5">
+              <p className="text-[10px] uppercase tracking-widest text-background/50 mb-3">Each contact unlock includes</p>
+              <div className="space-y-2">
+                {["Full name of poster", "Direct mobile number (call & SMS)", "WhatsApp number for instant chat", "Profession & verified area", "No brokerage — ever"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-background/70">
+                    <span className="text-primary">✓</span> {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col justify-between">
+              <div className="space-y-2.5 mb-6">
+                {["Starting at ₹10 per contact — cheapest in Hyderabad", "Instant unlock via Razorpay — UPI, Cards, NetBanking", "No house numbers for privacy — colony/area only", "Use contacts across any room on Takevolet"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2.5 text-sm text-background/70">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-3">
+                <Link href="/rooms" className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all">
+                  Browse Rooms &amp; Unlock Contact <ArrowRight size={14} />
+                </Link>
+                <Link href="/pricing" className="w-full flex items-center justify-center gap-2 border border-white/20 py-3 text-xs uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all">
+                  View Full Pricing →
+                </Link>
+                <p className="text-center text-[10px] text-background/30">🔒 Secured by Razorpay · UPI · Cards · NetBanking</p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
