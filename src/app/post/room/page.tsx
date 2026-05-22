@@ -487,7 +487,7 @@ export default function PostRoomPage() {
           )}
 
           {/* ── SUBMIT ─────────────────────────────────────────── */}
-          <button type="submit" disabled={submitting}
+          <button type="button" onClick={handleSubmit} disabled={submitting}
             className="w-full bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
             {submitting ? (
               <><Loader2 size={15} className="animate-spin" /> {uploadProgress || "Publishing…"}</>
