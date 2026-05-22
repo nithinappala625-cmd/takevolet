@@ -444,8 +444,23 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ━━━ GOLD DIVIDER ━━━ */}
+      <div className="bg-foreground">
+        <div className="container mx-auto px-6 md:px-12">
+          <div className="flex items-center gap-6 py-0">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/60 to-primary" />
+            <div className="flex items-center gap-3 py-5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span className="text-[10px] uppercase tracking-[0.35em] font-bold text-primary">Pricing & Plans</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent via-primary/60 to-primary" />
+          </div>
+        </div>
+      </div>
+
       {/* ━━━ UNLOCK CONTACT CTA (Razorpay Payment) ━━━ */}
-      <section className="py-20 bg-foreground text-background relative overflow-hidden">
+      <section className="py-20 bg-[#0a0a0a] text-background relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/10 blur-[100px] -z-0" />
         <div className="container mx-auto px-6 md:px-12 relative z-10">
 
