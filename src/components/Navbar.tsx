@@ -78,6 +78,7 @@ const Navbar = () => {
     { name: "Flatmates", href: "/flatmates" },
     { name: "Marketplace", href: "/marketplace" },
     { name: "Articles", href: "/articles" },
+    { name: "Our Partners", href: "/partners" },
     { name: "Join & Earn", href: "/refer" },
   ];
 

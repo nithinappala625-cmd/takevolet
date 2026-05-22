@@ -15,7 +15,7 @@ import { HYDERABAD_AREAS } from "@/data/locations";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
-type Tab = "overview" | "payouts" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "marketplace";
+type Tab = "overview" | "payouts" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "marketplace" | "partners";
 
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false);
@@ -33,6 +33,7 @@ export default function AdminPage() {
   const [localRooms, setLocalRooms] = useState<any[]>([]);
   const [localFlatmates, setLocalFlatmates] = useState<any[]>([]);
   const [localMarketplace, setLocalMarketplace] = useState<any[]>([]);
+  const [localPartners, setLocalPartners] = useState<any[]>([]);
 
   const [editItem, setEditItem] = useState<any | null>(null);
   const [editType, setEditType] = useState<"room" | "flatmate" | "marketplace" | null>(null);
@@ -129,6 +130,16 @@ export default function AdminPage() {
     }
   };
 
+  const fetchPartners = async () => {
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data } = await supabase.from("takevolet_partners").select("*").order("created_at", { ascending: false });
+      if (data) setLocalPartners(data);
+    } catch (e) {
+      console.error("Error fetching partners", e);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!deleteItem || !deleteType) return;
     setDeleteLoading(true);
@@ -169,6 +180,7 @@ export default function AdminPage() {
       setAuthed(true);
       setPwdError("");
       fetchData();
+      fetchPartners();
     } else {
       setPwdError("Incorrect password. Access denied.");
     }
@@ -382,7 +394,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex border-b border-border mb-6 overflow-x-auto bg-background">
-          {(["overview", "payouts", "interests", "handovers", "users", "rooms", "flatmates", "marketplace"] as Tab[]).map(tab => (
+          {(["overview", "payouts", "interests", "handovers", "users", "rooms", "flatmates", "marketplace", "partners"] as Tab[]).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-6 py-3.5 text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-all border-b-2 ${
                 activeTab === tab ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground"
@@ -393,6 +405,7 @@ export default function AdminPage() {
                 : tab === "rooms" ? `rooms (${localRooms.length})`
                 : tab === "flatmates" ? `flatmates (${localFlatmates.length})`
                 : tab === "marketplace" ? `marketplace (${localMarketplace.length})`
+                : tab === "partners" ? `partners (${localPartners.length})`
                 : tab}
             </button>
           ))}
@@ -903,6 +916,55 @@ export default function AdminPage() {
                         >
                           Delete
                         </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── PARTNERS TAB ── */}
+        {activeTab === "partners" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-sm font-bold uppercase tracking-widest">Verified Partners ({localPartners.length})</p>
+              <button onClick={fetchPartners} className="flex items-center gap-2 text-xs font-bold text-primary hover:underline">
+                <RefreshCw size={12} /> Refresh
+              </button>
+            </div>
+            
+            {localPartners.length === 0 ? (
+              <div className="bg-background border border-dashed border-border p-16 text-center">
+                <Building2 size={32} className="mx-auto mb-3 text-muted-foreground" />
+                <p className="font-semibold text-muted-foreground">No partners found</p>
+                <p className="text-xs text-muted-foreground mt-2">Ensure the 'takevolet_partners' table exists in Supabase.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {localPartners.map((partner: any) => (
+                  <div key={partner.id} className="border border-border bg-card overflow-hidden">
+                    <div className="h-[200px] w-full bg-secondary/20 relative">
+                      {partner.image_url ? (
+                        <img src={partner.image_url} alt={partner.owner_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Building2 size={32} className="text-muted-foreground opacity-30" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2 bg-primary text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest shadow-lg">
+                        Partner
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <p className="font-bold text-lg mb-1">{partner.owner_name}</p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Home size={12} /> {partner.area || "Hyderabad"}
+                      </p>
+                      <div className="mt-4 pt-4 border-t border-border flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground">Joined: {new Date(partner.created_at).toLocaleDateString()}</span>
+                        <span className="bg-green-500/10 text-green-500 px-2 py-1 rounded-full font-bold">Verified</span>
                       </div>
                     </div>
                   </div>

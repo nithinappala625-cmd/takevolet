@@ -81,15 +81,12 @@ export default function JoinAndEarnPage() {
         <div className="grid lg:grid-cols-2">
           {/* Image */}
           <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
-            className="relative h-[420px] lg:h-auto overflow-hidden">
-            <Image
+            className="relative bg-secondary/5 flex items-center justify-center p-8 lg:p-0">
+            <img
               src="/earn-contact-unlock.png"
               alt="Earn from contact unlocks"
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="w-full h-auto max-h-[600px] object-contain drop-shadow-2xl rounded-sm"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background hidden lg:block" />
             {/* Floating badge */}
             <div className="absolute bottom-6 left-6 bg-background/95 backdrop-blur border border-primary/20 px-5 py-3 shadow-xl">
               <p className="text-[9px] uppercase tracking-widest text-primary font-bold mb-1">💰 Per Contact Unlock</p>
@@ -180,15 +177,12 @@ export default function JoinAndEarnPage() {
 
           {/* Image */}
           <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} custom={1}
-            className="relative h-[420px] lg:h-auto overflow-hidden">
-            <Image
+            className="relative bg-secondary/5 flex items-center justify-center p-8 lg:p-0">
+            <img
               src="/earn-room-handover.png"
               alt="Earn per room handover"
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="w-full h-auto max-h-[600px] object-contain drop-shadow-2xl rounded-sm"
             />
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background/20" />
             <div className="absolute bottom-6 right-6 bg-background/95 backdrop-blur border border-green-500/30 px-5 py-3 shadow-xl">
               <p className="text-[9px] uppercase tracking-widest text-green-500 font-bold mb-1">🏠 Per Handover</p>
               <p className="text-2xl font-black text-green-500">₹500–₹1,000</p>
@@ -203,15 +197,12 @@ export default function JoinAndEarnPage() {
         <div className="grid lg:grid-cols-2">
           {/* Image */}
           <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
-            className="relative h-[420px] lg:h-auto overflow-hidden order-2 lg:order-1">
-            <Image
+            className="relative bg-secondary/5 flex items-center justify-center p-8 lg:p-0 order-2 lg:order-1">
+            <img
               src="/earn-premium-partner.png"
               alt="Premium Partner Program"
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="w-full h-auto max-h-[600px] object-contain drop-shadow-2xl rounded-sm"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/20" />
             <div className="absolute bottom-6 left-6 bg-background/95 backdrop-blur border border-yellow-400/30 px-5 py-3 shadow-xl">
               <p className="text-[9px] uppercase tracking-widest text-yellow-400 font-bold mb-1">👑 Milestone Bonus</p>
               <p className="text-2xl font-black text-yellow-400">₹500 Bonus</p>
@@ -284,12 +275,12 @@ export default function JoinAndEarnPage() {
               House Owner? <br />Earn <span className="text-orange-400">₹100</span> Per Listing
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-8 text-sm">
-              No photos needed. List your property on Takevolet in 5 minutes and earn ₹100 for every verified listing — plus recurring commissions every time a bachelor unlocks your contact!
+              List your property on Takevolet with authentic photos in 5 minutes and earn ₹100 for every verified listing — plus recurring commissions every time a bachelor unlocks your contact!
             </p>
             {/* Benefits */}
             <div className="space-y-3 mb-8">
               {[
-                { icon: "📸", text: "No photos required — just basic details", bold: true },
+                { icon: "📸", text: "Photos are required — for genuine verification", bold: true },
                 { icon: "💰", text: "₹100 cash for each verified listing", bold: true },
                 { icon: "🔓", text: "Earn ₹2–₹5 every time a bachelor unlocks your contact" },
                 { icon: "🔍", text: "Your listing shown across all Takevolet searches" },
@@ -311,7 +302,7 @@ export default function JoinAndEarnPage() {
               </div>
               {[
                 ["Cost to list", "FREE", "₹5,000+"],
-                ["Photo required", "No (optional)", "Mandatory"],
+                ["Photo required", "Yes (for verification)", "Mandatory"],
                 ["Your earnings", "₹100/listing", "₹0"],
                 ["Unlock commission", "₹2–₹5 each", "₹0"],
                 ["Speed", "5 minutes", "Days/weeks"],
@@ -331,13 +322,11 @@ export default function JoinAndEarnPage() {
 
           {/* BIG Visual Image — the house owner poster */}
           <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} custom={1}
-            className="relative h-[500px] lg:h-auto overflow-hidden">
-            <Image
+            className="relative bg-secondary/5 flex items-center justify-center p-8 lg:p-0">
+            <img
               src="/earn-house-owner.png"
               alt="House owner Takevolet partner"
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="w-full h-auto max-h-[600px] object-contain drop-shadow-2xl rounded-sm"
             />
             {/* Overlay badge */}
             <div className="absolute top-6 right-6 bg-orange-500 text-white px-4 py-2 shadow-xl">
@@ -401,7 +390,7 @@ export default function JoinAndEarnPage() {
           <div className="grid md:grid-cols-3 gap-5 max-w-4xl mx-auto">
             {[
               { icon: Home, label: "Post a Room", desc: "Earn ₹2–₹5 per unlock + ₹500–₹1,000 per handover", href: "/post/room", bg: "bg-primary text-primary-foreground" },
-              { icon: Building2, label: "House Owner Listing", desc: "No photos needed. Earn ₹100 per listing + unlock commission", href: "/post/partner", bg: "bg-orange-500 text-white" },
+              { icon: Building2, label: "House Owner Listing", desc: "List your verified property. Earn ₹100 per listing + unlock commission", href: "/post/room", bg: "bg-orange-500 text-white" },
               { icon: Users, label: "Post a Flatmate", desc: "Fill your flat vacancy and earn from every contact unlock", href: "/post/flatmate", bg: "bg-blue-600 text-white" },
             ].map((cta, i) => (
               <Link key={i} href={cta.href}
