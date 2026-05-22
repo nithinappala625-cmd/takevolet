@@ -78,7 +78,7 @@ const Navbar = () => {
     { name: "Flatmates", href: "/flatmates" },
     { name: "Marketplace", href: "/marketplace" },
     { name: "Articles", href: "/articles" },
-    { name: "Refer & Earn", href: "/refer" },
+    { name: "Join & Earn", href: "/refer" },
   ];
 
   const postOptions = [
