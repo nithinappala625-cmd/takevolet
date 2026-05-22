@@ -1,7 +1,6 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { MOCK_ROOMS } from "@/data/mock";
 import { HYDERABAD_AREAS, FURNISHING_OPTIONS, MEMBERS_ALLOWED, BUDGET_RANGES, GENDER_PREFERENCE, PARKING_OPTIONS } from "@/data/locations";
 import { MapPin, IndianRupee, Calendar, Users, Sofa, ArrowUpRight, SlidersHorizontal, Search, X, ChevronDown, Eye, UserCheck, Car, Bike, Lock, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -9,18 +8,6 @@ import { useState, useEffect } from "react";
 import { fetchAllRoomsAction } from "@/lib/server-actions";
 import type { Room } from "@/lib/db";
 
-// Convert MOCK room to unified Room type for display
-function mockToRoom(m: any): Room {
-  return {
-    id: m.id, user_id: "mock", title: m.title, description: m.description,
-    rent: m.rent, advance: m.advance, location: m.location, colony: m.colony,
-    leaving_date: m.leavingDate, members_allowed: m.membersAllowed,
-    gender_preference: m.genderPreference, furnishing: m.furnishing,
-    parking: m.parking, commission: m.commission, has_items: m.hasItems,
-    images: m.images, videos: m.videos || [], is_available: m.isAvailable,
-    profiles: { full_name: m.postedBy?.name, phone: m.postedBy?.phone, avatar_url: m.postedBy?.avatar, profession: m.postedBy?.profession },
-  };
-}
 
 export default function RoomsPage() {
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -34,14 +21,12 @@ export default function RoomsPage() {
   const [allRooms, setAllRooms] = useState<Room[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
 
-  // Load Supabase rooms first, then append MOCK_ROOMS
+  // Load Supabase rooms
   useEffect(() => {
     (async () => {
       setRoomsLoading(true);
       const dbRooms = await fetchAllRoomsAction();
-      const mockRooms = MOCK_ROOMS.map(mockToRoom);
-      // DB rooms first (real listings), then mocks as demo
-      setAllRooms([...dbRooms, ...mockRooms]);
+      setAllRooms(dbRooms);
       setRoomsLoading(false);
     })();
   }, []);

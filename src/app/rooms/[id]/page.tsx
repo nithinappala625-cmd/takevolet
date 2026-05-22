@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MOCK_ROOMS } from "@/data/mock";
 import {
   MapPin, IndianRupee, Calendar, Users, UserCheck, Sofa, Phone, ArrowLeft,
   ChevronLeft, ChevronRight, Play, X, Lock, CheckCircle2, Wifi,
@@ -15,39 +14,7 @@ import { fetchRoomByIdAction, checkRoomUnlockStatusAction } from "@/lib/server-a
 import type { Room } from "@/lib/db";
 import { useUser } from "@/hooks/useUser";
 
-// ─── Adapt MOCK room format to match DB Room format ───────────────────────────
-function mockToRoom(m: any): Room {
-  return {
-    id: m.id,
-    user_id: m.postedBy?.id || "mock",
-    title: m.title,
-    description: m.description,
-    rent: m.rent,
-    advance: m.advance,
-    location: m.location,
-    colony: m.colony,
-    full_address: `${m.colony}, ${m.location}, Hyderabad`,
-    leaving_date: m.leavingDate,
-    members_allowed: m.membersAllowed,
-    current_members: m.currentMembers,
-    gender_preference: m.genderPreference,
-    furnishing: m.furnishing,
-    parking: m.parking,
-    amenities: m.amenities,
-    furniture: m.furniture,
-    commission: m.commission,
-    images: m.images,
-    videos: m.videos || [],
-    is_available: m.isAvailable,
-    profiles: {
-      full_name: m.postedBy?.name,
-      phone: m.postedBy?.phone,
-      whatsapp: m.postedBy?.whatsapp,
-      avatar_url: m.postedBy?.avatar,
-      profession: m.postedBy?.profession,
-    },
-  };
-}
+
 
 export default function RoomDetailPage() {
   const params = useParams();
@@ -106,10 +73,7 @@ export default function RoomDetailPage() {
       // 1. Try Supabase
       const dbRoom = await fetchRoomByIdAction(id);
       if (dbRoom) { setRoom(dbRoom); setRoomLoading(false); return; }
-      // 2. Try MOCK_ROOMS
-      const mock = MOCK_ROOMS.find(r => r.id === id);
-      if (mock) { setRoom(mockToRoom(mock)); setRoomLoading(false); return; }
-      // 3. Not found
+      // 2. Not found
       setRoom(null);
       setRoomLoading(false);
     };
