@@ -89,11 +89,60 @@ export default function LandingPage() {
     }
   };
 
+  // FAQPage JSON-LD for homepage Google rich results
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is Takevolet?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Takevolet is Hyderabad's #1 zero-brokerage platform for bachelor room handovers, flatmate matching, and used furniture marketplace. Founded in 2026, it connects bachelors leaving their rooms directly with bachelors searching — no brokers, no commission." }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I find a bachelor room in Hyderabad without a broker?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Use Takevolet — browse rooms filtered by area, budget, furnishing, and members allowed. Unlock the poster's contact from just ₹10. Call or WhatsApp them directly. Zero brokerage, always." }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I earn money by posting my room on Takevolet?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes! When a new bachelor takes over your room through Takevolet, you earn ₹500–₹1,000 as a handover commission. Posting your room is completely free." }
+      },
+      {
+        "@type": "Question",
+        "name": "Which areas in Hyderabad does Takevolet cover?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Takevolet covers 90+ areas in Hyderabad including Madhapur, Gachibowli, Kondapur, KPHB, Kukatpally, Ameerpet, SR Nagar, Dilsukhnagar, Uppal, Malkajgiri, Secunderabad, Begumpet, Jubilee Hills, Banjara Hills, and more." }
+      },
+      {
+        "@type": "Question",
+        "name": "How much does it cost to unlock a room poster's contact on Takevolet?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Contact unlocks start at just ₹10 per contact. Bundle plans are available: 50 contacts for ₹139, 100 contacts for ₹280, 500 contacts for ₹400, and unlimited contacts for ₹500. All payments are secured by Razorpay." }
+      },
+    ]
+  };
+
+  // HowTo JSON-LD for the "How It Works" section
+  const howToJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to Hand Over a Bachelor Room in Hyderabad Using Takevolet",
+    "description": "A step-by-step guide to handing over your bachelor room in Hyderabad on Takevolet and earning commission.",
+    "step": [
+      { "@type": "HowToStep", "name": "Bachelor Leaving?", "text": "Post your room with photos, leaving date, rent, advance, and how many members the room allows. It takes 2 minutes." },
+      { "@type": "HowToStep", "name": "Bachelor Searching?", "text": "Browse rooms by area, budget, members allowed, furnishing, and gender preference. Filter exactly what you need." },
+      { "@type": "HowToStep", "name": "Connect Directly", "text": "View the poster's profile, profession, and phone number. Call or WhatsApp directly — no middleman, no broker." },
+      { "@type": "HowToStep", "name": "Earn ₹500–₹1,000", "text": "When new bachelors take over your room through Takevolet, you earn a referral commission. Easy money while you move out." }
+    ]
+  };
+
   return (
     <div className="flex flex-col w-full bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
 
       {/* ━━━ HERO ━━━ */}
       <section className="relative min-h-screen flex items-center pt-32 overflow-hidden">
@@ -106,7 +155,7 @@ export default function LandingPage() {
               <span className="text-xs uppercase tracking-[0.2em] font-medium text-muted-foreground">Built for Bachelors in Hyderabad</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl font-light tracking-tight mb-6 leading-[1.1]">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-light tracking-tight mb-6 leading-[1.1]">
               Leaving your room?<br />
               <span className="font-bold gold-gradient">Relay it to the next bachelor.</span>
             </h1>
@@ -141,7 +190,7 @@ export default function LandingPage() {
 
           {/* Hero Visual */}
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, delay: 0.3 }}
-            className="relative h-[300px] md:h-[500px] mt-8 lg:mt-0">
+            className="relative h-[240px] sm:h-[300px] md:h-[500px] mt-8 lg:mt-0">
             <div className="absolute inset-0 overflow-hidden">
               <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&h=800&fit=crop&q=80"
                 alt="Bachelor flat" loading="eager" className="w-full h-full object-cover" />
@@ -173,8 +222,14 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4">
             {stats.map((stat, i) => (
               <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-                className={`py-10 text-center ${i < 3 ? "border-r border-border" : ""}`}>
-                <p className="text-3xl font-bold mb-1">{stat.value}</p>
+                className={`py-8 sm:py-10 text-center ${
+                  // At 2-col: only 1st col gets border-r. At 4-col: first 3 get border-r
+                  i === 0 ? 'border-r border-border' :
+                  i === 1 ? 'md:border-r md:border-border' :
+                  i === 2 ? 'border-r border-border' :
+                  ''
+                }`}>
+                <p className="text-2xl sm:text-3xl font-bold mb-1">{stat.value}</p>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{stat.label}</p>
               </motion.div>
             ))}
@@ -479,7 +534,7 @@ export default function LandingPage() {
           </div>
 
           {/* Pricing mini grid */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 max-w-4xl mx-auto mb-10">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-3 max-w-4xl mx-auto mb-10">
             {[
               { label: "1 Contact",        price: "₹10",  sub: "₹10/contact",   hot: false },
               { label: "50 Contacts",       price: "₹139", sub: "₹2.78/contact", hot: false },

@@ -100,14 +100,16 @@ const Navbar = () => {
       isScrolled ? "bg-background/80 backdrop-blur-xl border-border" : "bg-transparent border-transparent"
     }`}>
       {/* ── TICKER ── */}
-      <div className="bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-widest py-1.5 overflow-hidden whitespace-nowrap flex items-center">
-        <div className="animate-ticker inline-block whitespace-nowrap">
-          <span className="mx-12">🔥 OFFER FOR BACHELORS: Post 50 rooms & earn ₹500 directly from Takevolet! Grab the offer now! 🔥</span>
-          <span className="mx-12">✨ HEY HOUSE OWNERS: Register your house today and get the "Bachelor Verified" badge instantly! ✨</span>
-          <span className="mx-12">🤝 FLATMATES: Find your roommate or flatmate if single or two members looking for vacancy instantly! 🤝</span>
-          <span className="mx-12">🔥 OFFER FOR BACHELORS: Post 50 rooms & earn ₹500 directly from Takevolet! Grab the offer now! 🔥</span>
-          <span className="mx-12">✨ HEY HOUSE OWNERS: Register your house today and get the "Bachelor Verified" badge instantly! ✨</span>
-          <span className="mx-12">🤝 FLATMATES: Find your roommate or flatmate if single or two members looking for vacancy instantly! 🤝</span>
+      <div className="bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-widest py-1.5 overflow-hidden whitespace-nowrap flex items-center" aria-hidden="true">
+        <div className="animate-ticker flex whitespace-nowrap" style={{ minWidth: '200%' }}>
+          <span className="mx-8 sm:mx-12">🔥 OFFER FOR BACHELORS: Post 50 rooms &amp; earn ₹500 directly from Takevolet! Grab the offer now!</span>
+          <span className="mx-8 sm:mx-12">✨ HEY HOUSE OWNERS: Register your house today and get the &quot;Bachelor Verified&quot; badge instantly!</span>
+          <span className="mx-8 sm:mx-12">🤝 FLATMATES: Find your roommate instantly on Takevolet — zero brokerage!</span>
+          <span className="mx-8 sm:mx-12">🏠 BACHELORS: Find rooms in Madhapur, Gachibowli, KPHB &amp; 90+ areas — direct contact, no broker!</span>
+          <span className="mx-8 sm:mx-12">🔥 OFFER FOR BACHELORS: Post 50 rooms &amp; earn ₹500 directly from Takevolet! Grab the offer now!</span>
+          <span className="mx-8 sm:mx-12">✨ HEY HOUSE OWNERS: Register your house today and get the &quot;Bachelor Verified&quot; badge instantly!</span>
+          <span className="mx-8 sm:mx-12">🤝 FLATMATES: Find your roommate instantly on Takevolet — zero brokerage!</span>
+          <span className="mx-8 sm:mx-12">🏠 BACHELORS: Find rooms in Madhapur, Gachibowli, KPHB &amp; 90+ areas — direct contact, no broker!</span>
         </div>
       </div>
 
@@ -121,7 +123,7 @@ const Navbar = () => {
             alt="Takevolet logo"
             className="w-10 h-10 group-hover:scale-110 transition-transform duration-300 rounded-sm"
           />
-          <span className="text-xl font-bold tracking-widest uppercase text-foreground">
+          <span className="text-base sm:text-xl font-bold tracking-widest uppercase text-foreground">
             TAKE<span className="text-primary">VOLET</span>
           </span>
         </Link>
@@ -240,7 +242,7 @@ const Navbar = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-            className="absolute top-full left-0 right-0 bg-background border-b border-border md:hidden overflow-hidden">
+            className="absolute top-full left-0 right-0 bg-background border-b border-border md:hidden overflow-hidden z-50 shadow-xl">
             <div className="p-6 flex flex-col space-y-5">
               {user && (
                 <div className="flex items-center gap-3 pb-4 border-b border-border">

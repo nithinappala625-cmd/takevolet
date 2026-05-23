@@ -40,76 +40,106 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${baseUrl}/articles/${article.slug}`,
     lastModified: new Date(article.date),
     changeFrequency: 'monthly' as const,
-    priority: 0.8,
+    priority: 0.85,
   }))
 
   return [
+    // Homepage — highest priority
     {
       url: baseUrl,
       lastModified: now,
       changeFrequency: 'daily',
       priority: 1,
     },
+    // Core listing pages — very high priority
     {
       url: `${baseUrl}/rooms`,
       lastModified: now,
       changeFrequency: 'hourly',
-      priority: 0.95,
+      priority: 0.97,
     },
     {
       url: `${baseUrl}/flatmates`,
       lastModified: now,
       changeFrequency: 'hourly',
-      priority: 0.9,
+      priority: 0.93,
     },
     {
       url: `${baseUrl}/marketplace`,
       lastModified: now,
       changeFrequency: 'hourly',
-      priority: 0.85,
+      priority: 0.88,
     },
+    // Content pages — high SEO value
+    {
+      url: `${baseUrl}/articles`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.87,
+    },
+    {
+      url: `${baseUrl}/articles/faq`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    // Posting / conversion pages
     {
       url: `${baseUrl}/list`,
       lastModified: now,
       changeFrequency: 'weekly',
-      priority: 0.75,
+      priority: 0.78,
     },
     {
       url: `${baseUrl}/post/room`,
       lastModified: now,
       changeFrequency: 'monthly',
-      priority: 0.7,
+      priority: 0.75,
     },
     {
       url: `${baseUrl}/post/flatmate`,
       lastModified: now,
       changeFrequency: 'monthly',
-      priority: 0.7,
+      priority: 0.73,
     },
     {
       url: `${baseUrl}/post/item`,
       lastModified: now,
       changeFrequency: 'monthly',
-      priority: 0.65,
+      priority: 0.68,
     },
+    // Info pages
     {
       url: `${baseUrl}/pricing`,
       lastModified: now,
       changeFrequency: 'monthly',
-      priority: 0.6,
+      priority: 0.65,
     },
     {
       url: `${baseUrl}/about`,
       lastModified: now,
       changeFrequency: 'monthly',
-      priority: 0.55,
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/contact`,
       lastModified: now,
       changeFrequency: 'monthly',
+      priority: 0.55,
+    },
+    {
+      url: `${baseUrl}/partners`,
+      lastModified: now,
+      changeFrequency: 'monthly',
       priority: 0.5,
     },
+    {
+      url: `${baseUrl}/refer`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    // Legal pages
     {
       url: `${baseUrl}/terms`,
       lastModified: now,
@@ -123,11 +153,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.3,
     },
     {
-      url: `${baseUrl}/articles`,
+      url: `${baseUrl}/refund-policy`,
       lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.8,
+      changeFrequency: 'yearly',
+      priority: 0.25,
     },
+    // Dynamic pages
     ...roomUrls,
     ...flatmateUrls,
     ...itemUrls,
