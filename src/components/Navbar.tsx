@@ -244,13 +244,34 @@ const Navbar = () => {
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
             className="absolute top-full left-0 right-0 bg-background border-b border-border lg:hidden overflow-y-auto z-50 shadow-xl" style={{ maxHeight: 'calc(100vh - 60px)' }}>
             <div className="p-6 flex flex-col space-y-5">
-              {user && (
-                <div className="flex items-center gap-3 pb-4 border-b border-border">
-                  <Avatar src={user.avatar} name={user.name} size={10} />
-                  <div>
-                    <p className="font-bold text-sm">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+              {user ? (
+                <>
+                  <div className="flex items-center gap-3 pb-2">
+                    <Avatar src={user.avatar} name={user.name} size={10} />
+                    <div>
+                      <p className="font-bold text-sm">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
                   </div>
+                  {profileDone && (
+                    <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
+                      <LayoutDashboard size={15} /> My Dashboard
+                    </Link>
+                  )}
+                  {user.email === "nithinappala625@gmail.com" && (
+                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
+                      <Shield size={15} className="text-primary" /> Admin Panel
+                    </Link>
+                  )}
+                  <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="text-base uppercase tracking-widest font-medium text-red-500 flex items-center gap-2 pb-4 border-b border-border text-left w-full">
+                    <LogOut size={15} /> Logout
+                  </button>
+                </>
+              ) : (
+                <div className="pb-4 border-b border-border">
+                  <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)} className="bg-primary text-primary-foreground px-6 py-3 text-sm uppercase tracking-wider font-bold hover:bg-primary/90 transition-all border border-primary flex items-center justify-center gap-2 w-full text-center shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+                    <User size={15} /> Sign Up / Login
+                  </Link>
                 </div>
               )}
               {navLinks.map((link) => {
@@ -272,30 +293,6 @@ const Navbar = () => {
                   <opt.icon size={15} /> {opt.name}
                 </Link>
               ))}
-              <hr className="border-border" />
-              {user ? (
-                <>
-                  {profileDone && (
-                    <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
-                      <LayoutDashboard size={15} /> My Dashboard
-                    </Link>
-                  )}
-                  {user.email === "nithinappala625@gmail.com" && (
-                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
-                      <Shield size={15} className="text-primary" /> Admin Panel
-                    </Link>
-                  )}
-                  <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="text-base uppercase tracking-widest font-medium text-red-500 flex items-center gap-2">
-                    <LogOut size={15} /> Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
-                    <User size={15} /> Sign Up / Login
-                  </Link>
-                </>
-              )}
             </div>
           </motion.div>
         )}
