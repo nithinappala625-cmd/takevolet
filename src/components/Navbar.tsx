@@ -130,7 +130,7 @@ const Navbar = () => {
 
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center space-x-8">
+        <div className="hidden lg:flex items-center space-x-4 xl:space-x-8">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || 
                              pathname.startsWith(link.href + "/") || 
@@ -223,7 +223,7 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
               <Link href="/auth"
                 className="bg-primary text-primary-foreground px-6 py-2.5 text-sm uppercase tracking-wider font-semibold hover:bg-primary/90 transition-all border border-primary hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]">
                 Sign Up Free
@@ -233,7 +233,7 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Toggle */}
-        <button className="md:hidden text-foreground" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+        <button className="lg:hidden text-foreground shrink-0" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
         </button>
       </div>
@@ -242,7 +242,7 @@ const Navbar = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-            className="absolute top-full left-0 right-0 bg-background border-b border-border md:hidden overflow-hidden z-50 shadow-xl">
+            className="absolute top-full left-0 right-0 bg-background border-b border-border lg:hidden overflow-hidden z-50 shadow-xl">
             <div className="p-6 flex flex-col space-y-5">
               {user && (
                 <div className="flex items-center gap-3 pb-4 border-b border-border">
