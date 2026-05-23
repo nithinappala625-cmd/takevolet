@@ -122,7 +122,7 @@ export const metadata: Metadata = {
       "Find or handover bachelor rooms in Hyderabad with zero brokerage. Discover flatmates, buy/sell furniture — the complete platform for Hyderabad's bachelor community. 90+ areas covered.",
     images: [
       {
-        url: `${APP_URL}/logo.png`,
+        url: `${APP_URL}/opengraph-image`,
         width: 1200,
         height: 630,
         alt: "Takevolet — Bachelor Rooms Hyderabad",
@@ -151,9 +151,13 @@ export const metadata: Metadata = {
     google: "RYGrWuGKRpiY8LOpxxyguVGJEoZSZuC2gCn1QGBT5f0",
   },
   icons: {
-    icon: [{ url: "/logo.png", type: "image/png" }],
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: [
+      { url: "/icon", type: "image/png", sizes: "512x512" },
+      { url: "/icon", type: "image/png", sizes: "32x32" },
+      { url: "/icon", type: "image/png", sizes: "16x16" },
+    ],
+    shortcut: "/icon",
+    apple: "/apple-icon",
   },
 };
 
@@ -169,8 +173,8 @@ const organizationSchema = {
   logo: {
     "@type": "ImageObject",
     url: `${APP_URL}/logo.png`,
-    width: "512",
-    height: "512",
+    width: "1024",
+    height: "1024",
   },
   description:
     "Takevolet is Hyderabad's #1 zero-brokerage platform for bachelor room handovers, flatmate discovery, and used furniture marketplace. An independent startup serving Hyderabad's bachelor community across 90+ areas.",
@@ -272,6 +276,12 @@ export default function RootLayout({
         {/* Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+
+        {/* Favicons — using /icon route (dark bg + gold house, looks great at 16px) */}
+        <link rel="icon" type="image/png" sizes="32x32" href="/icon" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/icon" />
+        <link rel="shortcut icon" href="/icon" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon" />
 
         {/* Google Analytics */}
         <Script
