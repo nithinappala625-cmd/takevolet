@@ -242,7 +242,7 @@ const Navbar = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-            className="absolute top-full left-0 right-0 bg-background border-b border-border lg:hidden overflow-hidden z-50 shadow-xl">
+            className="absolute top-full left-0 right-0 bg-background border-b border-border lg:hidden overflow-y-auto z-50 shadow-xl" style={{ maxHeight: 'calc(100vh - 60px)' }}>
             <div className="p-6 flex flex-col space-y-5">
               {user && (
                 <div className="flex items-center gap-3 pb-4 border-b border-border">

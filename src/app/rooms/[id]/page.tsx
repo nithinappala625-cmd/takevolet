@@ -377,10 +377,10 @@ export default function RoomDetailPage() {
 
       {/* Content and Media Grid */}
       <div className="container mx-auto px-6 md:px-12">
-        <div className="grid lg:grid-cols-3 gap-10">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-10">
 
-          {/* LEFT COLUMN */}
-          <div className="lg:col-span-2 space-y-10">
+          {/* TOP LEFT (Images, Title, Quick Facts) */}
+          <div className="lg:col-span-2 space-y-10 order-1">
             
             {/* Main Image Gallery */}
         <div className="relative aspect-[16/10] bg-black overflow-hidden group border border-border flex items-center justify-center cursor-pointer" onClick={() => openLightbox(currentImageIndex)}>
@@ -495,6 +495,10 @@ export default function RoomDetailPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* BOTTOM LEFT (Description, Amenities, Photos) */}
+          <div className="lg:col-span-2 space-y-10 order-3 lg:order-none lg:row-start-2 lg:col-start-1">
 
             {/* Description */}
             <div>
@@ -559,7 +563,7 @@ export default function RoomDetailPage() {
           </div>
 
           {/* RIGHT — Interest Flow & Posted By */}
-          <div className="space-y-6">
+          <div className="space-y-6 order-2 lg:order-none lg:col-start-3 lg:row-start-1 lg:row-span-2">
 
             {/* Posted By */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="border border-border p-6 bg-secondary/20">
