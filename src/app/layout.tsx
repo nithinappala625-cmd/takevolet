@@ -3,6 +3,7 @@ import { Outfit, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import NavbarWrapper from "@/components/NavbarWrapper";
+import { MetaPixel } from "@/components/MetaPixel";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -347,9 +348,9 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${outfit.variable} ${inter.variable} font-sans antialiased`}
-        suppressHydrationWarning
+        className={`${outfit.variable} ${inter.variable} font-sans antialiased bg-background text-foreground flex flex-col min-h-screen`}
       >
+        <MetaPixel />
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe 

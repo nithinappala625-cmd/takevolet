@@ -188,6 +188,11 @@ export default function PostRoomPage() {
       return;
     }
 
+    // Track Meta conversion
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq('trackCustom', 'RoomPosted');
+    }
+
     setSuccess(true);
     setTimeout(() => router.push(`/rooms/${newRoom?.id}`), 2000);
   };
