@@ -325,11 +325,11 @@ export default function LandingPage() {
               <motion.div key={room.id} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="border border-border overflow-hidden group hover:border-primary/30 transition-all">
                 <div className="relative h-48 overflow-hidden">
-                  <img src={room.images[0]} alt={room.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={room.images?.[0] || ""} alt={room.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                   <div className="absolute top-3 left-3 bg-background/90 backdrop-blur-sm px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold flex items-center gap-1">
                     <MapPin size={10} className="text-primary" /> {room.location}
                   </div>
-                  {room.commission > 0 && (
+                  {(room.commission || 0) > 0 && (
                     <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold">
                       ₹{room.commission} reward
                     </div>
