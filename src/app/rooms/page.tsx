@@ -8,6 +8,8 @@ import { useState, useEffect } from "react";
 import { fetchAllRoomsAction } from "@/lib/server-actions";
 import type { Room } from "@/lib/db";
 import RoomCard from "@/components/RoomCard";
+import { PremiumAdCarousel } from "@/components/PremiumAdCarousel";
+
 export default function RoomsPage() {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedFurnishing, setSelectedFurnishing] = useState("");
@@ -84,6 +86,9 @@ export default function RoomsPage() {
             Bachelors leaving their rooms post here. Click any room to see full photos, videos & details. Contact via ₹1,500 pack.
           </p>
         </div>
+
+        {/* Premium Native Ad Placement */}
+        <PremiumAdCarousel />
 
         {/* Search */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}

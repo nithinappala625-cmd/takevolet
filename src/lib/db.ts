@@ -85,6 +85,18 @@ export type PayoutRequest = {
   created_at?: string;
 };
 
+export type Ad = {
+  id: string;
+  advertiser_name: string;
+  title: string;
+  description?: string;
+  url: string;
+  image_url?: string;
+  placement: string;
+  is_active: boolean;
+  created_at?: string;
+};
+
 // ─── PROFILES ─────────────────────────────────────────────────────────────────
 
 export async function getProfile(userId: string): Promise<Profile | null> {

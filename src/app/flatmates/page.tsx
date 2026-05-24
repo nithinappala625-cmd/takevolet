@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getAllFlatmates } from "@/lib/flatmate-db";
 import type { Flatmate } from "@/data/mock";
+import { PremiumAdCarousel } from "@/components/PremiumAdCarousel";
 
 const PROFESSION_PREFS = ["Any", "Software Professional", "Working Professional", "Aspirant / Student preferred"];
 const GENDER_PREFS = ["Any", "Male Bachelors Only", "Female Bachelors Only"];
@@ -188,6 +189,9 @@ export default function FlatmatesPage() {
             </Link>
           </motion.div>
         </div>
+
+        {/* Premium Native Ad Placement */}
+        <PremiumAdCarousel />
 
         {/* Search */}
         <motion.div

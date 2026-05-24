@@ -171,3 +171,50 @@ export async function fetchItemByIdAction(id: string) {
   }
   return data;
 }
+
+// ─── ADS & SPONSORSHIPS ────────────────────────────────────────────────────────
+
+export async function fetchActiveAdsAction(placement: string) {
+  const { data, error } = await supabaseAdmin
+    .from("ads")
+    .select("*")
+    .eq("placement", placement)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+  return data as any[];
+}
+
+export async function getAllAdsAdminAction() {
+  const { data, error } = await supabaseAdmin
+    .from("ads")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+  return data as any[];
+}
+
+export async function insertAdAction(adData: any) {
+  const { error } = await supabaseAdmin
+    .from("ads")
+    .insert(adData);
+  return { error };
+}
+
+export async function updateAdAction(id: string, adData: any) {
+  const { error } = await supabaseAdmin
+    .from("ads")
+    .update(adData)
+    .eq("id", id);
+  return { error };
+}
+
+export async function deleteAdAction(id: string) {
+  const { error } = await supabaseAdmin
+    .from("ads")
+    .delete()
+    .eq("id", id);
+  return { error };
+}

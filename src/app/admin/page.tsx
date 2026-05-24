@@ -12,10 +12,11 @@ import {
 import { useUser } from "@/hooks/useUser";
 import { MOCK_ROOMS, MOCK_FLATMATES, MOCK_ITEMS } from "@/data/mock";
 import { HYDERABAD_AREAS } from "@/data/locations";
+import { insertAdAction, updateAdAction, deleteAdAction } from "@/lib/server-actions";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
-type Tab = "overview" | "payouts" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "marketplace" | "partners";
+type Tab = "overview" | "payouts" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "marketplace" | "partners" | "ads";
 
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false);
@@ -34,13 +35,14 @@ export default function AdminPage() {
   const [localFlatmates, setLocalFlatmates] = useState<any[]>([]);
   const [localMarketplace, setLocalMarketplace] = useState<any[]>([]);
   const [localPartners, setLocalPartners] = useState<any[]>([]);
+  const [localAds, setLocalAds] = useState<any[]>([]);
 
   const [editItem, setEditItem] = useState<any | null>(null);
-  const [editType, setEditType] = useState<"room" | "flatmate" | "marketplace" | null>(null);
+  const [editType, setEditType] = useState<"room" | "flatmate" | "marketplace" | "ad" | null>(null);
   const [editLoading, setEditLoading] = useState(false);
 
   const [deleteItem, setDeleteItem] = useState<any | null>(null);
-  const [deleteType, setDeleteType] = useState<"room" | "flatmate" | "marketplace" | null>(null);
+  const [deleteType, setDeleteType] = useState<"room" | "flatmate" | "marketplace" | "ad" | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [newImgUrl, setNewImgUrl] = useState("");
@@ -79,6 +81,31 @@ export default function AdminPage() {
     if (!editItem || !editType) return;
     setEditLoading(true);
     try {
+      if (editType === "ad") {
+        const adData = {
+          advertiser_name: editItem.advertiser_name,
+          title: editItem.title,
+          description: editItem.description,
+          url: editItem.url,
+          image_url: editItem.image_url,
+          placement: editItem.placement,
+          is_active: editItem.is_active,
+        };
+        let res;
+        if (editItem.id) {
+          res = await updateAdAction(editItem.id, adData);
+        } else {
+          res = await insertAdAction(adData);
+        }
+        if (res.error) throw new Error(res.error.message || "Failed to save ad");
+        
+        await fetchAds();
+        setEditItem(null);
+        setEditType(null);
+        setEditLoading(false);
+        return;
+      }
+
       const res = await fetch("/api/admin/data", {
         method: "PUT",
         headers: {
@@ -115,6 +142,8 @@ export default function AdminPage() {
           setLocalFlatmates(prev => prev.map(item => item.id === editItem.id ? { ...item, ...editItem } : item));
         } else if (editType === "marketplace") {
           setLocalMarketplace(prev => prev.map(item => item.id === editItem.id ? { ...item, ...editItem } : item));
+        } else if (editType === "ad") {
+          fetchAds();
         }
         setEditItem(null);
         setEditType(null);
@@ -140,10 +169,30 @@ export default function AdminPage() {
     }
   };
 
+  const fetchAds = async () => {
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data } = await supabase.from("ads").select("*").order("created_at", { ascending: false });
+      if (data) setLocalAds(data);
+    } catch (e) {
+      console.error("Error fetching ads", e);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!deleteItem || !deleteType) return;
     setDeleteLoading(true);
     try {
+      if (deleteType === "ad") {
+        const res = await deleteAdAction(deleteItem.id);
+        if (res.error) throw new Error(res.error.message || "Failed to delete ad");
+        await fetchAds();
+        setDeleteItem(null);
+        setDeleteType(null);
+        setDeleteLoading(false);
+        return;
+      }
+
       const res = await fetch(`/api/admin/data?type=${deleteType}&id=${deleteItem.id}`, {
         method: "DELETE",
         headers: {
@@ -158,6 +207,8 @@ export default function AdminPage() {
           setLocalFlatmates(prev => prev.filter(item => item.id !== deleteItem.id));
         } else if (deleteType === "marketplace") {
           setLocalMarketplace(prev => prev.filter(item => item.id !== deleteItem.id));
+        } else if (deleteType === "ad") {
+          fetchAds();
         }
         setDeleteItem(null);
         setDeleteType(null);
@@ -173,7 +224,6 @@ export default function AdminPage() {
     }
   };
 
-  // ── Login ──────────────────────────────────────────────────────────────────
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (pwd === ADMIN_PASSWORD) {
@@ -181,6 +231,7 @@ export default function AdminPage() {
       setPwdError("");
       fetchData();
       fetchPartners();
+      fetchAds();
     } else {
       setPwdError("Incorrect password. Access denied.");
     }
@@ -394,7 +445,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex border-b border-border mb-6 overflow-x-auto bg-background">
-          {(["overview", "payouts", "interests", "handovers", "users", "rooms", "flatmates", "marketplace", "partners"] as Tab[]).map(tab => (
+          {(["overview", "payouts", "interests", "handovers", "users", "rooms", "flatmates", "marketplace", "partners", "ads"] as Tab[]).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-6 py-3.5 text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-all border-b-2 ${
                 activeTab === tab ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground"
@@ -406,6 +457,7 @@ export default function AdminPage() {
                 : tab === "flatmates" ? `flatmates (${localFlatmates.length})`
                 : tab === "marketplace" ? `marketplace (${localMarketplace.length})`
                 : tab === "partners" ? `partners (${localPartners.length})`
+                : tab === "ads" ? `ads (${localAds.length})`
                 : tab}
             </button>
           ))}
@@ -974,6 +1026,77 @@ export default function AdminPage() {
           </motion.div>
         )}
 
+        {/* ── ADS TAB ── */}
+        {activeTab === "ads" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-sm font-bold uppercase tracking-widest">Sponsorships & Ads ({localAds.length})</p>
+              <div className="flex gap-4">
+                <button onClick={fetchAds} className="flex items-center gap-2 text-xs font-bold text-primary hover:underline">
+                  <RefreshCw size={12} /> Refresh
+                </button>
+                <button onClick={() => { setEditItem({ is_active: true, placement: "rooms_page" }); setEditType("ad"); }} className="bg-primary text-primary-foreground px-4 py-2 text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2">
+                  <Star size={14} /> Create Ad
+                </button>
+              </div>
+            </div>
+            
+            {localAds.length === 0 ? (
+              <div className="bg-background border border-dashed border-border p-16 text-center">
+                <Star size={32} className="mx-auto mb-3 text-muted-foreground" />
+                <p className="font-semibold text-muted-foreground">No ads created yet</p>
+              </div>
+            ) : (
+              <div className="bg-background border border-border overflow-hidden">
+                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border bg-secondary/30 text-[9px] uppercase tracking-widest font-bold text-muted-foreground">
+                  <div className="col-span-3">Advertiser</div>
+                  <div className="col-span-4">Offer / Details</div>
+                  <div className="col-span-2">Placement</div>
+                  <div className="col-span-1">Status</div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+                {localAds.map((ad: any) => (
+                  <div key={ad.id} className="grid grid-cols-12 gap-2 p-4 border-b border-border last:border-0 items-center hover:bg-secondary/10">
+                    <div className="col-span-3 flex items-center gap-3">
+                      {ad.image_url ? (
+                        <img src={ad.image_url} alt="" className="w-8 h-8 object-contain bg-white" />
+                      ) : (
+                        <div className="w-8 h-8 bg-secondary flex items-center justify-center shrink-0">
+                          <Star size={14} className="text-muted-foreground" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-bold text-sm truncate">{ad.advertiser_name}</p>
+                      </div>
+                    </div>
+                    <div className="col-span-4 min-w-0">
+                      <p className="font-semibold text-xs truncate">{ad.title}</p>
+                      {ad.description && <p className="text-[10px] text-muted-foreground truncate">{ad.description}</p>}
+                      <a href={ad.url} target="_blank" className="text-[10px] text-primary hover:underline truncate inline-block max-w-full">{ad.url}</a>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="bg-secondary px-2 py-1 text-[9px] uppercase tracking-wider font-bold">
+                        {ad.placement}
+                      </span>
+                    </div>
+                    <div className="col-span-1">
+                      {ad.is_active ? (
+                        <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider flex items-center gap-1"><CheckCircle2 size={10} /> Active</span>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider flex items-center gap-1"><X size={10} /> Paused</span>
+                      )}
+                    </div>
+                    <div className="col-span-2 flex justify-end gap-2">
+                      <button onClick={() => { setEditItem(ad); setEditType("ad"); }} className="text-[10px] uppercase font-bold text-primary hover:underline">Edit</button>
+                      <button onClick={() => { setDeleteItem(ad); setDeleteType("ad"); }} className="text-[10px] uppercase font-bold text-red-500 hover:underline">Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* ── EDIT MODAL ── */}
         <AnimatePresence>
           {editItem && (
@@ -994,41 +1117,84 @@ export default function AdminPage() {
 
                 {/* Form */}
                 <form onSubmit={handleSaveEdit} className="p-6 overflow-y-auto space-y-4 flex-1">
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Listing Title</label>
-                    <input
-                      type="text"
-                      required
-                      value={editItem.title || ""}
-                      onChange={e => setEditItem({ ...editItem, title: e.target.value })}
-                      className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
-                    />
-                  </div>
+                  {editType === "ad" ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Advertiser Name</label>
+                          <input type="text" required value={editItem.advertiser_name || ""} onChange={e => setEditItem({ ...editItem, advertiser_name: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="e.g. Porter" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Placement</label>
+                          <select value={editItem.placement || "rooms_page"} onChange={e => setEditItem({ ...editItem, placement: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none">
+                            <option value="rooms_page">Rooms Listing Page (Carousel)</option>
+                            <option value="room_detail">Room Detail Page (Under Contact)</option>
+                            <option value="handover_success">Handover Confirmed Page</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Offer Title</label>
+                        <input type="text" required value={editItem.title || ""} onChange={e => setEditItem({ ...editItem, title: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="e.g. Book a mini truck from ₹499" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Description (Optional)</label>
+                        <input type="text" value={editItem.description || ""} onChange={e => setEditItem({ ...editItem, description: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="e.g. Moving soon? Book now ->" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Destination URL</label>
+                          <input type="url" required value={editItem.url || ""} onChange={e => setEditItem({ ...editItem, url: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="https://..." />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Image URL (Optional Logo)</label>
+                          <input type="url" value={editItem.image_url || ""} onChange={e => setEditItem({ ...editItem, image_url: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="https://..." />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 mt-4">
+                        <input type="checkbox" id="ad_active" checked={editItem.is_active ?? true} onChange={e => setEditItem({ ...editItem, is_active: e.target.checked })} className="w-4 h-4 accent-primary" />
+                        <label htmlFor="ad_active" className="text-sm font-bold uppercase tracking-widest cursor-pointer">Ad is Active</label>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Listing Title</label>
+                        <input
+                          type="text"
+                          required
+                          value={editItem.title || ""}
+                          onChange={e => setEditItem({ ...editItem, title: e.target.value })}
+                          className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
+                        />
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Location (Area)</label>
-                      <select
-                        value={editItem.location || ""}
-                        onChange={e => setEditItem({ ...editItem, location: e.target.value })}
-                        className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none cursor-pointer"
-                      >
-                        {HYDERABAD_AREAS.map(area => (
-                          <option key={area} value={area}>{area}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Colony / Landmark</label>
-                      <input
-                        type="text"
-                        required
-                        value={editItem.colony || ""}
-                        onChange={e => setEditItem({ ...editItem, colony: e.target.value })}
-                        className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Location (Area)</label>
+                          <select
+                            value={editItem.location || ""}
+                            onChange={e => setEditItem({ ...editItem, location: e.target.value })}
+                            className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none cursor-pointer"
+                          >
+                            {HYDERABAD_AREAS.map(area => (
+                              <option key={area} value={area}>{area}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Colony / Landmark</label>
+                          <input
+                            type="text"
+                            required
+                            value={editItem.colony || ""}
+                            onChange={e => setEditItem({ ...editItem, colony: e.target.value })}
+                            className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     {editType === "room" && (

@@ -6,6 +6,7 @@ import { IndianRupee, ArrowUpRight, Tag, MapPin, Phone, Repeat } from "lucide-re
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getAllItems, MarketplaceItemType } from "@/lib/item-db";
+import { PremiumAdCarousel } from "@/components/PremiumAdCarousel";
 
 export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -48,6 +49,9 @@ export default function MarketplacePage() {
             + Sell Your Items
           </a>
         </div>
+
+        {/* Premium Native Ad Placement */}
+        <PremiumAdCarousel />
 
         {/* Type Toggle */}
         <div className="flex gap-3 mb-6">
