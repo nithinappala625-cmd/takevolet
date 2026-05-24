@@ -168,7 +168,7 @@ export default function LandingPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
 
       {/* ━━━ HERO ━━━ */}
-      <section className="relative min-h-screen flex items-center pt-32 overflow-hidden">
+      <section className="relative py-16 md:py-24 overflow-hidden">
         <div className="absolute top-20 right-20 w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px] -z-10" />
 
         <div className="container mx-auto px-6 md:px-12 grid lg:grid-cols-2 gap-16 items-center">

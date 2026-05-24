@@ -49,7 +49,7 @@ export function TopBannerCarousel() {
   const Icon = banner.icon;
 
   return (
-    <div className="w-full bg-background border-b border-border overflow-hidden relative mt-[80px]">
+    <div className="w-full bg-background border-b border-border overflow-hidden relative mt-[110px]">
       <div className="container mx-auto">
         <div className="flex flex-col md:flex-row min-h-[300px] md:min-h-[400px]">
           {/* Text Content */}
