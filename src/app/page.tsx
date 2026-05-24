@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowRight, ShieldCheck, Star, Zap, MapPin, Users, ChevronRight, IndianRupee, Calendar, Sofa, ShoppingBag, Wallet, Home } from "lucide-react";
 import { HYDERABAD_AREAS } from "@/data/locations";
 import { useEffect, useState } from "react";
-import { fetchAllRoomsAction } from "@/lib/server-actions";
+import { fetchAllRoomsAction, fetchAllFlatmatesAction } from "@/lib/server-actions";
+import { TopBannerCarousel } from "@/components/TopBannerCarousel";
 import { getAllFlatmates } from "@/lib/flatmate-db";
 import type { Room } from "@/lib/db";
 import type { Flatmate } from "@/data/mock";
@@ -157,6 +158,9 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col w-full bg-background">
+      <TopBannerCarousel />
+
+      {/* ━━━ HERO SECTION ━━━ */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }} />
