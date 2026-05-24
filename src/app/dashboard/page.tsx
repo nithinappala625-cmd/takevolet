@@ -188,13 +188,13 @@ function DashboardContent() {
       const fileName = `${user!.id}-${Date.now()}.${ext}`;
       
       const { data, error } = await supabase.storage
-        .from("rooms")
+        .from("room-media")
         .upload(`qrcodes/${fileName}`, file, { upsert: true });
         
       if (error) throw error;
       
       const { data: { publicUrl } } = supabase.storage
-        .from("rooms")
+        .from("room-media")
         .getPublicUrl(`qrcodes/${fileName}`);
         
       setPayoutQrCode(publicUrl);
