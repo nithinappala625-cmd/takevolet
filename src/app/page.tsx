@@ -338,7 +338,7 @@ export default function LandingPage() {
                 <div className="p-5">
                   <h3 className="font-bold text-sm mb-2 line-clamp-1">{room.title}</h3>
                   <div className="flex flex-wrap gap-1.5 mb-3">
-                    <span className="px-2 py-0.5 bg-secondary text-[10px] font-medium uppercase tracking-wider flex items-center gap-1"><Users size={10} /> {room.membersAllowed} allowed</span>
+                    <span className="px-2 py-0.5 bg-secondary text-[10px] font-medium uppercase tracking-wider flex items-center gap-1"><Users size={10} /> {room.members_allowed || 1} allowed</span>
                     <span className="px-2 py-0.5 bg-secondary text-[10px] font-medium uppercase tracking-wider flex items-center gap-1"><Sofa size={10} /> {room.furnishing}</span>
                   </div>
                   <div className="flex justify-between items-center pt-3 border-t border-border">
