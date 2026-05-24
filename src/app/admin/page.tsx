@@ -733,9 +733,10 @@ export default function AdminPage() {
                   <div className="col-span-2">Name</div>
                   <div className="col-span-2">Contact</div>
                   <div className="col-span-2">Location</div>
-                  <div className="col-span-2">House No</div>
+                  <div className="col-span-1">House No</div>
                   <div className="col-span-1">Gender</div>
-                  <div className="col-span-2">Profession</div>
+                  <div className="col-span-1">Profession</div>
+                  <div className="col-span-2">Payout Info</div>
                   <div className="col-span-1">KYC</div>
                 </div>
                 {users.map((u: any) => (
@@ -753,15 +754,41 @@ export default function AdminPage() {
                       <p className="text-xs font-semibold">{u.colony}</p>
                       <p className="text-[10px] text-muted-foreground">{u.location}</p>
                     </div>
-                    <div className="col-span-2">
-                      <p className="text-xs font-mono text-primary">{u.house_no}</p>
+                    <div className="col-span-1">
+                      <p className="text-xs font-mono text-primary truncate">{u.house_no}</p>
                     </div>
                     <div className="col-span-1">
                       <p className="text-xs">{u.gender}</p>
-                      <p className="text-[10px] text-muted-foreground">{u.members_count} member{u.members_count !== 1 ? "s" : ""}</p>
+                      <p className="text-[10px] text-muted-foreground">{u.members_count} mem</p>
+                    </div>
+                    <div className="col-span-1">
+                      <p className="text-xs truncate">{u.profession}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs truncate">{u.profession}</p>
+                      {u.payout_method === "upi" && (
+                        <div>
+                          <p className="text-[10px] font-bold text-primary uppercase">UPI</p>
+                          <p className="text-[10px] font-mono truncate">{u.upi_id}</p>
+                        </div>
+                      )}
+                      {u.payout_method === "bank" && (
+                        <div>
+                          <p className="text-[10px] font-bold text-primary uppercase">Bank</p>
+                          <p className="text-[10px] font-mono truncate">A/C: {u.bank_account}</p>
+                          <p className="text-[10px] font-mono truncate">IFSC: {u.bank_ifsc}</p>
+                        </div>
+                      )}
+                      {u.payout_method === "qrcode" && u.payout_qr_code && (
+                        <div>
+                          <p className="text-[10px] font-bold text-primary uppercase mb-1">QR Code</p>
+                          <a href={u.payout_qr_code} target="_blank" rel="noopener noreferrer" className="block w-10 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View QR">
+                            <img src={u.payout_qr_code} alt="QR Code" className="w-full h-full object-cover" />
+                          </a>
+                        </div>
+                      )}
+                      {!u.payout_method && (
+                        <p className="text-[10px] text-muted-foreground italic">None saved</p>
+                      )}
                     </div>
                     <div className="col-span-1 flex gap-1">
                       {u.aadhaar_url ? (
