@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Wallet, Users } from "lucide-react";
+import { ArrowRight, Wallet, Users, Home } from "lucide-react";
 
 const BANNERS = [
   {
@@ -23,6 +23,15 @@ const BANNERS = [
     ctaText: "Browse Flatmates",
     ctaLink: "/flatmates",
     icon: Users,
+  },
+  {
+    id: 3,
+    title: "Browse bachelor rooms across Hyderabad.",
+    subtitle: "Find the perfect space that matches your lifestyle and budget. Filter by area, amenities, and rent.",
+    image: "/browse_rooms_banner.png",
+    ctaText: "Explore Rooms",
+    ctaLink: "/rooms",
+    icon: Home,
   }
 ];
 
