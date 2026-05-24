@@ -6,7 +6,7 @@ import { MapPin, ShieldCheck, HelpCircle, CheckCircle2 } from "lucide-react";
 import type { Room } from "@/lib/db";
 
 type Props = {
-  params: { area: string };
+  params: Promise<{ area: string }>;
 };
 
 function formatAreaName(slug: string) {
@@ -16,7 +16,8 @@ function formatAreaName(slug: string) {
     .join(" ");
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const areaName = formatAreaName(params.area);
   
   return {
@@ -33,7 +34,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function AreaRoomsPage({ params }: Props) {
+export default async function AreaRoomsPage(props: Props) {
+  const params = await props.params;
   const areaName = formatAreaName(params.area);
   const allRooms = await fetchAllRoomsAction();
   
