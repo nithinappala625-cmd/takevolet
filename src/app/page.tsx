@@ -4,8 +4,11 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, Star, Zap, MapPin, Users, ChevronRight, IndianRupee, Calendar, Sofa, ShoppingBag, Wallet, Home } from "lucide-react";
 import { HYDERABAD_AREAS } from "@/data/locations";
-import { MOCK_ROOMS, MOCK_FLATMATES } from "@/data/mock";
-
+import { useEffect, useState } from "react";
+import { fetchAllRoomsAction } from "@/lib/server-actions";
+import { getAllFlatmates } from "@/lib/flatmate-db";
+import type { Room } from "@/lib/db";
+import type { Flatmate } from "@/data/mock";
 const stats = [
   { value: "5,200+", label: "Bachelors Registered" },
   { value: "₹0", label: "Brokerage Fee" },
@@ -21,7 +24,23 @@ const howItWorks = [
 ];
 
 export default function LandingPage() {
-  const featuredRooms = MOCK_ROOMS.slice(0, 3);
+  const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
+  const [featuredFlatmates, setFeaturedFlatmates] = useState<Flatmate[]>([]);
+
+  useEffect(() => {
+    async function loadFeaturedData() {
+      // Load top 3 available rooms
+      const roomsRes = await fetchAllRoomsAction();
+      if (roomsRes.success && roomsRes.data) {
+        setFeaturedRooms(roomsRes.data.filter(r => r.is_available).slice(0, 3));
+      }
+      
+      // Load top 3 available flatmates
+      const fms = await getAllFlatmates();
+      setFeaturedFlatmates(fms.filter(f => f.isAvailable).slice(0, 3));
+    }
+    loadFeaturedData();
+  }, []);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -355,7 +374,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {MOCK_FLATMATES.slice(0, 3).map((fm, i) => (
+            {featuredFlatmates.map((fm, i) => (
               <motion.div key={fm.id} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="border border-border bg-background overflow-hidden group hover:border-primary/45 transition-all flex flex-col justify-between shadow-sm">
                 

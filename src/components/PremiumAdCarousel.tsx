@@ -49,10 +49,10 @@ export function PremiumAdCarousel() {
         
         <div className="flex items-center gap-4 md:gap-6 w-full">
           {/* Logo Box */}
-          <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 bg-background border border-border/20 flex items-center justify-center shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-primary/5" />
+          <div className="w-16 h-16 md:w-24 md:h-24 shrink-0 bg-background border border-border/20 flex items-center justify-center shadow-lg relative overflow-hidden group-hover:shadow-[0_0_15px_rgba(212,175,55,0.2)] transition-all">
+            <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent" />
             {currentAd.image_url ? (
-              <img src={currentAd.image_url} alt={currentAd.advertiser_name} className="w-full h-full object-contain p-2 relative z-10" />
+              <img src={currentAd.image_url} alt={currentAd.advertiser_name} className="w-[85%] h-[85%] object-contain relative z-10" />
             ) : (
               <Star className="text-primary w-8 h-8 relative z-10" />
             )}

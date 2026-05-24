@@ -12,7 +12,8 @@ import {
 import { useUser } from "@/hooks/useUser";
 import { MOCK_ROOMS, MOCK_FLATMATES, MOCK_ITEMS } from "@/data/mock";
 import { HYDERABAD_AREAS } from "@/data/locations";
-import { insertAdAction, updateAdAction, deleteAdAction } from "@/lib/server-actions";
+import { insertAdAction, updateAdAction, deleteAdAction, fetchAllRoomsAction } from "@/lib/server-actions";
+import { uploadRoomMedia } from "@/lib/db";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
@@ -1147,8 +1148,23 @@ export default function AdminPage() {
                           <input type="url" required value={editItem.url || ""} onChange={e => setEditItem({ ...editItem, url: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="https://..." />
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Image URL (Optional Logo)</label>
-                          <input type="url" value={editItem.image_url || ""} onChange={e => setEditItem({ ...editItem, image_url: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="https://..." />
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Ad Image (Upload or URL)</label>
+                          <div className="flex flex-col gap-2">
+                            <input type="url" value={editItem.image_url || ""} onChange={e => setEditItem({ ...editItem, image_url: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="https://..." />
+                            <input type="file" accept="image/*" onChange={async (e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                const file = e.target.files[0];
+                                alert("Uploading image...");
+                                const { url, error } = await uploadRoomMedia("admin", file, "image");
+                                if (error) {
+                                  alert("Upload failed: " + error.message);
+                                } else if (url) {
+                                  setEditItem({ ...editItem, image_url: url });
+                                  alert("Upload successful!");
+                                }
+                              }
+                            }} className="text-xs" />
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 mt-4">
