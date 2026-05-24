@@ -519,7 +519,9 @@ export default function AdminPage() {
                       <div key={p.id} className="border border-yellow-200 bg-yellow-50 p-3 flex justify-between items-center gap-3">
                         <div className="min-w-0">
                           <p className="font-bold text-sm">{fmt(p.amount)} via {(p.method || "UPI").toUpperCase()}</p>
-                          <p className="text-xs text-muted-foreground truncate">{p.userName} · {p.upiId || `****${p.bankAccount?.slice(-4)}`}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {p.userName} · {p.method === "qrcode" ? "QR Code Uploaded" : (p.upiId || `****${p.bankAccount?.slice(-4)}`)}
+                          </p>
                         </div>
                         <div className="flex gap-1.5 shrink-0">
                           <button onClick={() => handlePayoutAction("approve", p)}
@@ -572,11 +574,22 @@ export default function AdminPage() {
                         </div>
                         <p className="text-sm font-semibold text-muted-foreground">{p.userName}</p>
                         <p className="text-xs text-muted-foreground font-mono">{p.id}</p>
-                        <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
-                          {p.upiId && <span className="flex items-center gap-1"><Phone size={10} />{p.upiId}</span>}
-                          {p.bankAccount && <span className="flex items-center gap-1"><Building2 size={10} />****{p.bankAccount.slice(-4)} | {p.bankIfsc}</span>}
-                          <span><Clock size={10} className="inline mr-1" />{fmtDate(p.requestedAt)}</span>
-                          {p.processedAt && <span className="text-green-600"><CheckCircle2 size={10} className="inline mr-1" />Processed: {fmtDate(p.processedAt)}</span>}
+                        <div className="flex flex-col gap-3 mt-1.5">
+                          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                            {p.method === "qrcode" && p.qrCode && (
+                              <a href={p.qrCode} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QR" className="w-3 h-3" /> View QR Code
+                              </a>
+                            )}
+                            {p.upiId && <span className="flex items-center gap-1"><Phone size={10} />{p.upiId}</span>}
+                            {p.bankAccount && <span className="flex items-center gap-1"><Building2 size={10} />****{p.bankAccount.slice(-4)} | {p.bankIfsc}</span>}
+                            {p.bankName && <span className="flex items-center gap-1">Bank: {p.bankName}</span>}
+                            <span><Clock size={10} className="inline mr-1" />{fmtDate(p.requestedAt)}</span>
+                            {p.processedAt && <span className="text-green-600"><CheckCircle2 size={10} className="inline mr-1" />Processed: {fmtDate(p.processedAt)}</span>}
+                          </div>
+                          {p.method === "qrcode" && p.qrCode && (
+                            <img src={p.qrCode} alt="Payout QR Code" className="w-24 h-24 object-contain border border-border" />
+                          )}
                         </div>
                         {p.notes && <p className="text-xs text-muted-foreground italic mt-1">Note: {p.notes}</p>}
                       </div>

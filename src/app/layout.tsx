@@ -3,6 +3,7 @@ import { Outfit, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import NavbarWrapper from "@/components/NavbarWrapper";
+import { Suspense } from "react";
 import { MetaPixel } from "@/components/MetaPixel";
 
 const outfit = Outfit({
@@ -350,7 +351,9 @@ export default function RootLayout({
       <body
         className={`${outfit.variable} ${inter.variable} font-sans antialiased bg-background text-foreground flex flex-col min-h-screen`}
       >
-        <MetaPixel />
+        <Suspense fallback={null}>
+          <MetaPixel />
+        </Suspense>
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe 

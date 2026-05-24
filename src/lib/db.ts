@@ -24,6 +24,12 @@ export type Profile = {
   aadhaar_back_url?: string;
   is_verified?: boolean;
   created_at?: string;
+  payout_method?: string;
+  upi_id?: string;
+  bank_account?: string;
+  bank_ifsc?: string;
+  bank_name?: string;
+  payout_qr_code?: string;
 };
 
 export type Room = {

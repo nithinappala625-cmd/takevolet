@@ -1,4 +1,4 @@
-﻿// ─── Payout Request API ───────────────────────────────────────────────────────
+// ─── Payout Request API ───────────────────────────────────────────────────────
 // POST /api/payout/request — User requests a withdrawal
 // GET  /api/payout/history — Get user's payout request history
 //
@@ -16,7 +16,7 @@ const payoutRequests: Record<string, any[]> = {};
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { userId, userName, amount, method, upiId, bankAccount, bankIfsc, bankName } = body;
+    const { userId, userName, amount, method, upiId, bankAccount, bankIfsc, bankName, qrCode } = body;
 
     // ── Validate ──────────────────────────────────────────────────────────────
     if (!userId || !amount || !method) {
@@ -37,6 +37,9 @@ export async function POST(request: Request) {
     if (method === "bank" && (!bankAccount || !bankIfsc)) {
       return NextResponse.json({ error: "Bank account number and IFSC code are required" }, { status: 400 });
     }
+    if (method === "qrcode" && !qrCode) {
+      return NextResponse.json({ error: "QR Code is required for QR payouts" }, { status: 400 });
+    }
 
     // ── Create payout request ─────────────────────────────────────────────────
     const requestId = `PAY-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
@@ -45,11 +48,12 @@ export async function POST(request: Request) {
       userId,
       userName: userName || "User",
       amount: amountNum,
-      method,                        // "upi" | "bank"
+      method,                        // "upi" | "bank" | "qrcode"
       upiId: method === "upi" ? upiId : null,
       bankAccount: method === "bank" ? bankAccount : null,
       bankIfsc: method === "bank" ? bankIfsc : null,
       bankName: method === "bank" ? bankName : null,
+      qrCode: method === "qrcode" ? qrCode : null,
       status: "pending",             // pending → processing → completed / rejected
       requestedAt: new Date().toISOString(),
       processedAt: null,

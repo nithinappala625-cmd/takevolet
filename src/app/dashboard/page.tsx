@@ -32,9 +32,10 @@ import {
   CreditCard, Building2, AlertCircle, Send, X, ChevronDown
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
-import { getUserRooms, getUserEarnings, getUserPayouts, deleteRoom, getContactUnlocks, type Room, type Earning, type PayoutRequest, type ContactUnlock } from "@/lib/db";
+import { getUserRooms, getUserEarnings, getUserPayouts, deleteRoom, getContactUnlocks, getProfile, upsertProfile, type Room, type Earning, type PayoutRequest, type ContactUnlock } from "@/lib/db";
 import { getUserFlatmates, deleteUserFlatmate } from "@/lib/flatmate-db";
 import type { Flatmate as FlatmateType } from "@/data/mock";
+import { supabase } from "@/lib/supabase";
 
 function DashboardContent() {
   const router = useRouter();
@@ -52,13 +53,15 @@ function DashboardContent() {
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ── Payout state ───────────────────────────────────────────────────────────
-  const [payoutMethod, setPayoutMethod] = useState<"upi" | "bank">("upi");
+  const [payoutMethod, setPayoutMethod] = useState<"upi" | "bank" | "qrcode">("upi");
   const [upiId, setUpiId] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [bankIfsc, setBankIfsc] = useState("");
   const [bankName, setBankName] = useState("");
+  const [payoutQrCode, setPayoutQrCode] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
+  const [qrUploading, setQrUploading] = useState(false);
   const [payoutSuccess, setPayoutSuccess] = useState<string | null>(null);
   const [payoutError, setPayoutError] = useState<string | null>(null);
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
@@ -91,17 +94,26 @@ function DashboardContent() {
       getUserPayouts(user.id).then(setPayoutHistory);
       // Load contact unlocks for this poster
       getContactUnlocks(user.id).then(setContactUnlocks);
-      // Load saved payout details from localStorage (UI preferences only)
-      const saved = localStorage.getItem(`payout_${user.id}`);
-      if (saved) {
-        const d = JSON.parse(saved);
-        setSavedPayoutDetails(d);
-        setPayoutMethod(d.method || "upi");
-        setUpiId(d.upiId || "");
-        setBankAccount(d.bankAccount || "");
-        setBankIfsc(d.bankIfsc || "");
-        setBankName(d.bankName || "");
-      }
+      // Load saved payout details from Supabase profiles table
+      getProfile(user.id).then((profile) => {
+        if (profile) {
+          const method = (profile.payout_method as any) || "upi";
+          setSavedPayoutDetails({
+            method,
+            upiId: profile.upi_id || "",
+            bankAccount: profile.bank_account || "",
+            bankIfsc: profile.bank_ifsc || "",
+            bankName: profile.bank_name || "",
+            qrCode: profile.payout_qr_code || ""
+          });
+          setPayoutMethod(method);
+          setUpiId(profile.upi_id || "");
+          setBankAccount(profile.bank_account || "");
+          setBankIfsc(profile.bank_ifsc || "");
+          setBankName(profile.bank_name || "");
+          setPayoutQrCode(profile.payout_qr_code || "");
+        }
+      });
     }
   }, [user]);
 
@@ -134,11 +146,63 @@ function DashboardContent() {
   };
 
   // ── Save payout details ───────────────────────────────────────────────────
-  const handleSavePayoutDetails = () => {
-    const details = { method: payoutMethod, upiId, bankAccount, bankIfsc, bankName };
-    localStorage.setItem(`payout_${user.id}`, JSON.stringify(details));
+  const handleSavePayoutDetails = async () => {
+    setPayoutSubmitting(true);
+    const details = { 
+      method: payoutMethod, 
+      upiId, 
+      bankAccount, 
+      bankIfsc, 
+      bankName,
+      qrCode: payoutQrCode
+    };
+    
+    // Save to Supabase
+    await upsertProfile({
+      id: user!.id,
+      payout_method: payoutMethod,
+      upi_id: upiId,
+      bank_account: bankAccount,
+      bank_ifsc: bankIfsc,
+      bank_name: bankName,
+      payout_qr_code: payoutQrCode,
+    });
+    
     setSavedPayoutDetails(details);
-    alert("Payout details saved!");
+    setPayoutSubmitting(false);
+    alert("Payout details permanently saved securely!");
+  };
+
+  const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert("QR code image must be under 5MB");
+      return;
+    }
+    
+    setQrUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `${user!.id}-${Date.now()}.${ext}`;
+      
+      const { data, error } = await supabase.storage
+        .from("rooms")
+        .upload(`qrcodes/${fileName}`, file, { upsert: true });
+        
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from("rooms")
+        .getPublicUrl(`qrcodes/${fileName}`);
+        
+      setPayoutQrCode(publicUrl);
+    } catch (error: any) {
+      alert("Failed to upload QR code: " + error.message);
+    } finally {
+      setQrUploading(false);
+    }
   };
 
   // ── Submit withdrawal request ─────────────────────────────────────────────
@@ -162,6 +226,10 @@ function DashboardContent() {
       setPayoutError("Please save your bank details first");
       return;
     }
+    if (payoutMethod === "qrcode" && !payoutQrCode.trim()) {
+      setPayoutError("Please upload your QR code first");
+      return;
+    }
     setPayoutSubmitting(true);
     try {
       const res = await fetch("/api/payout/request", {
@@ -176,6 +244,7 @@ function DashboardContent() {
           bankAccount: payoutMethod === "bank" ? bankAccount : undefined,
           bankIfsc: payoutMethod === "bank" ? bankIfsc : undefined,
           bankName: payoutMethod === "bank" ? bankName : undefined,
+          qrCode: payoutMethod === "qrcode" ? payoutQrCode : undefined,
         }),
       });
       const data = await res.json();
@@ -696,6 +765,17 @@ function DashboardContent() {
                   </div>
                   <Building2 size={14} className="text-primary" /> Bank Transfer
                 </button>
+                <button onClick={() => setPayoutMethod("qrcode")}
+                  className={`flex-1 flex items-center gap-2.5 p-3.5 border text-sm font-semibold transition-all ${
+                    payoutMethod === "qrcode" ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/40"
+                  }`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    payoutMethod === "qrcode" ? "border-primary" : "border-muted-foreground"
+                  }`}>
+                    {payoutMethod === "qrcode" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                  </div>
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QR" className="w-3.5 h-3.5 opacity-80" /> QR Code
+                </button>
               </div>
 
               {/* UPI fields */}
@@ -726,7 +806,7 @@ function DashboardContent() {
                       className="w-full border border-border px-4 py-3 text-sm bg-background focus:border-primary focus:outline-none transition-colors"
                     />
                   </div>
-                  <div>
+                          <div>
                     <label className="text-[10px] uppercase tracking-widest font-bold mb-1.5 block">Bank Account Number</label>
                     <input
                       value={bankAccount}
@@ -748,19 +828,74 @@ function DashboardContent() {
                 </div>
               )}
 
-              <button onClick={handleSavePayoutDetails}
-                className="mt-4 border border-border px-5 py-2.5 text-xs uppercase tracking-wider font-bold hover:border-primary hover:text-primary transition-all flex items-center gap-2">
-                <CheckCircle2 size={12} /> Save Payout Details
+              {/* QR Code fields */}
+              {payoutMethod === "qrcode" && (
+                <div className="space-y-3">
+                  <label className="text-[10px] uppercase tracking-widest font-bold mb-1.5 block">Upload Bank/UPI QR Code</label>
+                  
+                  {payoutQrCode ? (
+                    <div className="relative inline-block border border-border p-2 bg-secondary/20">
+                      <img src={payoutQrCode} alt="Payout QR Code" className="w-48 h-48 object-contain" />
+                      <button onClick={() => setPayoutQrCode("")} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:scale-110 transition-transform">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-border p-8 text-center hover:border-primary/50 transition-colors bg-secondary/10 relative">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleQrUpload}
+                        disabled={qrUploading}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+                      />
+                      <div className="pointer-events-none">
+                        {qrUploading ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            <p className="text-xs font-semibold">Uploading QR Code...</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="w-12 h-12 bg-background border border-border rounded-full flex items-center justify-center mx-auto mb-3">
+                              <Plus size={20} className="text-primary" />
+                            </div>
+                            <p className="font-semibold text-sm">Tap to upload QR Code</p>
+                            <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 5MB</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-muted-foreground mt-1">Upload the QR code from your Google Pay, PhonePe, or Banking app to receive payments directly.</p>
+                </div>
+              )}
+
+              <button onClick={handleSavePayoutDetails} disabled={payoutSubmitting}
+                className="mt-4 border border-border px-5 py-2.5 text-xs uppercase tracking-wider font-bold hover:border-primary hover:text-primary transition-all flex items-center gap-2 disabled:opacity-50">
+                {payoutSubmitting ? (
+                  <><div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> Saving…</>
+                ) : (
+                  <><CheckCircle2 size={12} /> Save Payout Details</>
+                )}
               </button>
 
               {savedPayoutDetails && (
-                <p className="text-xs text-green-600 font-semibold mt-2 flex items-center gap-1">
-                  <CheckCircle2 size={11} />
-                  {savedPayoutDetails.method === "upi"
-                    ? `UPI saved: ${savedPayoutDetails.upiId}`
-                    : `Bank saved: ****${savedPayoutDetails.bankAccount?.slice(-4)}, ${savedPayoutDetails.bankIfsc}`
-                  }
-                </p>
+                <div className="mt-4 p-3 bg-secondary/20 border border-border text-xs flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-green-600 block mb-0.5 flex items-center gap-1">
+                      <CheckCircle2 size={12} /> Active Payout Method Saved
+                    </span>
+                    <span className="text-muted-foreground">
+                      {savedPayoutDetails.method === "upi" ? `UPI: ${savedPayoutDetails.upiId}` : 
+                       savedPayoutDetails.method === "bank" ? `Bank: ****${savedPayoutDetails.bankAccount?.slice(-4)}` :
+                       "QR Code Uploaded"}
+                    </span>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-1 bg-background border border-border">
+                    {savedPayoutDetails.method}
+                  </span>
+                </div>
               )}
             </div>
 
