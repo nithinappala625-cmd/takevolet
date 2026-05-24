@@ -31,8 +31,8 @@ export default function LandingPage() {
     async function loadFeaturedData() {
       // Load top 3 available rooms
       const roomsRes = await fetchAllRoomsAction();
-      if (roomsRes.success && roomsRes.data) {
-        setFeaturedRooms(roomsRes.data.filter(r => r.is_available).slice(0, 3));
+      if (roomsRes && Array.isArray(roomsRes)) {
+        setFeaturedRooms(roomsRes.filter(r => r.is_available).slice(0, 3));
       }
       
       // Load top 3 available flatmates
