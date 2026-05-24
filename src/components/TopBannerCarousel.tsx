@@ -51,9 +51,9 @@ export function TopBannerCarousel() {
   return (
     <div className="w-full bg-background border-b border-border overflow-hidden relative mt-[110px]">
       <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row min-h-[300px] md:min-h-[400px]">
+        <div className="flex flex-col md:flex-row h-auto md:min-h-[400px]">
           {/* Text Content */}
-          <div className="w-full md:w-1/2 flex items-center p-8 md:p-16 relative z-10 bg-background/90 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none">
+          <div className="w-full md:w-1/2 flex items-center p-8 md:p-16 relative z-10 order-2 md:order-1 bg-background md:bg-transparent">
             <AnimatePresence mode="wait">
               <motion.div
                 key={banner.id}
@@ -88,8 +88,8 @@ export function TopBannerCarousel() {
           </div>
 
           {/* Image Content */}
-          <div className="absolute md:relative inset-0 md:inset-auto w-full md:w-1/2 h-full min-h-[300px] md:min-h-[400px] z-0 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent md:via-background/20 z-10" />
+          <div className="relative w-full md:w-1/2 h-[250px] md:h-auto order-1 md:order-2 z-0 overflow-hidden">
+            <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent md:via-background/20 z-10" />
             <AnimatePresence mode="wait">
               <motion.img
                 key={banner.id}
