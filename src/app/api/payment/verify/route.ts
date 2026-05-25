@@ -86,18 +86,76 @@ export async function POST(request: Request) {
           console.warn("[Razorpay] MOCK fallback also failed", e);
         }
       }
+    } else if (body.flatmateId) {
+      try {
+        const { data: dbFlatmate } = await supabaseAdmin
+          .from("flatmates")
+          .select("user_id, title")
+          .eq("id", body.flatmateId)
+          .single();
+        room = dbFlatmate; // Use room variable temporarily
+
+        if (room?.user_id) {
+          const { data: profile } = await supabaseAdmin
+            .from("profiles")
+            .select("full_name, phone, whatsapp, avatar_url, profession")
+            .eq("id", room.user_id)
+            .single();
+
+          if (profile && (profile.full_name || profile.phone)) {
+            contact = {
+              name:       profile.full_name  || "Flatmate Poster",
+              phone:      profile.phone      || "",
+              whatsapp:   profile.whatsapp   || profile.phone || "",
+              profession: profile.profession || "",
+              avatar:     profile.avatar_url || "",
+            };
+          }
+        }
+      } catch (e) {
+        console.warn("[Razorpay] Supabase flatmate fetch failed, trying MOCK fallback", e);
+      }
+
+      // ── MOCK_FLATMATES fallback (for test/demo rooms) ─────────────────────────
+      if (!contact) {
+        try {
+          const { MOCK_FLATMATES } = await import("@/data/mock");
+          const mock = MOCK_FLATMATES.find((r: any) => r.id === body.flatmateId);
+          if (mock?.postedBy) {
+            contact = {
+              name:       mock.postedBy.name      || "Flatmate Poster",
+              phone:      mock.postedBy.phone     || "",
+              whatsapp:   mock.postedBy.whatsapp  || mock.postedBy.phone || "",
+              profession: mock.postedBy.profession || "",
+              avatar:     mock.postedBy.avatar    || "",
+            };
+          }
+        } catch (e) {
+          console.warn("[Razorpay] MOCK fallback also failed", e);
+        }
+      }
     }
 
     // ── 4. Persist unlock to Supabase (non-blocking — don't crash on failure) ─
-    if (userId && userId !== "guest" && roomId) {
+    if (userId && userId !== "guest") {
       try {
-        await supabaseAdmin.from("contact_unlocks").upsert({
-          room_id:    roomId,
-          user_id:    userId,
-          razorpay_order_id: razorpay_order_id,
-          razorpay_payment_id: razorpay_payment_id,
-          created_at: new Date().toISOString(),
-        }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
+        if (roomId) {
+          await supabaseAdmin.from("contact_unlocks").upsert({
+            room_id:    roomId,
+            user_id:    userId,
+            razorpay_order_id: razorpay_order_id,
+            razorpay_payment_id: razorpay_payment_id,
+            created_at: new Date().toISOString(),
+          }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
+        } else if (body.flatmateId) {
+          await supabaseAdmin.from("flatmate_contact_unlocks").upsert({
+            flatmate_id: body.flatmateId,
+            user_id:    userId,
+            razorpay_order_id: razorpay_order_id,
+            razorpay_payment_id: razorpay_payment_id,
+            created_at: new Date().toISOString(),
+          }, { onConflict: "flatmate_id,user_id", ignoreDuplicates: true });
+        }
       } catch (e) {
         console.warn("[Razorpay] contact_unlocks upsert failed:", e);
       }
@@ -106,7 +164,7 @@ export async function POST(request: Request) {
     // ── 5. Final fallback contact ──────────────────────────────────────────────
     if (!contact) {
       contact = {
-        name:       "Room Poster",
+        name:       roomId ? "Room Poster" : "Flatmate Poster",
         phone:      "",
         whatsapp:   "",
         profession: "",
@@ -114,7 +172,7 @@ export async function POST(request: Request) {
       };
     }
 
-    console.log("[Razorpay] ✅ Payment verified — contact unlocked", { paymentId: razorpay_payment_id, roomId, userId, contactName: contact.name });
+    console.log("[Razorpay] ✅ Payment verified — contact unlocked", { paymentId: razorpay_payment_id, roomId: roomId || body.flatmateId, userId, contactName: contact.name });
 
     return NextResponse.json({
       success:   true,

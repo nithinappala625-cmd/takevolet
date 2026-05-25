@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getFlatmateById } from "@/lib/flatmate-db";
+import { checkFlatmateUnlockStatusAction } from "@/lib/server-actions";
 import type { Flatmate } from "@/data/mock";
 import { useUser } from "@/hooks/useUser";
 
@@ -25,6 +26,17 @@ export default function FlatmateDetailPage() {
   const [unlocking, setUnlocking] = useState(false);
   const [unlockSuccess, setUnlockSuccess] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
+  const [unlockedContact, setUnlockedContact] = useState<any>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+
+  // ── Pricing Plans ────────────────────────────────────────────────────────
+  const PLANS = [
+    { id: "single",    label: "1 Contact",         contacts: 1,      price: 15,  paise: 1500,  badge: "",            perContact: "₹15" },
+    { id: "starter",   label: "10 Contacts",       contacts: 10,     price: 55,  paise: 5500,  badge: "",            perContact: "₹5.50" },
+    { id: "growth",    label: "50 Contacts",       contacts: 50,     price: 105, paise: 10500, badge: "Popular",     perContact: "₹2.10" },
+    { id: "unlimited", label: "Unlimited Contacts", contacts: 999999, price: 200, paise: 20000, badge: "🔥 Best Deal",perContact: "₹0" },
+  ];
+  const [selectedPlan, setSelectedPlan] = useState(PLANS[2]);
 
   const { user } = useUser();
   const userId = user?.id || "guest";
@@ -34,6 +46,13 @@ export default function FlatmateDetailPage() {
     async function loadData() {
       setLoading(true);
       try {
+        if (userId !== "guest") {
+          const contact = await checkFlatmateUnlockStatusAction(id, userId);
+          if (contact) {
+            setContactUnlocked(true);
+            setUnlockedContact(contact);
+          }
+        }
         const data = await getFlatmateById(id);
         setFlatmate(data);
       } catch (err) {
@@ -84,34 +103,131 @@ export default function FlatmateDetailPage() {
     setCurrentImageIndex((prev) => (prev - 1 + allMedia.length) % allMedia.length);
   };
 
-  const handleSimulatedUnlock = () => {
+  // ── Load Razorpay Checkout Script dynamically ─────────────────────────────
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise(resolve => {
+      if ((window as any).Razorpay) { resolve(true); return; }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePay = async () => {
     if (userId === "guest") {
-      // Store redirect and go to login
-      if (typeof window !== "undefined") {
-        localStorage.setItem("post_login_redirect", `/flatmates/${flatmate.id}`);
-      }
+      alert("Please sign in to continue with this.");
       router.push("/auth");
       return;
     }
 
+    setPayError(null);
     setUnlocking(true);
-    // Highly engaging multichain simulation loader
-    setTimeout(() => {
+
+    try {
+      const orderRes = await fetch("/api/payment/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flatmateId: flatmate.id, userId, type: "flatmate_contact_unlock", planId: selectedPlan.id, amount: selectedPlan.paise }),
+      });
+      const orderData = await orderRes.json();
+
+      if (!orderRes.ok || !orderData.orderId) {
+        throw new Error(orderData.error || "Failed to create payment order");
+      }
+
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) throw new Error("Could not load Razorpay.");
+
       setUnlocking(false);
-      setUnlockSuccess(true);
-      setContactUnlocked(true);
-    }, 2200);
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Takevolet",
+        description: `${selectedPlan.label} — Unlock Contact`,
+        image: "/logo.png",
+        order_id: orderData.orderId,
+        prefill: {
+          name: user?.name || "Seeker",
+          email: user?.email || "",
+          contact: user?.phone || "",
+        },
+        notes: {
+          flatmateId: flatmate.id,
+          flatmateTitle: flatmate.title,
+        },
+        theme: { color: "#D4AF37" },
+        modal: {
+          ondismiss: () => {
+            setUnlocking(false);
+            setPayError("Payment cancelled.");
+          },
+        },
+        handler: async (response: any) => {
+          try {
+            setUnlocking(true);
+            const verifyRes = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                flatmateId: flatmate.id,
+                userId,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+
+            if (!verifyRes.ok || !verifyData.verified) {
+              throw new Error(verifyData.error || "Payment verification failed");
+            }
+
+            setUnlockedContact(verifyData.contact);
+            setUnlockSuccess(true);
+            setTimeout(() => {
+              setContactUnlocked(true);
+              setUnlockSuccess(false);
+            }, 1800);
+          } catch (err: any) {
+            setPayError(err.message || "Verification failed. Contact support.");
+          } finally {
+            setUnlocking(false);
+          }
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", (response: any) => {
+        setPayError("Payment failed: " + response.error.description);
+        setUnlocking(false);
+      });
+      rzp.open();
+
+    } catch (err: any) {
+      setPayError(err.message || "Something went wrong.");
+      setUnlocking(false);
+    }
   };
 
+  const displayedPhone = unlockedContact?.phone || flatmate.postedBy.phone;
+  const displayedWhatsapp = unlockedContact?.whatsapp || flatmate.postedBy.whatsapp;
+  const displayedName = unlockedContact?.name || flatmate.postedBy.name;
+  const displayedAvatar = unlockedContact?.avatar || flatmate.postedBy.avatar;
+  const displayedProfession = unlockedContact?.profession || flatmate.postedBy.profession;
+
   const copyPhoneNumber = () => {
-    navigator.clipboard.writeText(flatmate.postedBy.phone);
+    navigator.clipboard.writeText(displayedPhone);
     setCopiedPhone(true);
     setTimeout(() => setCopiedPhone(false), 2000);
   };
 
   // Precomposed WhatsApp URL
-  const waMessage = `Hi ${flatmate.postedBy.name}, I found your flatmate vacancy listing "${flatmate.title}" on Takevolet! I am extremely interested in joining as your flatmate. Let's connect!`;
-  const waUrl = `https://wa.me/${flatmate.postedBy.whatsapp.replace(/\+/g, "").replace(/\s/g, "")}?text=${encodeURIComponent(waMessage)}`;
+  const waMessage = `Hi ${displayedName}, I found your flatmate vacancy listing "${flatmate.title}" on Takevolet! I am extremely interested in joining as your flatmate. Let's connect!`;
+  const waUrl = `https://wa.me/${displayedWhatsapp.replace(/\+/g, "").replace(/\s/g, "")}?text=${encodeURIComponent(waMessage)}`;
 
   return (
     <div className="pt-36 pb-20 min-h-screen">
@@ -292,13 +408,13 @@ export default function FlatmateDetailPage() {
               <div className="border border-border p-6 bg-secondary/15 space-y-4">
                 <div className="flex items-center gap-3">
                   <img
-                    src={flatmate.postedBy.avatar}
-                    alt={flatmate.postedBy.name}
+                    src={displayedAvatar}
+                    alt={displayedName}
                     className="w-12 h-12 rounded-full border-2 border-primary/20 object-cover"
                   />
                   <div>
                     <p className="font-bold text-sm flex items-center gap-1.5">
-                      {flatmate.postedBy.name}
+                      {displayedName}
                       <span className="bg-primary/10 border border-primary/20 text-primary text-[8px] font-bold uppercase px-1.5 py-0.5">
                         Verified Poster
                       </span>
@@ -312,7 +428,7 @@ export default function FlatmateDetailPage() {
                 <div className="border-t border-border/60 pt-3 space-y-2 text-xs font-light text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Briefcase size={12} className="text-primary" />
-                    <span>Works as: <strong>{flatmate.postedBy.profession}</strong></span>
+                    <span>Works as: <strong>{displayedProfession}</strong></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin size={12} className="text-primary" />
@@ -344,21 +460,42 @@ export default function FlatmateDetailPage() {
                       exit={{ opacity: 0 }}
                       className="space-y-3"
                     >
-                      <div className="bg-primary/10 border border-primary/30 p-3 text-center text-xs font-bold text-primary flex items-center justify-center gap-2 uppercase tracking-wider">
-                        <Sparkles size={13} className="animate-spin" /> Free Launch Offer: ₹0 Unlock Fee!
+                      {/* PRIMARY: Contact Plans */}
+                      <p className="text-[10px] uppercase tracking-widest font-bold mb-3">Choose Contact Plan</p>
+                      <div className="space-y-2 mb-4">
+                        {PLANS.map(plan => (
+                          <label key={plan.id}
+                            className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${
+                              selectedPlan.id === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                            }`}>
+                            <input type="radio" name="plan" checked={selectedPlan.id === plan.id}
+                              onChange={() => setSelectedPlan(plan)} className="accent-primary" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold">{plan.label}</span>
+                                {plan.badge && (
+                                  <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 font-bold uppercase tracking-wider">{plan.badge}</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">{plan.perContact}/contact</span>
+                            </div>
+                            <span className="font-black text-primary">₹{plan.price}</span>
+                          </label>
+                        ))}
                       </div>
-                      
+
+                      {payError && <p className="text-xs text-red-500 mb-3 flex items-center gap-1"><AlertCircle size={11}/>{payError}</p>}
                       <button
-                        onClick={handleSimulatedUnlock}
+                        onClick={handlePay}
                         disabled={unlocking}
                         className="w-full bg-primary text-primary-foreground py-3.5 text-xs uppercase tracking-widest font-bold hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(212,175,55,0.2)] disabled:opacity-50"
                       >
                         {unlocking ? (
                           <>
-                            <Loader2 className="animate-spin" size={14} /> Unlocking Roommate...
+                            <Loader2 className="animate-spin" size={14} /> Processing...
                           </>
                         ) : (
-                          <>Unlock Direct Contact</>
+                          <>Unlock Contact — ₹{selectedPlan.price}</>
                         )}
                       </button>
                     </motion.div>
@@ -380,7 +517,7 @@ export default function FlatmateDetailPage() {
                             <span className="block text-[8px] uppercase tracking-widest text-muted-foreground font-bold">
                               Phone Number
                             </span>
-                            <span className="font-bold text-sm">{flatmate.postedBy.phone}</span>
+                            <span className="font-bold text-sm">{displayedPhone}</span>
                           </div>
                           <button
                             onClick={copyPhoneNumber}

@@ -218,3 +218,30 @@ export async function deleteAdAction(id: string) {
     .eq("id", id);
   return { error };
 }
+
+export async function checkFlatmateUnlockStatusAction(flatmateId: string, userId: string) {
+  if (!flatmateId || !userId || userId === 'guest') return null;
+
+  const { data, error } = await supabaseAdmin
+    .from('flatmate_contact_unlocks')
+    .select('id')
+    .eq('flatmate_id', flatmateId)
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !data) return null;
+  
+  // If found, fetch contact info to return
+  const flatmate = await fetchFlatmateByIdAction(flatmateId);
+  if (!flatmate || !flatmate.profile) return null;
+  
+  const p = flatmate.profile;
+  return {
+    name:       p.full_name  || 'Flatmate Poster',
+    phone:      p.phone      || '',
+    whatsapp:   p.whatsapp   || p.phone || '',
+    profession: p.profession || '',
+    avatar:     p.avatar_url || '',
+  };
+}
+

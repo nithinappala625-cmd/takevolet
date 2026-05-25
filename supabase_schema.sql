@@ -300,3 +300,23 @@ create policy "Users can view own contact unlocks"
 create policy "Service role can insert contact unlocks"
   on public.contact_unlocks for insert with check (true);
 
+
+-- ─── 9. FLATMATE CONTACT UNLOCKS ─────────────────────────────
+create table if not exists public.flatmate_contact_unlocks (
+  id                  uuid primary key default uuid_generate_v4(),
+  flatmate_id         text not null,
+  user_id             uuid references public.profiles(id) on delete cascade not null,
+  razorpay_order_id   text,
+  razorpay_payment_id text,
+  created_at          timestamptz default now(),
+  unique(flatmate_id, user_id)
+);
+
+alter table public.flatmate_contact_unlocks enable row level security;
+
+create policy "Users can view own flatmate contact unlocks"
+  on public.flatmate_contact_unlocks for select using (auth.uid() = user_id);
+
+create policy "Service role can insert flatmate contact unlocks"
+  on public.flatmate_contact_unlocks for insert with check (true);
+
