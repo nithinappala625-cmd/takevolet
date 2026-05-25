@@ -14,6 +14,7 @@ export default function RoomCard({ room }: { room: Room }) {
   };
 
   const hasImage = (room.images || [])[0] && !imageError;
+  const hasVideo = (room.videos || [])[0];
 
   return (
     <div className={`group border border-border overflow-hidden hover:border-primary/30 transition-all duration-500 bg-background flex flex-col h-full ${room.is_rented_out ? 'opacity-80 grayscale-[20%]' : ''}`}>
@@ -29,6 +30,9 @@ export default function RoomCard({ room }: { room: Room }) {
               onError={() => setImageError(true)}
               className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mx-auto" />
           </>
+        ) : hasVideo ? (
+          <video src={room.videos![0]} muted loop playsInline
+            className="w-full h-full object-cover relative z-10" />
         ) : (
           <div className="absolute inset-0 w-full h-full bg-secondary/20 flex flex-col items-center justify-center text-muted-foreground">
             <Sofa size={32} className="opacity-20 mb-2" />
