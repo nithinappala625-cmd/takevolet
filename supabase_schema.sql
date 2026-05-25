@@ -13,6 +13,8 @@ create table if not exists public.profiles (
   email         text,
   phone         text,
   whatsapp      text,
+  owner_name    text,
+  owner_phone   text,
   avatar_url    text,
   location      text,          -- main area e.g. "Hitech City"
   colony        text,          -- specific colony e.g. "Madhapur"

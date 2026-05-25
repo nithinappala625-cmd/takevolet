@@ -111,9 +111,6 @@ export const metadata: Metadata = {
   category: "Real Estate",
   classification: "Bachelor Accommodation, Room Rentals, Hyderabad",
   metadataBase: new URL(APP_URL),
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: "en_IN",

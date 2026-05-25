@@ -43,6 +43,8 @@ export default function ProfileCompletePage() {
   const [location, setLocation] = useState("");
   const [colony, setColony] = useState("");
   const [houseNo, setHouseNo] = useState("");
+  const [ownerName, setOwnerName] = useState("");
+  const [ownerPhone, setOwnerPhone] = useState("");
   const [profession, setProfession] = useState("");
   const [membersCount, setMembersCount] = useState(1);
   const [gender, setGender] = useState("");
@@ -126,6 +128,8 @@ export default function ProfileCompletePage() {
     if (!dob) return setError("Date of Birth is required.");
     if (!gender) return setError("Please select your gender.");
     if (!profession) return setError("Please select your profession.");
+    if (!ownerName.trim()) return setError("House owner name is required.");
+    if (!ownerPhone.trim() || ownerPhone.length < 10) return setError("Valid 10-digit owner phone number is required.");
     if (!aadhaarPath) return setError("Aadhaar photo is mandatory.");
 
     if (!user) return;
@@ -137,6 +141,8 @@ export default function ProfileCompletePage() {
       email: user.email,
       phone: phone.trim(),
       whatsapp: whatsapp.trim() || phone.trim(),
+      owner_name: ownerName.trim(),
+      owner_phone: ownerPhone.trim(),
       location,
       colony,
       house_no: houseNo.trim(),
@@ -288,6 +294,34 @@ export default function ProfileCompletePage() {
                     <option value="">Select profession</option>
                     {PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5">
+                  House Owner Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <User size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={ownerName} onChange={e => setOwnerName(e.target.value)}
+                    placeholder="Owner's full name"
+                    className="w-full border border-border pl-9 pr-4 py-3 text-sm focus:border-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5">
+                  House Owner Phone <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)}
+                    placeholder="Owner's contact number"
+                    className="w-full border border-border pl-9 pr-4 py-3 text-sm focus:border-primary focus:outline-none"
+                  />
                 </div>
               </div>
             </div>

@@ -12,6 +12,8 @@ export type Profile = {
   email: string;
   phone?: string;
   whatsapp?: string;
+  owner_name?: string;
+  owner_phone?: string;
   avatar_url?: string;
   location?: string;
   colony?: string;
