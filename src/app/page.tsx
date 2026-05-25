@@ -122,7 +122,7 @@ export default function LandingPage() {
       {
         "@type": "Question",
         "name": "How do I find a bachelor room in Hyderabad without a broker?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Use Takevolet — browse rooms filtered by area, budget, furnishing, and members allowed. Unlock the poster's contact from just ₹10. Call or WhatsApp them directly. Zero brokerage, always." }
+        "acceptedAnswer": { "@type": "Answer", "text": "Use Takevolet — browse rooms filtered by area, budget, furnishing, and members allowed. Unlock the poster's contact from just ₹15. Call or WhatsApp them directly. Zero brokerage, always." }
       },
       {
         "@type": "Question",
@@ -137,7 +137,7 @@ export default function LandingPage() {
       {
         "@type": "Question",
         "name": "How much does it cost to unlock a room poster's contact on Takevolet?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Contact unlocks start at just ₹10 per contact. Bundle plans are available: 50 contacts for ₹139, 100 contacts for ₹280, 500 contacts for ₹400, and unlimited contacts for ₹500. All payments are secured by Razorpay." }
+        "acceptedAnswer": { "@type": "Answer", "text": "Contact unlocks start at just ₹15 per contact. Bundle plans are available: 10 contacts for ₹55, 50 contacts for ₹105, and unlimited contacts for ₹200. All payments are secured by Razorpay." }
       },
     ]
   };
@@ -549,7 +549,7 @@ export default function LandingPage() {
             </div>
             <h2 className="text-4xl md:text-5xl font-light mb-4 leading-tight">
               Like a room? Unlock the poster&apos;s contact.<br />
-              <span className="font-bold text-primary">Starting ₹10 only.</span>
+              <span className="font-bold text-primary">Starting ₹15 only.</span>
             </h2>
             <p className="text-background/60 font-light max-w-xl mx-auto">
               Browse free. Pay only when you want to call or WhatsApp a poster. Choose any plan below.
@@ -557,13 +557,12 @@ export default function LandingPage() {
           </div>
 
           {/* Pricing mini grid */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-3 max-w-4xl mx-auto mb-10">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto mb-10">
             {[
-              { label: "1 Contact",        price: "₹10",  sub: "₹10/contact",   hot: false },
-              { label: "50 Contacts",       price: "₹139", sub: "₹2.78/contact", hot: false },
-              { label: "100 Contacts",      price: "₹280", sub: "₹2.80/contact", hot: true,  badge: "Best Value" },
-              { label: "500 Contacts",      price: "₹400", sub: "₹0.80/contact", hot: false, badge: "Popular" },
-              { label: "Unlimited",         price: "₹500", sub: "₹0/contact",    hot: false, badge: "🔥 Deal" },
+              { label: "1 Contact",         price: "₹15",  sub: "₹15/contact",   hot: false },
+              { label: "10 Contacts",       price: "₹55",  sub: "₹5.50/contact", hot: false },
+              { label: "50 Contacts",       price: "₹105", sub: "₹2.10/contact", hot: true,  badge: "Popular" },
+              { label: "Unlimited",         price: "₹200", sub: "₹0/contact",    hot: false, badge: "🔥 Deal" },
             ].map((p, i) => (
               <div key={i} className={`border p-4 text-center relative ${p.hot ? "border-primary bg-primary/10" : "border-white/10 bg-white/5"}`}>
                 {p.badge && (
@@ -592,7 +591,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col justify-between">
               <div className="space-y-2.5 mb-6">
-                {["Starting at ₹10 per contact — cheapest in Hyderabad", "Instant unlock via Razorpay — UPI, Cards, NetBanking", "No house numbers for privacy — colony/area only", "Use contacts across any room on Takevolet"].map((item, i) => (
+                {["Starting at ₹15 per contact — cheapest in Hyderabad", "Instant unlock via Razorpay — UPI, Cards, NetBanking", "No house numbers for privacy — colony/area only", "Use contacts across any room on Takevolet"].map((item, i) => (
                   <div key={i} className="flex items-center gap-2.5 text-sm text-background/70">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                     {item}

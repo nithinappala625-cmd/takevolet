@@ -49,11 +49,10 @@ export default function RoomDetailPage() {
 
   // ── Pricing Plans ────────────────────────────────────────────────────────
   const PLANS = [
-    { id: "single",    label: "1 Contact",         contacts: 1,      price: 10,  paise: 1000,  badge: "",            perContact: "₹10" },
-    { id: "starter",   label: "50 Contacts",        contacts: 50,     price: 139, paise: 13900, badge: "",            perContact: "₹2.78" },
-    { id: "growth",    label: "100 Contacts",       contacts: 100,    price: 280, paise: 28000, badge: "Best Value",  perContact: "₹2.80" },
-    { id: "pro",       label: "500 Contacts",       contacts: 500,    price: 400, paise: 40000, badge: "Popular",     perContact: "₹0.80" },
-    { id: "unlimited", label: "Unlimited Contacts", contacts: 999999, price: 500, paise: 50000, badge: "🔥 Best Deal",perContact: "₹0" },
+    { id: "single",    label: "1 Contact",         contacts: 1,      price: 15,  paise: 1500,  badge: "",            perContact: "₹15" },
+    { id: "starter",   label: "10 Contacts",       contacts: 10,     price: 55,  paise: 5500,  badge: "",            perContact: "₹5.50" },
+    { id: "growth",    label: "50 Contacts",       contacts: 50,     price: 105, paise: 10500, badge: "Popular",     perContact: "₹2.10" },
+    { id: "unlimited", label: "Unlimited Contacts", contacts: 999999, price: 200, paise: 20000, badge: "🔥 Best Deal",perContact: "₹0" },
   ];
   const [selectedPlan, setSelectedPlan] = useState(PLANS[2]);
 
