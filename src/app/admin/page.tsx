@@ -17,7 +17,7 @@ import { uploadRoomMedia } from "@/lib/db";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
-type Tab = "overview" | "payouts" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "marketplace" | "partners" | "ads";
+type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "marketplace" | "partners" | "ads";
 
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false);
@@ -446,13 +446,14 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex border-b border-border mb-6 overflow-x-auto bg-background">
-          {(["overview", "payouts", "interests", "handovers", "users", "rooms", "flatmates", "marketplace", "partners", "ads"] as Tab[]).map(tab => (
+          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "marketplace", "partners", "ads"] as Tab[]).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-6 py-3.5 text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-all border-b-2 ${
                 activeTab === tab ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground"
               }`}>
               {tab === "payouts" && pendingPayouts.length > 0
                 ? `payouts (${pendingPayouts.length})`
+                : tab === "unlocks" && data?.contactUnlocks?.length > 0 ? `unlocks (${data.contactUnlocks.length})`
                 : tab === "users" ? `users (${users.length})`
                 : tab === "rooms" ? `rooms (${localRooms.length})`
                 : tab === "flatmates" ? `flatmates (${localFlatmates.length})`
@@ -625,6 +626,53 @@ export default function AdminPage() {
           </motion.div>
         )}
 
+        {/* ── CONTACT UNLOCKS ── */}
+        {activeTab === "unlocks" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <p className="text-sm font-bold uppercase tracking-widest mb-4">Contact Unlocks Records ({data?.contactUnlocks?.length || 0})</p>
+            {(!data?.contactUnlocks || data.contactUnlocks.length === 0) ? (
+              <div className="bg-background border border-dashed border-border p-16 text-center">
+                <Phone size={32} className="mx-auto mb-3 text-muted-foreground" />
+                <p className="font-semibold text-muted-foreground">No contact unlocks yet</p>
+              </div>
+            ) : (
+              <div className="bg-background border border-border overflow-hidden">
+                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border bg-secondary/30 text-[9px] uppercase tracking-widest font-bold text-muted-foreground">
+                  <div className="col-span-3">Seeker (Paid)</div>
+                  <div className="col-span-3">Poster (Unlocked)</div>
+                  <div className="col-span-3">Listing Info</div>
+                  <div className="col-span-1">Amount</div>
+                  <div className="col-span-2">Date</div>
+                </div>
+                {data.contactUnlocks.map((u: any) => (
+                  <div key={u.id} className="grid grid-cols-12 gap-2 p-4 border-b border-border last:border-0 items-center hover:bg-secondary/10">
+                    <div className="col-span-3">
+                      <p className="text-sm font-bold">{u.seeker_name}</p>
+                    </div>
+                    <div className="col-span-3">
+                      <p className="text-sm font-bold text-primary">{u.poster_name}</p>
+                      <p className="text-xs font-mono mt-0.5">{u.poster_phone}</p>
+                      {u.poster_whatsapp && <p className="text-[10px] text-green-600 font-bold mt-0.5">WA: {u.poster_whatsapp}</p>}
+                    </div>
+                    <div className="col-span-3">
+                      <p className="text-xs font-semibold">{u.title}</p>
+                      <span className="text-[9px] uppercase tracking-wider bg-secondary px-2 py-0.5 mt-1 inline-block">
+                        {u.type}
+                      </span>
+                    </div>
+                    <div className="col-span-1">
+                      <p className="text-xs font-bold text-green-600">₹15</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-muted-foreground">{fmtDate(u.created_at)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* ── INTERESTS (Address Unlocks) ── */}
         {activeTab === "interests" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -748,7 +796,8 @@ export default function AdminPage() {
                     </div>
                     <div className="col-span-2">
                       <p className="text-xs font-mono">{u.phone}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
+                      {u.whatsapp && <p className="text-[10px] text-green-600 font-bold mt-0.5">WA: {u.whatsapp}</p>}
+                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">{u.email}</p>
                     </div>
                     <div className="col-span-2">
                       <p className="text-xs font-semibold">{u.colony}</p>

@@ -240,28 +240,27 @@ export async function getContactUnlocks(posterId: string): Promise<ContactUnlock
   const roomMap: Record<string, { title: string; location: string }> = {};
   rooms.forEach((r: any) => { roomMap[r.id] = { title: r.title, location: r.location }; });
 
-  // Fetch interests (unlocks) for those rooms
-  const { data: interests, error: intErr } = await supabase
-    .from("interests")
-    .select("id, room_id, user_id, amount, status, paid_at, created_at")
+  // Fetch contact unlocks for those rooms
+  const { data: unlocksData, error: unlocksErr } = await supabase
+    .from("contact_unlocks")
+    .select("id, room_id, user_id, created_at")
     .in("room_id", roomIds)
-    .eq("status", "paid")
-    .order("paid_at", { ascending: false });
+    .order("created_at", { ascending: false });
 
-  if (intErr || !interests) return [];
+  if (unlocksErr || !unlocksData) return [];
 
   // Enrich with seeker profiles
   const unlocks: ContactUnlock[] = [];
-  for (const interest of interests as any[]) {
+  for (const item of unlocksData as any[]) {
     let seekerName = "Anonymous Bachelor";
     let seekerAvatar = undefined;
     let seekerProfession = undefined;
 
-    if (interest.user_id) {
+    if (item.user_id) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, avatar_url, profession")
-        .eq("id", interest.user_id)
+        .eq("id", item.user_id)
         .single();
       if (profile) {
         seekerName = profile.full_name || seekerName;
@@ -270,24 +269,104 @@ export async function getContactUnlocks(posterId: string): Promise<ContactUnlock
       }
     }
 
-    const room = roomMap[interest.room_id] || {};
+    const room = roomMap[item.room_id] || {};
     unlocks.push({
-      id: interest.id,
-      room_id: interest.room_id,
+      id: item.id,
+      room_id: item.room_id,
       room_title: room.title,
       room_location: room.location,
-      user_id: interest.user_id,
+      user_id: item.user_id,
       seeker_name: seekerName,
       seeker_avatar: seekerAvatar,
       seeker_profession: seekerProfession,
-      amount: interest.amount || 0,
-      status: interest.status,
-      paid_at: interest.paid_at,
-      created_at: interest.created_at,
+      amount: 15,
+      status: "paid",
+      paid_at: item.created_at,
+      created_at: item.created_at,
     });
   }
 
   return unlocks;
+}
+
+export type UnlockedContactInfo = {
+  id: string;
+  type: "room" | "flatmate";
+  listing_id: string;
+  title: string;
+  location: string;
+  owner_name: string;
+  owner_phone: string;
+  owner_whatsapp: string;
+  unlocked_at: string;
+};
+
+/** Fetch contacts that the given user has paid to unlock */
+export async function getMyUnlockedContacts(userId: string): Promise<UnlockedContactInfo[]> {
+  const results: UnlockedContactInfo[] = [];
+
+  // 1. Rooms unlocked by user
+  const { data: roomUnlocks } = await supabase
+    .from("contact_unlocks")
+    .select("id, room_id, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+    
+  if (roomUnlocks && roomUnlocks.length > 0) {
+    for (const unlock of roomUnlocks) {
+      const { data: room } = await supabase.from("rooms").select("title, location, user_id").eq("id", unlock.room_id).single();
+      if (room && room.user_id) {
+        const { data: profile } = await supabase.from("profiles").select("full_name, phone, whatsapp").eq("id", room.user_id).single();
+        if (profile) {
+          results.push({
+            id: unlock.id,
+            type: "room",
+            listing_id: unlock.room_id,
+            title: room.title,
+            location: room.location,
+            owner_name: profile.full_name || "Owner",
+            owner_phone: profile.phone || "",
+            owner_whatsapp: profile.whatsapp || "",
+            unlocked_at: unlock.created_at
+          });
+        }
+      }
+    }
+  }
+
+  // 2. Flatmates unlocked by user
+  const { data: flatmateUnlocks } = await supabase
+    .from("flatmate_contact_unlocks")
+    .select("id, flatmate_id, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (flatmateUnlocks && flatmateUnlocks.length > 0) {
+    for (const unlock of flatmateUnlocks) {
+      const { data: flatmate } = await supabase.from("flatmates").select("title, location, user_id").eq("id", unlock.flatmate_id).single();
+      if (flatmate && flatmate.user_id) {
+        const { data: profile } = await supabase.from("profiles").select("full_name, phone, whatsapp").eq("id", flatmate.user_id).single();
+        if (profile) {
+          results.push({
+            id: unlock.id,
+            type: "flatmate",
+            listing_id: unlock.flatmate_id,
+            title: flatmate.title,
+            location: flatmate.location,
+            owner_name: profile.full_name || "Owner",
+            owner_phone: profile.phone || "",
+            owner_whatsapp: profile.whatsapp || "",
+            unlocked_at: unlock.created_at
+          });
+        }
+      }
+    }
+  }
+
+  // Sort combined results by unlocked_at desc
+  results.sort((a, b) => new Date(b.unlocked_at).getTime() - new Date(a.unlocked_at).getTime());
+  
+  return results;
 }
 
 

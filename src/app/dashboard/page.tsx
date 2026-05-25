@@ -32,7 +32,7 @@ import {
   CreditCard, Building2, AlertCircle, Send, X, ChevronDown
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
-import { getUserRooms, getUserEarnings, getUserPayouts, deleteRoom, getContactUnlocks, getProfile, upsertProfile, type Room, type Earning, type PayoutRequest, type ContactUnlock } from "@/lib/db";
+import { getUserRooms, getUserEarnings, getUserPayouts, deleteRoom, getContactUnlocks, getMyUnlockedContacts, getProfile, upsertProfile, type Room, type Earning, type PayoutRequest, type ContactUnlock, type UnlockedContactInfo } from "@/lib/db";
 import { getUserFlatmates, deleteUserFlatmate } from "@/lib/flatmate-db";
 import type { Flatmate as FlatmateType } from "@/data/mock";
 import { supabase } from "@/lib/supabase";
@@ -45,6 +45,7 @@ function DashboardContent() {
   const [myFlatmates, setMyFlatmates] = useState<FlatmateType[]>([]);
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [contactUnlocks, setContactUnlocks] = useState<ContactUnlock[]>([]);
+  const [myUnlockedContacts, setMyUnlockedContacts] = useState<UnlockedContactInfo[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "listings" | "earnings" | "payout" | "profile">(
     (searchParams.get("tab") as "overview" | "listings" | "earnings" | "payout" | "profile") || "overview"
@@ -100,6 +101,8 @@ function DashboardContent() {
       getUserPayouts(user.id).then(setPayoutHistory);
       // Load contact unlocks for this poster
       getContactUnlocks(user.id).then(setContactUnlocks);
+      // Load contacts this user has unlocked
+      getMyUnlockedContacts(user.id).then(setMyUnlockedContacts);
       // Load saved payout details from Supabase profiles table
       getProfile(user.id).then((profile) => {
         if (profile) {
@@ -470,31 +473,62 @@ function DashboardContent() {
 
             {/* ── WHO UNLOCKED MY CONTACT ── */}
             <div className="mt-12">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
-                  <Phone size={14} className="text-blue-500" />
-                  Who Unlocked My Contact
-                  {contactUnlocks.length > 0 && (
-                    <span className="ml-2 bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                      {contactUnlocks.length}
-                    </span>
-                  )}
-                </h3>
-                {contactUnlocks.length > 0 && (
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Total earned from unlocks: <strong className="text-green-600">~₹{(contactUnlocks.length * 10).toLocaleString("en-IN")}+</strong>
-                  </span>
-                )}
-              </div>
-
-              {contactUnlocks.length === 0 ? (
-                <div className="border border-dashed border-border p-10 text-center">
-                  <Phone size={24} className="mx-auto text-muted-foreground mb-3" />
-                  <p className="font-semibold mb-1">No contact unlocks yet</p>
-                  <p className="text-sm text-muted-foreground">When a bachelor pays to unlock your contact from your listing, they will appear here instantly.</p>
+              {myUnlockedContacts.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
+                    <h3 className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
+                      <Phone size={14} className="text-blue-500" /> Contacts You Unlocked
+                      <span className="ml-2 bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                        {myUnlockedContacts.length}
+                      </span>
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {myUnlockedContacts.map((contact, i) => (
+                      <motion.div key={contact.id}
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                        className="border border-border p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-blue-500/30 bg-blue-500/5 transition-all">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1">
+                            {contact.type === "room" ? "Room" : "Flatmate"} Owner: <strong className="text-foreground">{contact.owner_name}</strong>
+                          </p>
+                          <Link href={`/${contact.type}s/${contact.listing_id}`} className="font-bold text-sm hover:underline hover:text-primary">
+                            {contact.title}
+                          </Link>
+                          {contact.location && <p className="text-xs text-muted-foreground mt-0.5">{contact.location}</p>}
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          {contact.owner_phone && (
+                            <a href={`tel:${contact.owner_phone}`} className="bg-background border border-border px-3 py-2 text-xs font-bold uppercase hover:bg-secondary transition-colors flex items-center gap-1.5">
+                              <Phone size={12} /> Call
+                            </a>
+                          )}
+                          {contact.owner_whatsapp && (
+                            <a href={`https://wa.me/${contact.owner_whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="bg-green-500 text-white px-3 py-2 text-xs font-bold uppercase hover:bg-green-600 transition-colors flex items-center gap-1.5">
+                              WhatsApp
+                            </a>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
+              )}
+
+              {contactUnlocks.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
+                    <h3 className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
+                      <Eye size={14} className="text-primary" /> People who unlocked your contact
+                      <span className="ml-2 bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                        {contactUnlocks.length}
+                      </span>
+                    </h3>
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Total earned from unlocks: <strong className="text-green-600">~₹{(contactUnlocks.length * 10).toLocaleString("en-IN")}+</strong>
+                    </span>
+                  </div>
+                  <div className="space-y-3">
                   {contactUnlocks.slice(0, 10).map((unlock, i) => {
                     const timeAgo = unlock.paid_at ? (() => {
                       const diff = Date.now() - new Date(unlock.paid_at!).getTime();
@@ -549,7 +583,8 @@ function DashboardContent() {
                     </p>
                   )}
                 </div>
-              )}
+                </>
+              ) : null}
             </div>
           </motion.div>
         )}

@@ -26,13 +26,15 @@ export async function GET(request: Request) {
   }
 
   // Fetch all data in parallel
-  const [payoutsRes, interestsRes, handoversRes, profilesRes, roomsRes, flatmatesRes] = await Promise.all([
+  const [payoutsRes, interestsRes, handoversRes, profilesRes, roomsRes, flatmatesRes, contactUnlocksRes, flatmateUnlocksRes] = await Promise.all([
     supabaseAdmin.from("payouts").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("interests").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("handovers").select("*").order("confirmed_at", { ascending: false }),
     supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("rooms").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("flatmates").select("*").order("created_at", { ascending: false }),
+    supabaseAdmin.from("contact_unlocks").select("*, rooms(title, user_id, profiles!rooms_user_id_fkey(full_name, phone, whatsapp)), profiles!contact_unlocks_user_id_fkey(full_name)").order("created_at", { ascending: false }),
+    supabaseAdmin.from("flatmate_contact_unlocks").select("*, flatmates(title, user_id, profiles!flatmates_user_id_fkey(full_name, phone, whatsapp)), profiles!flatmate_contact_unlocks_user_id_fkey(full_name)").order("created_at", { ascending: false }),
   ]);
 
   const payouts   = payoutsRes.data   || [];
@@ -41,9 +43,11 @@ export async function GET(request: Request) {
   const profiles  = profilesRes.data  || [];
   const rooms     = roomsRes.data     || [];
   const flatmates = flatmatesRes.data || [];
+  const contactUnlocks = contactUnlocksRes.data || [];
+  const flatmateUnlocks = flatmateUnlocksRes.data || [];
 
   // Revenue calculation
-  const interestRevenue = interests
+  const interestRevenue = contactUnlocks.length * 15 + flatmateUnlocks.length * 15 + interests
     .filter((i: any) => i.payment_status === "paid")
     .reduce((s: number, i: any) => s + (i.platform_fee || 500), 0);
 
@@ -93,6 +97,30 @@ export async function GET(request: Request) {
       posterName: h.poster_name,
       confirmedAt: h.confirmed_at,
     })),
+    contactUnlocks: [
+      ...contactUnlocks.map((c: any) => ({
+        id: c.id,
+        type: "room",
+        listing_id: c.room_id,
+        title: c.rooms?.title || "Unknown Room",
+        seeker_name: c.profiles?.full_name || "Anonymous",
+        poster_name: c.rooms?.profiles?.full_name || "Unknown Poster",
+        poster_phone: c.rooms?.profiles?.phone || "",
+        poster_whatsapp: c.rooms?.profiles?.whatsapp || "",
+        created_at: c.created_at,
+      })),
+      ...flatmateUnlocks.map((f: any) => ({
+        id: f.id,
+        type: "flatmate",
+        listing_id: f.flatmate_id,
+        title: f.flatmates?.title || "Unknown Flatmate",
+        seeker_name: f.profiles?.full_name || "Anonymous",
+        poster_name: f.flatmates?.profiles?.full_name || "Unknown Poster",
+        poster_phone: f.flatmates?.profiles?.phone || "",
+        poster_whatsapp: f.flatmates?.profiles?.whatsapp || "",
+        created_at: f.created_at,
+      }))
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     // Map profiles to include computed fields
     users: await Promise.all(profiles.map(async (p: any) => {
       let docUrl = p.aadhaar_url || null;
