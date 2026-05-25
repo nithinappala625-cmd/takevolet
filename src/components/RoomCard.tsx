@@ -1,22 +1,40 @@
+"use client";
+
 import Link from "next/link";
 import { MapPin, IndianRupee, Calendar, Users, Sofa, Eye, UserCheck, Car, Bike, ArrowUpRight } from "lucide-react";
 import type { Room } from "@/lib/db";
+import { useState } from "react";
 
 export default function RoomCard({ room }: { room: Room }) {
+  const [imageError, setImageError] = useState(false);
+
   const getDaysLeft = (dateStr: string) => {
     const diff = new Date(dateStr).getTime() - new Date().getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 
+  const hasImage = (room.images || [])[0] && !imageError;
+
   return (
     <div className={`group border border-border overflow-hidden hover:border-primary/30 transition-all duration-500 bg-background flex flex-col h-full ${room.is_rented_out ? 'opacity-80 grayscale-[20%]' : ''}`}>
       <Link href={`/rooms/${room.id}`} className="block relative aspect-[16/9] overflow-hidden bg-black shrink-0 border-b border-border flex items-center justify-center">
         {/* Ambient Blur */}
-        <img src={(room.images || [])[0] || ""} alt=""
-          className="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-110 pointer-events-none transition-transform duration-500 group-hover:scale-125" />
-        {/* Clear Foreground */}
-        <img src={(room.images || [])[0] || ""} alt={room.title} loading="lazy"
-          className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mx-auto" />
+        {hasImage ? (
+          <>
+            <img src={room.images![0]} alt=""
+              onError={() => setImageError(true)}
+              className="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-110 pointer-events-none transition-transform duration-500 group-hover:scale-125" />
+            {/* Clear Foreground */}
+            <img src={room.images![0]} alt={room.title} loading="lazy"
+              onError={() => setImageError(true)}
+              className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mx-auto" />
+          </>
+        ) : (
+          <div className="absolute inset-0 w-full h-full bg-secondary/20 flex flex-col items-center justify-center text-muted-foreground">
+            <Sofa size={32} className="opacity-20 mb-2" />
+            <span className="text-[10px] uppercase tracking-wider font-bold opacity-40">No Image</span>
+          </div>
+        )}
 
         <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-2">
           <span className="bg-background/90 backdrop-blur-sm px-3 py-1 text-[11px] uppercase tracking-wider font-semibold flex items-center gap-1">

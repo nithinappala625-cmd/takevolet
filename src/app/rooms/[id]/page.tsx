@@ -31,6 +31,8 @@ export default function RoomDetailPage() {
   const [paying, setPaying] = useState(false);
   const [paySuccess, setPaySuccess] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
+  const [mediaErrors, setMediaErrors] = useState<Record<number, boolean>>({});
+  const hasMediaError = mediaErrors[currentImageIndex];
 
   // ── Auth
   const { user } = useUser();
@@ -386,11 +388,12 @@ export default function RoomDetailPage() {
           
           {/* Background Layer: Ambient Blur (only for images) */}
           <AnimatePresence mode="wait">
-            {allMedia[currentImageIndex] && !allMedia[currentImageIndex].match(/\.(mp4|webm|ogg)$/i) && (
+            {allMedia[currentImageIndex] && !hasMediaError && !allMedia[currentImageIndex].match(/\.(mp4|webm|ogg)$/i) && (
               <motion.img
                 key={`bg-${currentImageIndex}`}
                 src={allMedia[currentImageIndex]}
                 alt=""
+                onError={() => setMediaErrors(prev => ({ ...prev, [currentImageIndex]: true }))}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0.4 }}
                 exit={{ opacity: 0 }}
@@ -402,7 +405,7 @@ export default function RoomDetailPage() {
 
           {/* Foreground Layer: Crystal Clear Uncropped */}
           <AnimatePresence mode="wait">
-            {allMedia[currentImageIndex] ? (
+            {allMedia[currentImageIndex] && !hasMediaError ? (
               allMedia[currentImageIndex].match(/\.(mp4|webm|ogg)$/i) ? (
                 <motion.video
                   key={`fg-video-${currentImageIndex}`}
@@ -420,6 +423,7 @@ export default function RoomDetailPage() {
                   key={`fg-${currentImageIndex}`}
                   src={allMedia[currentImageIndex]}
                   alt={`Room View ${currentImageIndex + 1}`}
+                  onError={() => setMediaErrors(prev => ({ ...prev, [currentImageIndex]: true }))}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
@@ -428,7 +432,10 @@ export default function RoomDetailPage() {
                 />
               )
             ) : (
-              <div className="text-muted-foreground text-sm relative z-10">No media available</div>
+              <div className="absolute inset-0 w-full h-full bg-secondary/20 flex flex-col items-center justify-center text-muted-foreground z-10">
+                <Sofa size={48} className="opacity-20 mb-3" />
+                <span className="text-xs uppercase tracking-wider font-bold opacity-40">No Image Available</span>
+              </div>
             )}
           </AnimatePresence>
 
