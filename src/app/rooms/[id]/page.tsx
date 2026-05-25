@@ -460,7 +460,10 @@ export default function RoomDetailPage() {
         {/* Title & Location */}
             <div>
               <div className="flex flex-wrap gap-2 mb-4">
-                <span className="bg-primary/10 text-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider">{room.furnishing || "Semi-Furnished"}</span>
+                <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${room.tenant_type === 'family' ? 'bg-blue-100 text-blue-700' : 'bg-primary/10 text-primary'}`}>
+                  {room.tenant_type === 'family' ? '👨‍👩‍👧‍👦 Family' : '🎓 Bachelors'}
+                </span>
+                <span className="bg-secondary px-3 py-1 text-[11px] font-bold uppercase tracking-wider">{room.furnishing || "Semi-Furnished"}</span>
                 <span className="bg-secondary px-3 py-1 text-[11px] font-medium uppercase tracking-wider flex items-center gap-1">
                   <Calendar size={10} /> {getDaysLeft(room.leaving_date || "")} days left
                 </span>

@@ -37,6 +37,7 @@ export default function PostRoomPage() {
   const colonies = location ? getColonies(location) : [];
 
   // Room details
+  const [tenantType, setTenantType]     = useState("bachelor");
   const [title, setTitle]               = useState("");
   const [description, setDescription]   = useState("");
   const [rent, setRent]                 = useState("");
@@ -164,6 +165,7 @@ export default function PostRoomPage() {
       house_no: houseNo.trim() || profile?.house_no || "",
       full_address: fullAddress,
       leaving_date: leavingDate,
+      tenant_type: tenantType,
       members_allowed: membersAllowed,
       current_members: currentMembers,
       gender_preference: genderPref,
@@ -228,6 +230,29 @@ export default function PostRoomPage() {
 
         <div className="space-y-8">
 
+          {/* ── TENANT TYPE ───────────────────────────────────────── */}
+          <div className="border border-border p-6 space-y-4 bg-secondary/20">
+            <p className="text-[10px] uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
+              <Users size={12} className="text-primary" /> Who is this room for?
+            </p>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setTenantType("bachelor")}
+                className={`flex-1 py-4 border-2 font-bold uppercase tracking-wider transition-all ${tenantType === "bachelor" ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}
+              >
+                🎓 Bachelors
+              </button>
+              <button
+                type="button"
+                onClick={() => setTenantType("family")}
+                className={`flex-1 py-4 border-2 font-bold uppercase tracking-wider transition-all ${tenantType === "family" ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}
+              >
+                👨‍👩‍👧‍👦 Families
+              </button>
+            </div>
+          </div>
+
           {/* ── TITLE & DESCRIPTION ─────────────────────────── */}
           <div className="border border-border p-6 space-y-4">
             <p className="text-[10px] uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
@@ -240,7 +265,7 @@ export default function PostRoomPage() {
               <input
                 type="text"
                 value={title} onChange={e => setTitle(e.target.value)}
-                placeholder="e.g. 2BHK Semi-Furnished in Kondapur — Bachelors Welcome"
+                placeholder={tenantType === 'family' ? "e.g. Beautiful 2BHK for Family in Kondapur" : "e.g. 2BHK Semi-Furnished in Kondapur — Bachelors Welcome"}
                 className="w-full border border-border px-4 py-3 text-sm focus:border-primary focus:outline-none"
               />
             </div>

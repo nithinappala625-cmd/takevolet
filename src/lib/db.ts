@@ -46,6 +46,7 @@ export type Room = {
   house_no?: string;
   full_address?: string;
   leaving_date: string;
+  tenant_type?: string;
   members_allowed?: number;
   current_members?: number;
   gender_preference?: string;

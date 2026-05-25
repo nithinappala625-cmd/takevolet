@@ -58,6 +58,7 @@ create table if not exists public.rooms (
   house_no          text,           -- hidden until payment
   full_address      text,           -- revealed after ₹500 payment
   leaving_date      date not null,
+  tenant_type       text default 'bachelor', -- 'bachelor' or 'family'
   members_allowed   int default 2,
   current_members   int default 1,
   gender_preference text default 'Any',

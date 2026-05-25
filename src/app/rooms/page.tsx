@@ -19,6 +19,7 @@ export default function RoomsPage() {
   const [selectedParking, setSelectedParking] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(true);
+  const [activeTab, setActiveTab] = useState<"bachelor" | "family">("bachelor");
   const [allRooms, setAllRooms] = useState<Room[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
 
@@ -58,7 +59,8 @@ export default function RoomsPage() {
       const range = BUDGET_RANGES.find(r => r.label === selectedBudget);
       if (range) matchesBudget = room.rent >= range.min && room.rent <= range.max;
     }
-    return matchesLocation && matchesFurnishing && matchesMembers && matchesBudget && matchesSearch && matchesGender && matchesParking;
+    const matchesTenantType = (room.tenant_type || 'bachelor') === activeTab;
+    return matchesLocation && matchesFurnishing && matchesMembers && matchesBudget && matchesSearch && matchesGender && matchesParking && matchesTenantType;
   });
 
   const activeFilters = [selectedLocation, selectedFurnishing, selectedMembers, selectedBudget, selectedGender, selectedParking].filter(Boolean).length;
@@ -77,13 +79,42 @@ export default function RoomsPage() {
     <div className="pt-36 pb-20 min-h-screen">
       <div className="container mx-auto px-6 md:px-12">
 
-        <div className="mb-10">
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Bachelor Rooms</motion.p>
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl md:text-5xl font-light mb-4">
-            Room <span className="font-bold">Handovers</span>
+        <div className="mb-10 text-center">
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">
+            Room Handovers
+          </motion.p>
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl md:text-5xl font-light mb-8">
+            Find Your <span className="font-bold">Perfect Space</span>
           </motion.h1>
-          <p className="text-muted-foreground font-light max-w-2xl">
-            Bachelors leaving their rooms post here. Click any room to see full photos, videos & details. Contact via ₹1,500 pack.
+          
+          {/* ── DRIPPY TOGGLE ─────────────────────────────────── */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-secondary/40 p-1.5 rounded-full inline-flex border border-border/50 backdrop-blur-sm shadow-sm relative">
+              <div 
+                className="absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-primary rounded-full transition-all duration-300 ease-in-out shadow-md"
+                style={{ transform: activeTab === 'family' ? 'translateX(100%)' : 'translateX(0)' }}
+              />
+              
+              <button 
+                onClick={() => setActiveTab('bachelor')}
+                className={`relative px-8 py-3 rounded-full text-sm font-bold tracking-wider uppercase transition-colors z-10 w-48 ${activeTab === 'bachelor' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                🎓 Bachelors
+              </button>
+              
+              <button 
+                onClick={() => setActiveTab('family')}
+                className={`relative px-8 py-3 rounded-full text-sm font-bold tracking-wider uppercase transition-colors z-10 w-48 ${activeTab === 'family' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                👨‍👩‍👧‍👦 Family
+              </button>
+            </div>
+          </div>
+          
+          <p className="text-muted-foreground font-light max-w-2xl mx-auto">
+            {activeTab === 'bachelor' 
+              ? "Bachelors leaving their rooms post here. Contact via ₹15/₹55 packs to unlock details." 
+              : "Discover safe, beautiful homes perfect for families. Fully verified listings with transparent pricing."}
           </p>
         </div>
 
