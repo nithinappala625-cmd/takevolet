@@ -72,6 +72,8 @@ create table if not exists public.rooms (
   images            text[] default '{}',   -- Supabase storage paths
   videos            text[] default '{}',   -- Supabase storage paths
   is_available      boolean default true,
+  is_rented_out     boolean default false,
+  curiosity_text    text default null,
   enquiries         int default 0,
   contact_unlocks   int default 0,
   earnings          int default 0,
@@ -81,9 +83,9 @@ create table if not exists public.rooms (
 
 alter table public.rooms enable row level security;
 
--- Anyone can read available rooms
+-- Anyone can read available or rented out rooms
 create policy "Anyone can view available rooms"
-  on public.rooms for select using (is_available = true);
+  on public.rooms for select using (is_available = true OR is_rented_out = true);
 
 -- Users can insert their own rooms
 create policy "Users can insert own rooms"

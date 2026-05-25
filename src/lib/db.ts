@@ -60,6 +60,8 @@ export type Room = {
   images?: string[];
   videos?: string[];
   is_available?: boolean;
+  is_rented_out?: boolean;
+  curiosity_text?: string;
   enquiries?: number;
   contact_unlocks?: number;
   earnings?: number;
@@ -140,12 +142,12 @@ export async function isProfileComplete(userId: string): Promise<boolean> {
 
 // ─── ROOMS ────────────────────────────────────────────────────────────────────
 
-/** Fetch all available rooms (with poster profile joined) */
+/** Fetch all available or rented out rooms (with poster profile joined) */
 export async function getAllRooms(): Promise<Room[]> {
   const { data, error } = await supabase
     .from("rooms")
     .select("*")
-    .eq("is_available", true)
+    .or("is_available.eq.true,is_rented_out.eq.true")
     .order("created_at", { ascending: false });
   if (error) { console.error("getAllRooms:", error); return []; }
   
@@ -195,6 +197,16 @@ export async function getUserRooms(userId: string): Promise<Room[]> {
     .order("created_at", { ascending: false });
   if (error) return [];
   return (data as Room[]) || [];
+}
+
+/** Update room status (rented out) and curiosity text */
+export async function updateRoomStatus(id: string, userId: string, updates: { is_rented_out: boolean; curiosity_text: string | null }): Promise<{ error: any }> {
+  const { error } = await supabase
+    .from("rooms")
+    .update(updates)
+    .eq("id", id)
+    .eq("user_id", userId);
+  return { error };
 }
 
 // ─── CONTACT UNLOCKS ──────────────────────────────────────────────────────────

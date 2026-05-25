@@ -9,7 +9,7 @@ export default function RoomCard({ room }: { room: Room }) {
   };
 
   return (
-    <div className="group border border-border overflow-hidden hover:border-primary/30 transition-all duration-500 bg-background flex flex-col h-full">
+    <div className={`group border border-border overflow-hidden hover:border-primary/30 transition-all duration-500 bg-background flex flex-col h-full ${room.is_rented_out ? 'opacity-80 grayscale-[20%]' : ''}`}>
       <Link href={`/rooms/${room.id}`} className="block relative aspect-[16/9] overflow-hidden bg-black shrink-0 border-b border-border flex items-center justify-center">
         {/* Ambient Blur */}
         <img src={(room.images || [])[0] || ""} alt=""
@@ -46,9 +46,24 @@ export default function RoomCard({ room }: { room: Room }) {
         <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-black/20 backdrop-blur-[2px]">
           <span className="bg-background/90 backdrop-blur-sm px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-xl">View Details</span>
         </div>
+        
+        {room.is_rented_out && (
+          <div className="absolute inset-0 z-30 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
+            <span className="bg-yellow-500 text-yellow-950 px-6 py-2 text-lg font-black uppercase tracking-widest shadow-2xl rotate-[-5deg]">
+              Rented Out
+            </span>
+          </div>
+        )}
       </Link>
 
-      <div className="p-6 flex flex-col flex-grow">
+      <div className="p-6 flex flex-col flex-grow relative">
+        {room.curiosity_text && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 w-max max-w-[90%]">
+            <span className="bg-primary text-primary-foreground px-4 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-lg border border-primary-foreground/20 rounded-full flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+              {room.curiosity_text}
+            </span>
+          </div>
+        )}
         <Link href={`/rooms/${room.id}`}>
           <h3 className="text-lg font-bold tracking-tight mb-1 line-clamp-1 hover:text-primary transition-colors">{room.title}</h3>
         </Link>

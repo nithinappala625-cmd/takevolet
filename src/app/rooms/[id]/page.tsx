@@ -630,6 +630,19 @@ export default function RoomDetailPage() {
                         </a>
                       </div>
                     </div>
+                  ) : room.is_rented_out ? (
+                    <div className="bg-yellow-50 border border-yellow-200 p-6 mb-5 text-center">
+                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Lock size={24} className="text-yellow-600" />
+                      </div>
+                      <h3 className="font-black text-yellow-800 text-lg mb-1 uppercase tracking-wider">Rented Out</h3>
+                      <p className="text-sm text-yellow-700 font-medium">This room is no longer available. Contact unlocking has been disabled.</p>
+                      {room.curiosity_text && (
+                        <div className="mt-4 inline-block bg-yellow-200/50 px-4 py-2 text-xs font-bold text-yellow-800 rounded-full">
+                          {room.curiosity_text}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <>
                       {/* Blurred contact preview */}
@@ -676,20 +689,22 @@ export default function RoomDetailPage() {
                   )}
 
                   {/* SECONDARY: I'm Interested — address unlock */}
-                  <div className="border border-dashed border-primary/30 p-4 bg-primary/3">
-                    <p className="text-xs font-bold mb-1 flex items-center gap-1.5"><Zap size={12} className="text-primary"/>Want the full address too?</p>
-                    <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
-                      Pay <strong className="text-primary">₹500</strong> → Full address revealed instantly → Visit room → Like it? Pay <strong>₹1,000</strong> → Handover confirmed, poster earns ₹1,000
-                    </p>
-                    {flowError && <p className="text-xs text-red-500 mb-2 flex items-center gap-1"><AlertCircle size={11}/>{flowError}</p>}
-                    <button onClick={handleInterest} disabled={interestPaying}
-                      className="w-full border border-primary text-primary py-3 text-xs uppercase tracking-wider font-bold hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                      {interestPaying
-                        ? <><div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin"/>Processing…</>
-                        : <><Zap size={13}/> I'm Interested — ₹500 (Address Unlock)</>}
-                    </button>
-                  </div>
-                  <p className="text-center text-[10px] text-muted-foreground mt-2">🔒 Razorpay · UPI · Cards · NetBanking</p>
+                  {!room.is_rented_out && (
+                    <div className="border border-dashed border-primary/30 p-4 bg-primary/3 mt-5">
+                      <p className="text-xs font-bold mb-1 flex items-center gap-1.5"><Zap size={12} className="text-primary"/>Want the full address too?</p>
+                      <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
+                        Pay <strong className="text-primary">₹500</strong> → Full address revealed instantly → Visit room → Like it? Pay <strong>₹1,000</strong> → Handover confirmed, poster earns ₹1,000
+                      </p>
+                      {flowError && <p className="text-xs text-red-500 mb-2 flex items-center gap-1"><AlertCircle size={11}/>{flowError}</p>}
+                      <button onClick={handleInterest} disabled={interestPaying}
+                        className="w-full border border-primary text-primary py-3 text-xs uppercase tracking-wider font-bold hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                        {interestPaying
+                          ? <><div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin"/>Processing…</>
+                          : <><Zap size={13}/> I'm Interested — ₹500 (Address Unlock)</>}
+                      </button>
+                    </div>
+                  )}
+                  {!room.is_rented_out && <p className="text-center text-[10px] text-muted-foreground mt-2">🔒 Razorpay · UPI · Cards · NetBanking</p>}
                 </div>
               )}
 

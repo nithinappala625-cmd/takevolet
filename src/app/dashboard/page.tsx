@@ -52,6 +52,12 @@ function DashboardContent() {
   const [showPostDropdown, setShowPostDropdown] = useState(false);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
+  // ── Status Edit state ────────────────────────────────────────────────────────
+  const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
+  const [editIsRentedOut, setEditIsRentedOut] = useState(false);
+  const [editCuriosityText, setEditCuriosityText] = useState("");
+  const [statusSubmitting, setStatusSubmitting] = useState(false);
+
   // ── Payout state ───────────────────────────────────────────────────────────
   const [payoutMethod, setPayoutMethod] = useState<"upi" | "bank" | "qrcode">("upi");
   const [upiId, setUpiId] = useState("");
@@ -143,6 +149,24 @@ function DashboardContent() {
     if (!confirm("Delete this flatmate listing?")) return;
     await deleteUserFlatmate(id);
     setMyFlatmates(prev => prev.filter(f => f.id !== id));
+  };
+
+  const handleUpdateStatus = async (id: string) => {
+    setStatusSubmitting(true);
+    try {
+      const { updateRoomStatus } = await import("@/lib/db");
+      const { error } = await updateRoomStatus(id, user!.id, {
+        is_rented_out: editIsRentedOut,
+        curiosity_text: editCuriosityText || null,
+      });
+      if (error) throw error;
+      setMyRooms(prev => prev.map(r => r.id === id ? { ...r, is_rented_out: editIsRentedOut, curiosity_text: editCuriosityText || undefined } : r));
+      setEditingStatusId(null);
+    } catch (err: any) {
+      alert("Failed to update status: " + err.message);
+    } finally {
+      setStatusSubmitting(false);
+    }
   };
 
   // ── Save payout details ───────────────────────────────────────────────────
@@ -582,13 +606,14 @@ function DashboardContent() {
                 {combinedListings.map((item, i) => {
                   const isRoom = item.type === "room";
                   const image = isRoom ? (item.images || [])[0] : (item.images || [])[0];
-                  const isActive = isRoom ? item.is_available : item.isAvailable;
+                  let isActive = isRoom ? item.is_available : item.isAvailable;
+                  if (isRoom && item.is_rented_out) isActive = false;
                   const detailHref = isRoom ? `/rooms/${item.id}` : `/flatmates/${item.id}`;
                   const deleteFn = isRoom ? () => handleDelete(item.id) : () => handleDeleteFlatmate(item.id);
 
                   return (
                     <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                      className="border border-border p-5 flex flex-col md:flex-row gap-4">
+                      className={`border border-border p-5 flex flex-col md:flex-row gap-4 ${isRoom && item.is_rented_out ? 'opacity-70' : ''}`}>
                       <div className="w-full md:w-32 h-24 bg-secondary shrink-0 overflow-hidden relative">
                         {image ? (
                           <img src={image} alt="" className="w-full h-full object-cover" />
@@ -601,9 +626,13 @@ function DashboardContent() {
                       </div>
                       <div className="flex-1">
                         <div className="flex flex-wrap gap-2 mb-2">
-                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${isActive ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
-                            {isActive ? "Active" : "Inactive"}
-                          </span>
+                          {isRoom && item.is_rented_out ? (
+                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-yellow-100 text-yellow-700">Rented Out</span>
+                          ) : (
+                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${isActive ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
+                              {isActive ? "Active" : "Inactive"}
+                            </span>
+                          )}
                           {!isRoom && <span className="text-[10px] font-medium uppercase px-2 py-0.5 bg-secondary">Vacancy: {item.vacancyCount}</span>}
                           {isRoom && <span className="text-[10px] font-medium uppercase px-2 py-0.5 bg-secondary">{item.furnishing}</span>}
                         </div>
@@ -631,6 +660,15 @@ function DashboardContent() {
                         )}
                       </div>
                       <div className="flex md:flex-col gap-2 shrink-0">
+                        {isRoom && (
+                          <button onClick={() => {
+                            setEditingStatusId(item.id);
+                            setEditIsRentedOut(!!item.is_rented_out);
+                            setEditCuriosityText(item.curiosity_text || "");
+                          }} className="flex-1 md:flex-none border border-border px-3 py-2 text-xs uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-1">
+                            <Edit2 size={11} /> Edit Status
+                          </button>
+                        )}
                         <Link href={detailHref} className="flex-1 md:flex-none border border-border px-3 py-2 text-xs uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-1">
                           <Eye size={11} /> View
                         </Link>
@@ -642,6 +680,39 @@ function DashboardContent() {
                   );
                 })}
               </div>
+            )}
+            
+            {/* Status Edit Modal */}
+            {editingStatusId && (
+              <>
+                <div className="fixed inset-0 bg-black/60 z-40" onClick={() => !statusSubmitting && setEditingStatusId(null)} />
+                <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background border border-border w-full max-w-md p-6 z-50">
+                  <h3 className="text-lg font-bold mb-4 uppercase tracking-wide">Edit Room Status</h3>
+                  
+                  <label className="flex items-center gap-3 cursor-pointer mb-6 border border-border p-4 hover:border-primary/50 transition-colors">
+                    <input type="checkbox" checked={editIsRentedOut} onChange={e => setEditIsRentedOut(e.target.checked)} className="w-5 h-5 accent-primary" />
+                    <div>
+                      <p className="font-bold">Mark as Rented Out</p>
+                      <p className="text-xs text-muted-foreground">This will show a "Rented Out" badge and disable contact unlocking.</p>
+                    </div>
+                  </label>
+                  
+                  <div className="mb-6">
+                    <label className="block text-xs uppercase tracking-widest font-bold mb-2">Curiosity Text (Optional)</label>
+                    <input type="text" value={editCuriosityText} onChange={e => setEditCuriosityText(e.target.value)} placeholder="e.g. 🔥 10 people contacted today" className="w-full bg-secondary/30 border border-border p-3 text-sm focus:border-primary outline-none" />
+                    <p className="text-[10px] text-muted-foreground mt-1.5">Add urgency to make seekers act faster.</p>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button onClick={() => setEditingStatusId(null)} disabled={statusSubmitting} className="flex-1 border border-border py-3 text-xs font-bold uppercase tracking-wider hover:bg-secondary transition-colors disabled:opacity-50">
+                      Cancel
+                    </button>
+                    <button onClick={() => handleUpdateStatus(editingStatusId)} disabled={statusSubmitting} className="flex-1 bg-primary text-primary-foreground py-3 text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-colors disabled:opacity-50">
+                      {statusSubmitting ? "Saving..." : "Save Status"}
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </motion.div>
         )}
