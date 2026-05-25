@@ -27,11 +27,11 @@ const razorpay = new Razorpay({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { roomId, userId, type = "contact_unlock", planId = "growth", amount } = body;
+    const { roomId, flatmateId, userId, type = "contact_unlock", planId = "growth", amount } = body;
 
     // Validate inputs
-    if (!roomId) {
-      return NextResponse.json({ error: "roomId is required" }, { status: 400 });
+    if (!roomId && !flatmateId) {
+      return NextResponse.json({ error: "roomId or flatmateId is required" }, { status: 400 });
     }
     if (!userId || userId === "guest") {
       return NextResponse.json({ error: "Authentication required to create a payment order" }, { status: 401 });
@@ -54,7 +54,8 @@ export async function POST(request: Request) {
     const AMOUNT_PAISE = amount && amount > 0 ? Math.min(amount, 50000) : plan.paise; // use client amount, but cap at ₹500
 
     // Create a unique receipt ID (max 40 chars per Razorpay spec)
-    const receipt = `rcpt_${roomId.slice(0, 15)}_${Date.now().toString().slice(-8)}`;
+    const targetId = roomId || flatmateId;
+    const receipt = `rcpt_${targetId.slice(0, 15)}_${Date.now().toString().slice(-8)}`;
 
     // Create order via Razorpay API
     const order = await razorpay.orders.create({
@@ -62,7 +63,8 @@ export async function POST(request: Request) {
       currency: "INR",
       receipt,
       notes: {
-        roomId,
+        roomId: roomId || "",
+        flatmateId: flatmateId || "",
         userId: userId || "guest",
         type,                          // "contact_unlock"
         packContacts: "5",
