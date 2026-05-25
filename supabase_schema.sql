@@ -280,3 +280,23 @@ create policy "Users can delete own flatmates"
 
 create policy "Users can update own KYC docs" on storage.objects for update using (bucket_id = 'kyc-docs' and auth.uid()::text = (storage.foldername(name))[1]);
 create policy "Users can delete own KYC docs" on storage.objects for delete using (bucket_id = 'kyc-docs' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ─── 8. CONTACT UNLOCKS ─────────────────────────────────────
+create table if not exists public.contact_unlocks (
+  id                  uuid primary key default uuid_generate_v4(),
+  room_id             uuid references public.rooms(id) on delete cascade not null,
+  user_id             uuid references public.profiles(id) on delete cascade not null,
+  razorpay_order_id   text,
+  razorpay_payment_id text,
+  created_at          timestamptz default now(),
+  unique(room_id, user_id)
+);
+
+alter table public.contact_unlocks enable row level security;
+
+create policy "Users can view own contact unlocks"
+  on public.contact_unlocks for select using (auth.uid() = user_id);
+
+create policy "Service role can insert contact unlocks"
+  on public.contact_unlocks for insert with check (true);
+

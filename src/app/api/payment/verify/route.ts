@@ -91,28 +91,15 @@ export async function POST(request: Request) {
     // ── 4. Persist unlock to Supabase (non-blocking — don't crash on failure) ─
     if (userId && userId !== "guest" && roomId) {
       try {
-        let seekerName = "Anonymous";
-        if (userId && userId !== "guest") {
-          const { data: seeker } = await supabaseAdmin.from("profiles").select("full_name").eq("id", userId).single();
-          if (seeker?.full_name) seekerName = seeker.full_name;
-        }
-
-        await supabaseAdmin.from("interests").upsert({
+        await supabaseAdmin.from("contact_unlocks").upsert({
           room_id:    roomId,
-          seeker_id:  userId,
-          poster_id:  room?.user_id || "",
-          room_title: room?.title || "",
-          poster_name: contact?.name || "Room Poster",
-          seeker_name: seekerName,
-          platform_fee: 500,
+          user_id:    userId,
           razorpay_order_id: razorpay_order_id,
           razorpay_payment_id: razorpay_payment_id,
-          payment_status: "paid",
-          full_address: room?.full_address || "",
-          paid_at:    new Date().toISOString(),
-        }, { onConflict: "room_id,seeker_id", ignoreDuplicates: true });
+          created_at: new Date().toISOString(),
+        }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
       } catch (e) {
-        console.warn("[Razorpay] interests upsert failed:", e);
+        console.warn("[Razorpay] contact_unlocks upsert failed:", e);
       }
     }
 

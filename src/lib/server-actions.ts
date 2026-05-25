@@ -38,13 +38,13 @@ export async function checkRoomUnlockStatusAction(roomId: string, userId: string
   if (!roomId || !userId || userId === "guest") return null;
 
   const { data, error } = await supabaseAdmin
-    .from("interests")
-    .select("payment_status")
+    .from("contact_unlocks")
+    .select("id")
     .eq("room_id", roomId)
-    .eq("seeker_id", userId)
+    .eq("user_id", userId)
     .single();
 
-  if (error || !data || data.payment_status !== "paid") return null;
+  if (error || !data) return null;
   
   // If paid, fetch contact info to return
   const room = await fetchRoomByIdAction(roomId);
