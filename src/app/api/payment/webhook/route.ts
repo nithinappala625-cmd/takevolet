@@ -75,22 +75,43 @@ export async function POST(request: Request) {
         });
 
         // ── Persist contact unlock to Supabase ────────────────────────────────
-        if (notes.roomId && notes.userId && notes.userId !== "guest") {
-          const { error } = await supabaseAdmin.from("interests").upsert({
-            room_id:    notes.roomId,
-            user_id:    notes.userId,
-            payment_id: paymentId,
-            order_id:   orderId,
-            amount:     Math.round(amount / 100),
-            status:     "paid",
-            type:       notes.type || "contact_unlock",
-            paid_at:    new Date().toISOString(),
-          }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
+        if (notes.userId && notes.userId !== "guest") {
+          if (notes.type === "contact_unlock" && notes.roomId) {
+            await supabaseAdmin.from("contact_unlocks").upsert({
+              room_id:    notes.roomId,
+              user_id:    notes.userId,
+              razorpay_payment_id: paymentId,
+              razorpay_order_id:   orderId,
+              created_at: new Date().toISOString(),
+            }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
+            console.log("[Webhook] ✅ Contact unlock saved to Supabase");
+          } else if (notes.type === "flatmate_contact_unlock" && notes.flatmateId) {
+            await supabaseAdmin.from("flatmate_contact_unlocks").upsert({
+              flatmate_id: notes.flatmateId,
+              user_id:    notes.userId,
+              razorpay_payment_id: paymentId,
+              razorpay_order_id:   orderId,
+              created_at: new Date().toISOString(),
+            }, { onConflict: "flatmate_id,user_id", ignoreDuplicates: true });
+            console.log("[Webhook] ✅ Flatmate contact unlock saved to Supabase");
+          } else if (notes.roomId) {
+            // Default to interests table for actual interests
+            const { error } = await supabaseAdmin.from("interests").upsert({
+              room_id:    notes.roomId,
+              user_id:    notes.userId,
+              payment_id: paymentId,
+              order_id:   orderId,
+              amount:     Math.round(amount / 100),
+              status:     "paid",
+              type:       notes.type || "interest",
+              paid_at:    new Date().toISOString(),
+            }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
 
-          if (error) {
-            console.error("[Webhook] Supabase upsert error:", error.message);
-          } else {
-            console.log("[Webhook] ✅ Interest record saved to Supabase");
+            if (error) {
+              console.error("[Webhook] Supabase upsert error:", error.message);
+            } else {
+              console.log("[Webhook] ✅ Interest record saved to Supabase");
+            }
           }
         }
         break;

@@ -648,6 +648,8 @@ export default function AdminPage() {
                   <div key={u.id} className="grid grid-cols-12 gap-2 p-4 border-b border-border last:border-0 items-center hover:bg-secondary/10">
                     <div className="col-span-3">
                       <p className="text-sm font-bold">{u.seeker_name}</p>
+                      <p className="text-xs font-mono mt-0.5">{u.seeker_phone}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{u.seeker_email}</p>
                     </div>
                     <div className="col-span-3">
                       <p className="text-sm font-bold text-primary">{u.poster_name}</p>

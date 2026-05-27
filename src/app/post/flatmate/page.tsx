@@ -94,8 +94,7 @@ export default function PostFlatmatePage() {
       getProfile(user.id).then((profile) => {
         if (profile) {
           setDbProfile(profile);
-          if (profile.location) setLocation(profile.location);
-          if (profile.colony) setColony(profile.colony);
+          // Removed location and colony prefill from profile to fix glitch
         }
       });
     }

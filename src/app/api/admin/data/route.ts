@@ -59,6 +59,57 @@ export async function GET(request: Request) {
   const totalPaidOut  = payouts.filter((p: any) => p.status === "completed").reduce((s: number, p: any) => s + p.amount, 0);
   const pendingAmount = payouts.filter((p: any) => p.status === "pending").reduce((s: number, p: any) => s + p.amount, 0);
 
+  // Fetch Razorpay details for unlocks to show plan and amount
+  let razorpayInstance: any = null;
+  if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+    const Razorpay = require("razorpay");
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  }
+
+  const mapUnlocksWithRazorpay = async (unlocks: any[], type: string, relationName: string) => {
+    return Promise.all(unlocks.map(async (u: any) => {
+      let planId = "unknown";
+      let amount = 15; // default fallback
+
+      if (razorpayInstance && u.razorpay_order_id) {
+        try {
+          const order = await razorpayInstance.orders.fetch(u.razorpay_order_id);
+          if (order && order.notes) {
+            planId = order.notes.planId || "growth";
+            if (order.amount) amount = order.amount / 100;
+          }
+        } catch (e) {
+          console.error("Razorpay fetch failed for order", u.razorpay_order_id);
+        }
+      }
+
+      return {
+        id: u.id,
+        type: type,
+        listing_id: type === "room" ? u.room_id : u.flatmate_id,
+        title: u[relationName]?.title || "Unknown Listing",
+        seeker_name: u.profiles?.full_name || "Anonymous",
+        seeker_phone: u.profiles?.phone || "No phone",
+        seeker_email: u.profiles?.email || "No email",
+        poster_name: u[relationName]?.profiles?.full_name || "Unknown Poster",
+        poster_phone: u[relationName]?.profiles?.phone || "",
+        poster_whatsapp: u[relationName]?.profiles?.whatsapp || "",
+        planId,
+        amount,
+        created_at: u.created_at,
+      };
+    }));
+  };
+
+  const processedContactUnlocks = await mapUnlocksWithRazorpay(contactUnlocks, "room", "rooms");
+  const processedFlatmateUnlocks = await mapUnlocksWithRazorpay(flatmateUnlocks, "flatmate", "flatmates");
+
+  const combinedUnlocks = [...processedContactUnlocks, ...processedFlatmateUnlocks]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   return NextResponse.json({
     success: true,
     stats: {
@@ -97,30 +148,7 @@ export async function GET(request: Request) {
       posterName: h.poster_name,
       confirmedAt: h.confirmed_at,
     })),
-    contactUnlocks: [
-      ...contactUnlocks.map((c: any) => ({
-        id: c.id,
-        type: "room",
-        listing_id: c.room_id,
-        title: c.rooms?.title || "Unknown Room",
-        seeker_name: c.profiles?.full_name || "Anonymous",
-        poster_name: c.rooms?.profiles?.full_name || "Unknown Poster",
-        poster_phone: c.rooms?.profiles?.phone || "",
-        poster_whatsapp: c.rooms?.profiles?.whatsapp || "",
-        created_at: c.created_at,
-      })),
-      ...flatmateUnlocks.map((f: any) => ({
-        id: f.id,
-        type: "flatmate",
-        listing_id: f.flatmate_id,
-        title: f.flatmates?.title || "Unknown Flatmate",
-        seeker_name: f.profiles?.full_name || "Anonymous",
-        poster_name: f.flatmates?.profiles?.full_name || "Unknown Poster",
-        poster_phone: f.flatmates?.profiles?.phone || "",
-        poster_whatsapp: f.flatmates?.profiles?.whatsapp || "",
-        created_at: f.created_at,
-      }))
-    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    contactUnlocks: combinedUnlocks,
     // Map profiles to include computed fields
     users: await Promise.all(profiles.map(async (p: any) => {
       let docUrl = p.aadhaar_url || null;

@@ -69,6 +69,8 @@ export async function POST(request: Request) {
         type,                          // "contact_unlock"
         packContacts: "5",
         validityDays: "30",
+        planId: planId || "growth",
+        amountPaise: AMOUNT_PAISE.toString()
       },
     });
 

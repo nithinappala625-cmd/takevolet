@@ -94,6 +94,27 @@ export const HYDERABAD_AREAS = [
   "Jeedimetla",
   "Medchal",
   "Shamirpet",
+  "Borabanda",
+  "Allapur",
+  "Sanathnagar",
+  "Suraram",
+  "Gajularamaram",
+  "Chintal",
+  "Bolarum",
+  "Padmarao Nagar",
+  "Baghlingampally",
+  "Amberpet",
+  "Karmanghat",
+  "Santoshnagar",
+  "Chandrayangutta",
+  "Barkas",
+  "Falaknuma",
+  "Charminar",
+  "Koti",
+  "Bandlaguda",
+  "Kismatpur",
+  "Gopanpally",
+  "Lingampally"
 ];
 
 // ─── For dropdowns (profile complete + post room forms) ───────────────────────

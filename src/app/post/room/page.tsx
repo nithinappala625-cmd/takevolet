@@ -72,10 +72,7 @@ export default function PostRoomPage() {
             router.replace("/profile/complete?redirect=/post/room");
           } else {
             getProfile(user.id).then((profile) => {
-              if (profile) {
-                if (profile.location) setLocation(profile.location);
-                if (profile.colony) setColony(profile.colony);
-              }
+              // Removed location and colony prefill from profile to fix glitch
               setProfileChecking(false);
             });
           }
