@@ -38,6 +38,7 @@ export default function PostItemPage() {
   const [uploadedFiles, setUploadedFiles] = useState<{ file: File; preview: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [listingType, setListingType] = useState<"sell" | "rent" | "both">("sell");
+  const [bundleItems, setBundleItems] = useState<{name: string, price?: string}[]>([]);
 
   const [form, setForm] = useState({
     title: "",
@@ -54,7 +55,7 @@ export default function PostItemPage() {
   };
 
   const handleFiles = (files: FileList) => {
-    const newFiles = Array.from(files).slice(0, 8 - uploadedFiles.length);
+    const newFiles = Array.from(files).slice(0, 15 - uploadedFiles.length);
     newFiles.forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -73,10 +74,16 @@ export default function PostItemPage() {
     // Simulate upload delay for photos if any
     await new Promise(r => setTimeout(r, 1000));
     
+    // Append bundle items to description if any exist and have a name
+    const validBundleItems = bundleItems.filter(item => item.name.trim() !== "");
+    const finalDescription = validBundleItems.length > 0 
+      ? `${form.description}\n\nIncluded Items:\n${validBundleItems.map((item, i) => `${i + 1}. ${item.name} ${item.price ? `(₹${item.price})` : ""}`).join("\n")}`
+      : form.description;
+
     const newItem: MarketplaceItemType = {
       user_id: user?.id,
       title: form.title,
-      description: form.description,
+      description: finalDescription,
       category: form.category,
       condition: form.condition,
       price: Number(form.price) || 0,
@@ -222,14 +229,62 @@ export default function PostItemPage() {
               className="w-full bg-transparent border border-border px-5 py-4 outline-none focus:border-primary transition-colors text-sm font-light resize-none" />
           </div>
 
+          {/* Bundle Items (Optional) */}
+          <div>
+            <div className="flex justify-between items-end mb-3">
+              <label className="block text-xs uppercase tracking-widest font-bold">Bundle Items (Optional)</label>
+              <span className="text-[10px] text-muted-foreground font-bold">{bundleItems.length} / 15 added</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Selling multiple items together? List them here individually so buyers know exactly what's included in the price.</p>
+            
+            <div className="space-y-3 mb-4">
+              {bundleItems.map((item, i) => (
+                <div key={i} className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</div>
+                  <input type="text" placeholder="Item name (e.g. Fridge)" value={item.name}
+                    onChange={(e) => {
+                      const newItems = [...bundleItems];
+                      newItems[i].name = e.target.value;
+                      setBundleItems(newItems);
+                    }}
+                    className="flex-1 bg-transparent border border-border px-4 py-3 outline-none focus:border-primary transition-colors text-sm font-light" />
+                  <div className="relative w-32 shrink-0">
+                    <IndianRupee size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input type="number" placeholder="Price" value={item.price || ""}
+                      onChange={(e) => {
+                        const newItems = [...bundleItems];
+                        newItems[i].price = e.target.value;
+                        setBundleItems(newItems);
+                      }}
+                      className="w-full bg-transparent border border-border pl-7 pr-3 py-3 outline-none focus:border-primary transition-colors text-sm font-light" />
+                  </div>
+                  <button type="button" onClick={() => setBundleItems(bundleItems.filter((_, idx) => idx !== i))}
+                    className="w-10 h-10 border border-border flex items-center justify-center text-red-400 hover:bg-red-50 hover:border-red-200 transition-colors shrink-0">
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {bundleItems.length < 15 && (
+              <button type="button" onClick={() => setBundleItems([...bundleItems, { name: "", price: "" }])}
+                className="text-xs font-bold text-primary border border-primary/30 px-5 py-3 hover:bg-primary/10 transition-colors uppercase tracking-widest flex items-center gap-2">
+                <span>+</span> Add Bundle Item
+              </button>
+            )}
+          </div>
+
           {/* Photos Upload */}
           <div>
-            <label className="block text-xs uppercase tracking-widest font-bold mb-3">Photos (Up to 8)</label>
-            <div onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-border p-10 text-center hover:border-primary/50 transition-colors cursor-pointer group mb-4">
-              <Upload size={28} className="mx-auto text-muted-foreground mb-3 group-hover:text-primary transition-colors" />
+            <div className="flex justify-between items-end mb-3">
+              <label className="block text-xs uppercase tracking-widest font-bold">Photos (Up to 15)</label>
+              <span className="text-[10px] text-muted-foreground font-bold">{uploadedFiles.length} / 15 added</span>
+            </div>
+            <div onClick={() => { if (uploadedFiles.length < 15) fileInputRef.current?.click(); }}
+              className={`border-2 border-dashed border-border p-10 text-center transition-colors mb-4 ${uploadedFiles.length < 15 ? 'hover:border-primary/50 cursor-pointer group' : 'opacity-50 cursor-not-allowed'}`}>
+              <Upload size={28} className={`mx-auto mb-3 transition-colors ${uploadedFiles.length < 15 ? 'text-muted-foreground group-hover:text-primary' : 'text-muted-foreground/50'}`} />
               <p className="font-medium text-sm mb-1">Click to upload photos</p>
-              <p className="text-xs text-muted-foreground">JPG, PNG • Max 10MB each • Up to 8 photos</p>
+              <p className="text-xs text-muted-foreground">JPG, PNG • Max 10MB each • Up to 15 photos</p>
             </div>
             <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden"
               onChange={e => e.target.files && handleFiles(e.target.files)} />
