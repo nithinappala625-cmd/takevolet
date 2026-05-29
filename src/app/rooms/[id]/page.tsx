@@ -703,38 +703,73 @@ export default function RoomDetailPage() {
 
                   {/* SECONDARY: I'm Interested — address unlock */}
                   {!room.is_rented_out && (
-                    <div className="border border-dashed border-primary/30 p-4 bg-primary/3 mt-5">
-                      <p className="text-xs font-bold mb-2 flex items-center gap-1.5"><Zap size={12} className="text-primary"/>Visit Pass Model</p>
-                      {(() => {
-                        const isHighRent = (room.rent || 0) >= 20000;
-                        const visitFee = isHighRent ? 499 : 299;
-                        const totalFee = isHighRent ? 2000 : 1500;
-                        const remaining = isHighRent ? 1501 : 1201;
-                        return (
-                          <>
-                            <div className="text-[11px] text-muted-foreground mb-4 leading-relaxed space-y-1.5">
-                              <p>Visit fee = <strong className="text-primary">₹{visitFee}</strong></p>
-                              <p className="text-[9px] italic text-primary/80 pb-1">Exact location / address directly shared for visiting.</p>
-                              <p>Final platform fee = <strong>₹{totalFee}</strong></p>
-                              <p>If room selected, pay remaining <strong>₹{remaining}</strong></p>
-                              <p className="text-[9px] mt-1 text-muted-foreground italic leading-tight pt-1">
-                                (We give ₹1,000 from this platform fee to the poster who finds the room for you)
-                              </p>
-                            </div>
-                            {flowError && <p className="text-xs text-red-500 mb-2 flex items-center gap-1"><AlertCircle size={11}/>{flowError}</p>}
-                            <button onClick={handleInterest} disabled={interestPaying}
-                              className="w-full border border-primary text-primary py-3 text-xs uppercase tracking-wider font-bold hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                              {interestPaying
-                                ? <><div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin"/>Processing…</>
-                                : <><Zap size={13}/> Get Visit Pass — ₹{visitFee}</>}
-                            </button>
-                            <button onClick={() => setPassPreviewOpen(true)}
-                              className="w-full mt-2 text-[10px] uppercase tracking-wider font-bold text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1.5 underline decoration-primary/30 underline-offset-2">
-                              <Eye size={12} /> View how pass looks like
-                            </button>
-                          </>
-                        );
-                      })()}
+                    <div className="relative mt-6 rounded-xl overflow-hidden shadow-2xl border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
+                      {/* Decorative elements */}
+                      <div className="absolute -right-12 -top-12 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+                      <div className="absolute -left-12 -bottom-12 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                      <div className="p-5 relative z-10">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                            <Zap size={16} className="text-primary fill-primary/20" />
+                            Premium Visit Pass
+                          </h3>
+                          <span className="bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border border-primary/20">
+                            Recommended
+                          </span>
+                        </div>
+                        
+                        {(() => {
+                          const isHighRent = (room.rent || 0) >= 20000;
+                          const visitFee = isHighRent ? 499 : 299;
+                          const totalFee = isHighRent ? 2000 : 1500;
+                          const remaining = isHighRent ? 1501 : 1201;
+                          return (
+                            <>
+                              <div className="space-y-3 mb-5">
+                                <div className="bg-background/80 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+                                  <div className="flex justify-between items-center mb-1">
+                                    <p className="text-xs font-semibold text-muted-foreground">Visit Fee</p>
+                                    <p className="text-lg font-black text-foreground">₹{visitFee}</p>
+                                  </div>
+                                  <p className="text-[10px] italic text-primary/80">Full exact address unlocked instantly for visiting.</p>
+                                </div>
+                                
+                                <div className="flex flex-col gap-1.5 px-1">
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-muted-foreground">Total Platform Fee</span>
+                                    <span className="font-bold">₹{totalFee}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-muted-foreground">If room selected, pay remaining</span>
+                                    <span className="font-bold text-primary">₹{remaining}</span>
+                                  </div>
+                                  <p className="text-[9px] mt-1 text-muted-foreground/80 italic border-t border-border/50 pt-1.5">
+                                    (We reward ₹1,000 to the poster who found this room for you)
+                                  </p>
+                                </div>
+                              </div>
+
+                              {flowError && <p className="text-xs text-red-500 mb-3 p-2 bg-red-50 rounded border border-red-100 flex items-center gap-1.5"><AlertCircle size={12}/>{flowError}</p>}
+                              
+                              <button onClick={handleInterest} disabled={interestPaying}
+                                className="w-full relative overflow-hidden group bg-primary text-primary-foreground py-3.5 text-xs uppercase tracking-widest font-bold hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all rounded-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                                <span className="relative z-10 flex items-center gap-2">
+                                  {interestPaying
+                                    ? <><div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"/>Processing...</>
+                                    : <><Zap size={14}/> Get Visit Pass For ₹{visitFee}</>}
+                                </span>
+                              </button>
+                              
+                              <button onClick={() => setPassPreviewOpen(true)}
+                                className="w-full mt-3 flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-primary transition-colors py-1">
+                                <Eye size={12} /> Preview how pass looks
+                              </button>
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
                   )}
 

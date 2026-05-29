@@ -28,8 +28,12 @@ export default function FlatmateDetailPage() {
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [unlockedContact, setUnlockedContact] = useState<any>(null);
   const [payError, setPayError] = useState<string | null>(null);
+  
+  // Visit Pass states
   const [passNumber, setPassNumber] = useState<string | null>(null);
   const [passPreviewOpen, setPassPreviewOpen] = useState(false);
+  const [visitPassPaying, setVisitPassPaying] = useState(false);
+  const [visitPassError, setVisitPassError] = useState<string | null>(null);
 
   // ── Pricing Plans ────────────────────────────────────────────────────────
   const PLANS = [
@@ -213,6 +217,104 @@ export default function FlatmateDetailPage() {
     } catch (err: any) {
       setPayError(err.message || "Something went wrong.");
       setUnlocking(false);
+    }
+  };
+
+  const handleVisitPassPay = async () => {
+    if (userId === "guest") {
+      alert("Please sign in to continue with this.");
+      router.push("/auth");
+      return;
+    }
+
+    setVisitPassError(null);
+    setVisitPassPaying(true);
+
+    try {
+      const isHighRent = (flatmate?.rentShare || 0) >= 20000;
+      const visitFeePaise = (isHighRent ? 499 : 299) * 100;
+
+      const orderRes = await fetch("/api/payment/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flatmateId: flatmate?.id, userId, type: "flatmate_contact_unlock", planId: "visit_pass", amount: visitFeePaise }),
+      });
+      const orderData = await orderRes.json();
+
+      if (!orderRes.ok || !orderData.orderId) {
+        throw new Error(orderData.error || "Failed to create payment order");
+      }
+
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) throw new Error("Could not load Razorpay.");
+
+      setVisitPassPaying(false);
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Takevolet",
+        description: `Premium Visit Pass`,
+        image: "/logo.png",
+        order_id: orderData.orderId,
+        prefill: {
+          name: user?.name || "Seeker",
+          email: user?.email || "",
+          contact: user?.phone || "",
+        },
+        theme: { color: "#D4AF37" },
+        modal: {
+          ondismiss: () => {
+            setVisitPassPaying(false);
+            setVisitPassError("Payment cancelled.");
+          },
+        },
+        handler: async (response: any) => {
+          try {
+            setVisitPassPaying(true);
+            const verifyRes = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                flatmateId: flatmate?.id,
+                userId,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+
+            if (!verifyRes.ok || !verifyData.verified) {
+              throw new Error(verifyData.error || "Payment verification failed");
+            }
+
+            if (verifyData.passNumber) setPassNumber(verifyData.passNumber);
+            setUnlockedContact(verifyData.contact);
+            setUnlockSuccess(true);
+            setTimeout(() => {
+              setContactUnlocked(true);
+              setUnlockSuccess(false);
+            }, 1800);
+          } catch (err: any) {
+            setVisitPassError(err.message || "Verification failed. Contact support.");
+          } finally {
+            setVisitPassPaying(false);
+          }
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", (response: any) => {
+        setVisitPassError("Payment failed: " + response.error.description);
+        setVisitPassPaying(false);
+      });
+      rzp.open();
+
+    } catch (err: any) {
+      setVisitPassError(err.message || "Something went wrong.");
+      setVisitPassPaying(false);
     }
   };
 
@@ -516,6 +618,13 @@ export default function FlatmateDetailPage() {
                         <CheckCircle2 size={14} /> Match Connection Active
                       </div>
 
+                      {passNumber && (
+                        <div className="bg-primary/5 border border-primary/20 p-3 mb-2 flex justify-between items-center text-xs">
+                          <span className="font-bold uppercase tracking-widest text-primary text-[10px]">Visit Pass No.</span>
+                          <span className="font-mono font-bold bg-primary/10 px-2 py-0.5 border border-primary/20 text-primary">{passNumber}</span>
+                        </div>
+                      )}
+
                       {/* Contact items */}
                       <div className="space-y-2">
                         <div className="bg-background border border-border p-3 flex items-center justify-between">
@@ -550,6 +659,132 @@ export default function FlatmateDetailPage() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* SECONDARY: Premium Visit Pass */}
+              <div className="relative mt-6 rounded-xl overflow-hidden shadow-2xl border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
+                <div className="absolute -right-12 -top-12 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+                <div className="absolute -left-12 -bottom-12 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div className="p-5 relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                      <Zap size={16} className="text-primary fill-primary/20" />
+                      Premium Visit Pass
+                    </h3>
+                    <span className="bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border border-primary/20">
+                      Recommended
+                    </span>
+                  </div>
+                  
+                  {(() => {
+                    const isHighRent = (flatmate.rentShare || 0) >= 20000;
+                    const visitFee = isHighRent ? 499 : 299;
+                    const totalFee = isHighRent ? 2000 : 1500;
+                    const remaining = isHighRent ? 1501 : 1201;
+                    return (
+                      <>
+                        <div className="space-y-3 mb-5">
+                          <div className="bg-background/80 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+                            <div className="flex justify-between items-center mb-1">
+                              <p className="text-xs font-semibold text-muted-foreground">Visit Fee</p>
+                              <p className="text-lg font-black text-foreground">₹{visitFee}</p>
+                            </div>
+                            <p className="text-[10px] italic text-primary/80">Full exact address unlocked instantly for visiting.</p>
+                          </div>
+                          
+                          <div className="flex flex-col gap-1.5 px-1">
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="text-muted-foreground">Total Platform Fee</span>
+                              <span className="font-bold">₹{totalFee}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="text-muted-foreground">If flat selected, pay remaining</span>
+                              <span className="font-bold text-primary">₹{remaining}</span>
+                            </div>
+                            <p className="text-[9px] mt-1 text-muted-foreground/80 italic border-t border-border/50 pt-1.5">
+                              (We reward ₹1,000 to the poster who found this room for you)
+                            </p>
+                          </div>
+                        </div>
+
+                        {visitPassError && <p className="text-xs text-red-500 mb-3 p-2 bg-red-50 rounded border border-red-100 flex items-center gap-1.5"><AlertCircle size={12}/>{visitPassError}</p>}
+                        
+                        <button onClick={handleVisitPassPay} disabled={visitPassPaying || contactUnlocked}
+                          className="w-full relative overflow-hidden group bg-primary text-primary-foreground py-3.5 text-xs uppercase tracking-widest font-bold hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all rounded-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                          <span className="relative z-10 flex items-center gap-2">
+                            {visitPassPaying
+                              ? <><div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"/>Processing...</>
+                              : contactUnlocked 
+                                ? <><CheckCircle2 size={14}/> Contact Already Unlocked</>
+                                : <><Zap size={14}/> Get Visit Pass For ₹{visitFee}</>}
+                          </span>
+                        </button>
+                        
+                        <button onClick={() => setPassPreviewOpen(true)}
+                          className="w-full mt-3 flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-primary transition-colors py-1">
+                          <Eye size={12} /> Preview how pass looks
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Pass Preview Modal */}
+              <AnimatePresence>
+                {passPreviewOpen && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                      className="bg-background border border-border w-full max-w-sm overflow-hidden relative shadow-2xl">
+                      
+                      <button onClick={() => setPassPreviewOpen(false)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground z-10 p-1 bg-background/80 rounded-full">
+                        <X size={16} />
+                      </button>
+
+                      <div className="bg-primary/5 border-b border-primary/20 p-6 text-center">
+                        <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-full mx-auto mb-3">
+                          <Zap size={20} className="text-primary" />
+                        </div>
+                        <h3 className="font-black text-xl uppercase tracking-wider">Visit Pass</h3>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Takevolet Verified</p>
+                      </div>
+
+                      <div className="p-6 space-y-4 relative">
+                        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+                          <ShieldCheck size={120} />
+                        </div>
+
+                        <div className="flex justify-between items-center border-b border-border border-dashed pb-4 relative z-10">
+                          <div>
+                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Pass No.</p>
+                            <p className="font-mono text-primary font-bold">TV-PASS-XXXXXX</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Status</p>
+                            <p className="text-xs font-bold text-yellow-600 flex items-center gap-1 justify-end"><Lock size={10}/> Pending</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 relative z-10">
+                          <div>
+                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Seeker</p>
+                            <p className="text-sm font-semibold">{user?.name || "User"}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Property</p>
+                            <p className="text-sm font-semibold truncate">{flatmate?.title}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-secondary/30 border-t border-border flex justify-center">
+                        <p className="text-[9px] text-muted-foreground text-center italic max-w-[250px]">This is a preview. Get the pass to view the exact location and contact details.</p>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
 
               {/* Safety notice */}
               <div className="border border-border/50 p-4 rounded-sm text-[11px] font-light text-muted-foreground bg-secondary/10 flex gap-2">
