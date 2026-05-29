@@ -128,13 +128,10 @@ export default function FlatmateDetailPage() {
     setUnlocking(true);
 
     try {
-      const isHighRent = (flatmate?.rentShare || 0) >= 20000;
-      const visitFeePaise = (isHighRent ? 499 : 299) * 100;
-
       const orderRes = await fetch("/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ flatmateId: flatmate?.id, userId, type: "flatmate_contact_unlock", planId: "visit_pass", amount: visitFeePaise }),
+        body: JSON.stringify({ flatmateId: flatmate?.id, userId, type: "flatmate_contact_unlock", planId: selectedPlan.id, amount: selectedPlan.paise }),
       });
       const orderData = await orderRes.json();
 
@@ -378,18 +375,6 @@ export default function FlatmateDetailPage() {
               
               {/* Financial Box */}
               <div className="border border-border p-6 bg-background space-y-6">
-                {passNumber && (
-                  <div className="border border-green-500 bg-green-50/50 p-6 space-y-5 shadow-lg relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-3 opacity-10"><Zap size={48} className="text-green-600"/></div>
-                    <div>
-                      <h3 className="font-black text-green-700 uppercase tracking-widest text-sm flex items-center gap-2 mb-2">
-                        <CheckCircle2 size={16} />
-                        Visit Pass Generated
-                      </h3>
-                      <p className="text-[10px] uppercase tracking-widest text-green-600 font-bold mb-3">Pass No: <span className="font-mono bg-green-100 border border-green-200 px-1.5 py-0.5 ml-1 text-green-800">{passNumber}</span></p>
-                    </div>
-                  </div>
-                )}
                 <div>
                   <span className="block text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
                     Your Share of Rent
@@ -420,25 +405,6 @@ export default function FlatmateDetailPage() {
                     </span>
                   </div>
                 </div>
-
-                {/* Visit Pass Model Info */}
-                {(() => {
-                  const isHighRent = (flatmate.rentShare || 0) >= 20000;
-                  const visitFee = isHighRent ? 499 : 299;
-                  const totalFee = isHighRent ? 2000 : 1500;
-                  const remaining = isHighRent ? 1501 : 1201;
-                  return (
-                    <div className="border-t border-border pt-4 mt-2">
-                      <p className="text-xs font-bold mb-2 flex items-center gap-1.5 text-primary"><Zap size={12}/>Visit Pass Model Applicable</p>
-                      <div className="text-[11px] text-muted-foreground leading-relaxed space-y-1.5">
-                        <p>Visit fee = <strong className="text-primary">₹{visitFee}</strong></p>
-                        <p className="text-[9px] italic text-primary/80 pb-1">Exact location / address directly shared for visiting.</p>
-                        <p>Final platform fee = <strong>₹{totalFee}</strong></p>
-                        <p>If room selected, pay remaining <strong>₹{remaining}</strong></p>
-                      </div>
-                    </div>
-                  );
-                })()}
               </div>
 
               {/* Roommate Owner Profile Box */}
@@ -474,61 +440,6 @@ export default function FlatmateDetailPage() {
                 </div>
               </div>
 
-              {/* Pass Preview Modal */}
-              <AnimatePresence>
-                {passPreviewOpen && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                      className="bg-background border border-border w-full max-w-sm overflow-hidden relative shadow-2xl">
-                      
-                      <button onClick={() => setPassPreviewOpen(false)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground z-10 p-1 bg-background/80 rounded-full">
-                        <X size={16} />
-                      </button>
-
-                      <div className="bg-primary/5 border-b border-primary/20 p-6 text-center">
-                        <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-full mx-auto mb-3">
-                          <Zap size={20} className="text-primary" />
-                        </div>
-                        <h3 className="font-black text-xl uppercase tracking-wider">Visit Pass</h3>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Takevolet Verified</p>
-                      </div>
-
-                      <div className="p-6 space-y-4 relative">
-                        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-                          <ShieldCheck size={120} />
-                        </div>
-
-                        <div className="flex justify-between items-center border-b border-border border-dashed pb-4 relative z-10">
-                          <div>
-                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Pass No.</p>
-                            <p className="font-mono text-primary font-bold">TV-PASS-XXXXXX</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Status</p>
-                            <p className="text-xs font-bold text-yellow-600 flex items-center gap-1 justify-end"><Lock size={10}/> Pending</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3 relative z-10">
-                          <div>
-                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Seeker</p>
-                            <p className="text-sm font-semibold">{user?.name || "User"}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Property</p>
-                            <p className="text-sm font-semibold truncate">{flatmate?.title}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-4 bg-secondary/30 border-t border-border flex justify-center">
-                        <p className="text-[9px] text-muted-foreground text-center italic max-w-[250px]">This is a preview. Get the pass to view the exact location and contact details.</p>
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
-              </AnimatePresence>
-
               {/* DIRECT CONTACT UNLOCKING MECHANISM */}
               <div className="border-2 border-primary bg-primary/5 p-6 space-y-5">
                 <div className="flex items-start gap-3">
@@ -552,20 +463,43 @@ export default function FlatmateDetailPage() {
                       exit={{ opacity: 0 }}
                       className="space-y-3"
                     >
+                      {/* PRIMARY: Contact Plans */}
+                      <p className="text-[10px] uppercase tracking-widest font-bold mb-3">Choose Contact Plan</p>
+                      <div className="space-y-2 mb-4">
+                        {PLANS.map(plan => (
+                          <label key={plan.id}
+                            className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${
+                              selectedPlan.id === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                            }`}>
+                            <input type="radio" name="plan" checked={selectedPlan.id === plan.id}
+                              onChange={() => setSelectedPlan(plan)} className="accent-primary" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold">{plan.label}</span>
+                                {plan.badge && (
+                                  <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 font-bold uppercase tracking-wider">{plan.badge}</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">{plan.perContact}/contact</span>
+                            </div>
+                            <span className="font-black text-primary">₹{plan.price}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      {payError && <p className="text-xs text-red-500 mb-3 flex items-center gap-1"><AlertCircle size={11}/>{payError}</p>}
                       <button
                         onClick={handlePay}
                         disabled={unlocking}
-                        className="w-full bg-foreground text-background py-4 text-sm uppercase tracking-wider font-bold hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full bg-primary text-primary-foreground py-3.5 text-xs uppercase tracking-widest font-bold hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(212,175,55,0.2)] disabled:opacity-50"
                       >
                         {unlocking ? (
-                          <><div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" /> Processing…</>
+                          <>
+                            <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" /> Processing...
+                          </>
                         ) : (
-                          <><Lock size={15} /> Get Visit Pass — ₹{(flatmate.rentShare || 0) >= 20000 ? 499 : 299}</>
+                          <>Unlock Contact — ₹{selectedPlan.price}</>
                         )}
-                      </button>
-                      <button onClick={() => setPassPreviewOpen(true)}
-                        className="w-full mt-3 text-[10px] uppercase tracking-wider font-bold text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1.5 underline decoration-primary/30 underline-offset-2">
-                        <Eye size={12} /> View how pass looks like
                       </button>
                       <p className="text-[10px] text-center text-muted-foreground mt-3 uppercase tracking-widest font-light">
                         🔒 Razorpay Secure
