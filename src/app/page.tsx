@@ -213,28 +213,52 @@ export default function LandingPage() {
 
           {/* Hero Visual */}
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, delay: 0.3 }}
-            className="relative h-[240px] sm:h-[300px] md:h-[500px] mt-8 lg:mt-0">
-            <div className="absolute inset-0 overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&h=800&fit=crop&q=80"
-                alt="Bachelor flat" loading="eager" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-            </div>
-            <div className="absolute bottom-6 left-6 right-6 bg-background/90 backdrop-blur-xl border border-border p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Bachelor Room Available</p>
-                  <h4 className="font-bold">2BHK in Madhapur — 3 members</h4>
+            className="relative h-[240px] sm:h-[300px] md:h-[500px] mt-8 lg:mt-0 bg-secondary/20">
+            {featuredRooms.length > 0 ? (
+              <>
+                <div className="absolute inset-0 overflow-hidden">
+                  <img src={featuredRooms[0].images?.[0] || "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&h=800&fit=crop&q=80"}
+                    alt="Bachelor flat" loading="eager" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
                 </div>
-                <span className="text-lg font-bold">₹15,000<span className="text-xs text-muted-foreground font-normal">/mo</span></span>
+                <div className="absolute bottom-6 left-6 right-6 bg-background/90 backdrop-blur-xl border border-border p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Bachelor Room Available</p>
+                      <h4 className="font-bold line-clamp-1">{featuredRooms[0].title}</h4>
+                    </div>
+                    <span className="text-lg font-bold">₹{featuredRooms[0].rent.toLocaleString("en-IN")}<span className="text-xs text-muted-foreground font-normal">/mo</span></span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><MapPin size={12} /> {featuredRooms[0].location}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1"><Calendar size={12} /> Leaving {new Date(featuredRooms[0].leaving_date).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}</span>
+                    {(featuredRooms[0].commission || 0) > 0 && (
+                      <>
+                        <span>•</span>
+                        <span className="text-primary font-bold">₹{featuredRooms[0].commission} reward</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="absolute inset-0 animate-pulse flex flex-col justify-end p-6 bg-secondary/50">
+                <div className="bg-background border border-border p-5 w-full">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="space-y-2 w-1/2">
+                      <div className="h-2 bg-muted w-1/2 rounded" />
+                      <div className="h-4 bg-muted w-full rounded" />
+                    </div>
+                    <div className="h-6 bg-muted w-20 rounded" />
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="h-3 bg-muted w-16 rounded" />
+                    <div className="h-3 bg-muted w-24 rounded" />
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><MapPin size={12} /> Madhapur</span>
-                <span>•</span>
-                <span className="flex items-center gap-1"><Calendar size={12} /> Leaving June 15</span>
-                <span>•</span>
-                <span className="text-primary font-bold">₹1,000 reward</span>
-              </div>
-            </div>
+            )}
           </motion.div>
         </div>
       </section>
