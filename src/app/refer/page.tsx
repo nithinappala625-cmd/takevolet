@@ -110,10 +110,10 @@ export default function JoinAndEarnPage() {
             </p>
             <div className="space-y-3 mb-8">
               {[
-                { plan: "1 Contact Unlock", earn: "₹2", paid: "₹10" },
-                { plan: "50 Contacts Pack", earn: "₹15", paid: "₹139" },
-                { plan: "100 Contacts Pack", earn: "₹28 ⭐", paid: "₹280", hot: true },
-                { plan: "Unlimited Pack", earn: "₹100+", paid: "₹500" },
+                { plan: "1 Contact", earn: "₹3", paid: "₹15" },
+                { plan: "10 Contacts", earn: "₹10", paid: "₹55" },
+                { plan: "50 Contacts", earn: "₹30 ⭐", paid: "₹105", hot: true },
+                { plan: "Unlimited Contacts", earn: "₹60+", paid: "₹200" },
               ].map((row, i) => (
                 <div key={i} className={`flex items-center justify-between border px-4 py-3 ${row.hot ? "border-primary bg-primary/5" : "border-border"}`}>
                   <div>
