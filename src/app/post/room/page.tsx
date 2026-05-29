@@ -44,7 +44,7 @@ export default function PostRoomPage() {
   const [advance, setAdvance]           = useState("");
   const [leavingDate, setLeavingDate]   = useState("");
   const [membersAllowed, setMembersAllowed] = useState(2);
-  const [currentMembers, setCurrentMembers] = useState(1);
+  const [currentMembers, setCurrentMembers] = useState(0);
   const [genderPref, setGenderPref]     = useState("Any");
   const [furnishing, setFurnishing]     = useState("Semi-Furnished");
   const [parking, setParking]           = useState("None");
@@ -397,7 +397,7 @@ export default function PostRoomPage() {
               <div>
                 <label className="text-[10px] uppercase tracking-widest font-bold block mb-2">Currently Living</label>
                 <div className="flex gap-2">
-                  {[1,2,3,4].map(n => (
+                  {[0,1,2,3,4].map(n => (
                     <button key={n} type="button" onClick={() => setCurrentMembers(n)}
                       className={`w-10 h-10 border font-bold text-sm transition-all ${currentMembers === n ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary"}`}>
                       {n}

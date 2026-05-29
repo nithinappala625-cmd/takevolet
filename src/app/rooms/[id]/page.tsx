@@ -698,17 +698,33 @@ export default function RoomDetailPage() {
                   {/* SECONDARY: I'm Interested — address unlock */}
                   {!room.is_rented_out && (
                     <div className="border border-dashed border-primary/30 p-4 bg-primary/3 mt-5">
-                      <p className="text-xs font-bold mb-1 flex items-center gap-1.5"><Zap size={12} className="text-primary"/>Want the full address too?</p>
-                      <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
-                        Pay <strong className="text-primary">₹500</strong> → Full address revealed instantly → Visit room → Like it? Pay <strong>₹1,000</strong> → Handover confirmed, poster earns ₹1,000
-                      </p>
-                      {flowError && <p className="text-xs text-red-500 mb-2 flex items-center gap-1"><AlertCircle size={11}/>{flowError}</p>}
-                      <button onClick={handleInterest} disabled={interestPaying}
-                        className="w-full border border-primary text-primary py-3 text-xs uppercase tracking-wider font-bold hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                        {interestPaying
-                          ? <><div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin"/>Processing…</>
-                          : <><Zap size={13}/> I'm Interested — ₹500 (Address Unlock)</>}
-                      </button>
+                      <p className="text-xs font-bold mb-2 flex items-center gap-1.5"><Zap size={12} className="text-primary"/>Visit Pass Model</p>
+                      {(() => {
+                        const isHighRent = (room.rent || 0) >= 20000;
+                        const visitFee = isHighRent ? 499 : 299;
+                        const totalFee = isHighRent ? 2000 : 1500;
+                        const remaining = isHighRent ? 1501 : 1201;
+                        return (
+                          <>
+                            <div className="text-[11px] text-muted-foreground mb-4 leading-relaxed space-y-1.5">
+                              <p>Visit fee = <strong className="text-primary">₹{visitFee}</strong></p>
+                              <p className="text-[9px] italic text-primary/80 pb-1">Exact location / address directly shared for visiting.</p>
+                              <p>Final platform fee = <strong>₹{totalFee}</strong></p>
+                              <p>If room selected, pay remaining <strong>₹{remaining}</strong></p>
+                              <p className="text-[9px] mt-1 text-muted-foreground italic leading-tight pt-1">
+                                (We give ₹1,000 from this platform fee to the poster who finds the room for you)
+                              </p>
+                            </div>
+                            {flowError && <p className="text-xs text-red-500 mb-2 flex items-center gap-1"><AlertCircle size={11}/>{flowError}</p>}
+                            <button onClick={handleInterest} disabled={interestPaying}
+                              className="w-full border border-primary text-primary py-3 text-xs uppercase tracking-wider font-bold hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                              {interestPaying
+                                ? <><div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin"/>Processing…</>
+                                : <><Zap size={13}/> Get Visit Pass — ₹{visitFee}</>}
+                            </button>
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                   {!room.is_rented_out && <p className="text-center text-[10px] text-muted-foreground mt-2">🔒 Razorpay · UPI · Cards · NetBanking</p>}

@@ -778,17 +778,18 @@ export default function AdminPage() {
                 <p className="font-semibold text-muted-foreground">No users registered yet</p>
               </div>
             ) : (
-              <div className="bg-background border border-border overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border bg-secondary/30 text-[9px] uppercase tracking-widest font-bold text-muted-foreground">
-                  <div className="col-span-2">Name</div>
-                  <div className="col-span-2">Contact</div>
-                  <div className="col-span-2">Location</div>
-                  <div className="col-span-1">House No</div>
-                  <div className="col-span-1">Gender</div>
-                  <div className="col-span-1">Profession</div>
-                  <div className="col-span-2">Payout Info</div>
-                  <div className="col-span-1">KYC</div>
-                </div>
+              <div className="bg-background border border-border overflow-x-auto">
+                <div className="min-w-[1000px]">
+                  <div className="grid grid-cols-12 gap-2 p-4 border-b border-border bg-secondary/30 text-[9px] uppercase tracking-widest font-bold text-muted-foreground">
+                    <div className="col-span-2">Name</div>
+                    <div className="col-span-2">Contact</div>
+                    <div className="col-span-1">Location</div>
+                    <div className="col-span-1">House No</div>
+                    <div className="col-span-2">Owner Info</div>
+                    <div className="col-span-1">Profile</div>
+                    <div className="col-span-2">Payout Info</div>
+                    <div className="col-span-1">KYC</div>
+                  </div>
                 {users.map((u: any) => (
                   <div key={u.id} className="grid grid-cols-12 gap-2 p-4 border-b border-border last:border-0 items-center hover:bg-secondary/10">
                     <div className="col-span-2">
@@ -801,19 +802,21 @@ export default function AdminPage() {
                       {u.whatsapp && <p className="text-[10px] text-green-600 font-bold mt-0.5">WA: {u.whatsapp}</p>}
                       <p className="text-[10px] text-muted-foreground truncate mt-0.5">{u.email}</p>
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                       <p className="text-xs font-semibold">{u.colony}</p>
-                      <p className="text-[10px] text-muted-foreground">{u.location}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{u.location}</p>
                     </div>
                     <div className="col-span-1">
                       <p className="text-xs font-mono text-primary truncate">{u.house_no}</p>
                     </div>
-                    <div className="col-span-1">
-                      <p className="text-xs">{u.gender}</p>
-                      <p className="text-[10px] text-muted-foreground">{u.members_count} mem</p>
+                    <div className="col-span-2">
+                      <p className="text-xs font-semibold truncate">{u.owner_name || "N/A"}</p>
+                      <p className="text-[10px] font-mono text-muted-foreground">{u.owner_phone || "No phone"}</p>
                     </div>
                     <div className="col-span-1">
-                      <p className="text-xs truncate">{u.profession}</p>
+                      <p className="text-[10px] truncate">{u.gender}</p>
+                      <p className="text-[10px] truncate text-muted-foreground">{u.profession}</p>
+                      <p className="text-[10px] text-muted-foreground">{u.members_count} mem</p>
                     </div>
                     <div className="col-span-2">
                       {u.payout_method === "upi" && (
@@ -857,6 +860,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
             )}
           </motion.div>

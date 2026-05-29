@@ -402,6 +402,25 @@ export default function FlatmateDetailPage() {
                     </span>
                   </div>
                 </div>
+
+                {/* Visit Pass Model Info */}
+                {(() => {
+                  const isHighRent = (flatmate.rentShare || 0) >= 20000;
+                  const visitFee = isHighRent ? 499 : 299;
+                  const totalFee = isHighRent ? 2000 : 1500;
+                  const remaining = isHighRent ? 1501 : 1201;
+                  return (
+                    <div className="border-t border-border pt-4 mt-2">
+                      <p className="text-xs font-bold mb-2 flex items-center gap-1.5 text-primary"><Zap size={12}/>Visit Pass Model Applicable</p>
+                      <div className="text-[11px] text-muted-foreground leading-relaxed space-y-1.5">
+                        <p>Visit fee = <strong className="text-primary">₹{visitFee}</strong></p>
+                        <p className="text-[9px] italic text-primary/80 pb-1">Exact location / address directly shared for visiting.</p>
+                        <p>Final platform fee = <strong>₹{totalFee}</strong></p>
+                        <p>If room selected, pay remaining <strong>₹{remaining}</strong></p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Roommate Owner Profile Box */}
