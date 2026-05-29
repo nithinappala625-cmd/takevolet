@@ -7,7 +7,7 @@ import {
   Clock, X, AlertCircle, RefreshCw, Eye, EyeOff, LogOut,
   Wallet, ArrowUpRight, Building2, Phone, Mail, Send,
   BarChart2, Activity, Download, ChevronDown, Star, Lock,
-  ShoppingBag
+  ShoppingBag, ShieldCheck
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { MOCK_ROOMS, MOCK_FLATMATES, MOCK_ITEMS } from "@/data/mock";
@@ -675,46 +675,71 @@ export default function AdminPage() {
           </motion.div>
         )}
 
-        {/* ── INTERESTS (Address Unlocks) ── */}
+        {/* ── INTERESTS (Visit Passes) ── */}
         {activeTab === "interests" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <p className="text-sm font-bold uppercase tracking-widest mb-4">Address Unlock Records ({interests.length}) — ₹500 each</p>
+            <p className="text-sm font-bold uppercase tracking-widest mb-4">Visit Passes ({interests.length})</p>
             {interests.length === 0 ? (
               <div className="bg-background border border-dashed border-border p-16 text-center">
                 <Eye size={32} className="mx-auto mb-3 text-muted-foreground" />
                 <p className="font-semibold text-muted-foreground">No interest records yet</p>
               </div>
             ) : (
-              <div className="bg-background border border-border overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border bg-secondary/30 text-[9px] uppercase tracking-widest font-bold text-muted-foreground">
-                  <div className="col-span-3">Seeker</div>
-                  <div className="col-span-3">Room / Poster</div>
-                  <div className="col-span-2">Platform Fee</div>
-                  <div className="col-span-2">Date</div>
-                  <div className="col-span-2">Handover</div>
-                </div>
-                {interests.map((i: any) => (
-                  <div key={i.id} className="grid grid-cols-12 gap-2 p-4 border-b border-border last:border-0 items-center hover:bg-secondary/10">
-                    <div className="col-span-3">
-                      <p className="text-sm font-semibold">{i.userName}</p>
-                      <p className="text-[10px] text-muted-foreground font-mono">{i.userId}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {interests.map((i: any) => {
+                  const pId = i.razorpay_payment_id || i.payment_id || i.id;
+                  const passNumber = "TV-PASS-" + (pId.slice(-6).toUpperCase());
+                  return (
+                    <div key={i.id} className="bg-background border border-border shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                        <ShieldCheck size={80} className="text-primary"/>
+                      </div>
+                      
+                      {/* Header */}
+                      <div className="bg-primary/5 border-b border-border p-4 flex justify-between items-center relative z-10">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Pass Number</p>
+                          <p className="font-mono font-bold text-primary">{passNumber}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Fee Paid</p>
+                          <p className="text-sm font-black text-green-600">₹{i.platform_fee || i.amount || 500}</p>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-4 space-y-4 relative z-10">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Seeker</p>
+                            <p className="text-sm font-semibold truncate">{i.userName || i.seeker_name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{i.userId || i.seeker_id}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Poster</p>
+                            <p className="text-sm font-semibold truncate">{i.posterName || i.poster_name}</p>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-border pt-4">
+                          <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Property</p>
+                          <p className="text-sm font-semibold truncate" title={i.roomTitle || i.room_title}>{i.roomTitle || i.room_title}</p>
+                        </div>
+
+                        <div className="flex justify-between items-center border-t border-border pt-4">
+                          <div>
+                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Generated</p>
+                            <p className="text-xs font-semibold">{fmtDate(i.paidAt || i.paid_at || i.created_at)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Handover</p>
+                            <StatusBadge status={i.handoverConfirmed || i.handover_confirmed ? "completed" : "pending"} />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="col-span-3">
-                      <p className="text-xs font-semibold truncate">{i.roomTitle}</p>
-                      <p className="text-[10px] text-muted-foreground">by {i.posterName}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-sm font-black text-green-600">₹500</p>
-                      <p className="text-[10px] text-muted-foreground">To platform</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-xs text-muted-foreground">{fmtDate(i.paidAt)}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <StatusBadge status={i.handoverConfirmed ? "completed" : "pending"} />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </motion.div>

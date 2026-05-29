@@ -174,11 +174,14 @@ export async function POST(request: Request) {
 
     console.log("[Razorpay] ✅ Payment verified — contact unlocked", { paymentId: razorpay_payment_id, roomId: roomId || body.flatmateId, userId, contactName: contact.name });
 
+    const passNumber = "TV-PASS-" + razorpay_payment_id.slice(-6).toUpperCase();
+
     return NextResponse.json({
       success:   true,
       verified:  true,
       paymentId: razorpay_payment_id,
       orderId:   razorpay_order_id,
+      passNumber,
       contact,
       message:   "Payment verified. Contact unlocked successfully.",
     });

@@ -34,9 +34,9 @@ export async function POST(request: Request) {
   const action = url.searchParams.get("action") || "create-order";
 
   if (action === "create-order") {
-    // ── Create ₹500 interest order ─────────────────────────────────────────
+    // ── Create interest order ─────────────────────────────────────────
     const body = await request.json();
-    const { roomId, userId, userName } = body;
+    const { roomId, userId, userName, amount } = body;
 
     if (!roomId || !userId) {
       return NextResponse.json({ error: "roomId and userId required" }, { status: 400 });
@@ -53,9 +53,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "You have already unlocked this address" }, { status: 400 });
     }
 
+    const payAmountRupees = amount ? parseInt(amount) : 500;
+    const payAmountPaise = payAmountRupees * 100;
+
     const receipt = `int_${roomId.slice(0, 10)}_${Date.now().toString().slice(-8)}`;
     const order = await razorpay.orders.create({
-      amount: 50000,    // ₹500 in paise
+      amount: payAmountPaise,
       currency: "INR",
       receipt,
       notes: { roomId, userId, userName: userName || "User", type: "interest_unlock" },
@@ -98,6 +101,19 @@ export async function POST(request: Request) {
       ? (Array.isArray(room.profiles) ? room.profiles[0] : room.profiles)
       : null;
 
+    // Fetch real amount from Razorpay order to be secure
+    let paidAmount = 500;
+    try {
+      const orderData = await razorpay.orders.fetch(razorpay_order_id);
+      if (orderData && orderData.amount) {
+        paidAmount = Number(orderData.amount) / 100;
+      }
+    } catch (e) {
+      console.warn("Could not fetch razorpay order amount", e);
+    }
+
+    const passNumber = "TV-PASS-" + razorpay_payment_id.slice(-6).toUpperCase();
+
     // ── Persist interest record to Supabase ─────────────────────────────────
     const interestId = `INT-${Date.now()}`;
     if (userId && userId !== "guest") {
@@ -108,7 +124,7 @@ export async function POST(request: Request) {
         poster_id:  posterId || room?.user_id,
         payment_id: razorpay_payment_id,
         order_id:   razorpay_order_id,
-        amount:     500,
+        amount:     paidAmount,
         status:     "paid",
         paid_at:    new Date().toISOString(),
       }, { onConflict: "room_id,user_id", ignoreDuplicates: true });
@@ -125,7 +141,8 @@ export async function POST(request: Request) {
       posterName: posterName || poster?.full_name || "Poster",
       paymentId: razorpay_payment_id,
       orderId: razorpay_order_id,
-      platformFee: 500,
+      platformFee: paidAmount,
+      passNumber: passNumber,
       status: "paid",
       paidAt: new Date().toISOString(),
       handoverConfirmed: false,
@@ -139,11 +156,12 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       interestId,
+      passNumber,
       fullAddress,
       posterContact:  poster?.phone    || "Contact via WhatsApp",
       posterWhatsapp: poster?.whatsapp || poster?.phone,
       posterName:     poster?.full_name,
-      message: "Address unlocked! ₹500 paid. Contact the poster to visit the room.",
+      message: `Pass Generated (${passNumber})! Contact the poster to visit the room.`,
     });
 
   } else if (action === "create-handover-order") {

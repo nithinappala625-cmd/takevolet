@@ -45,6 +45,8 @@ export default function RoomDetailPage() {
   const [step, setStep] = useState<"idle"|"interested"|"handover"|"done">("idle");
   const [interestId, setInterestId] = useState<string | null>(null);
   const [fullAddress, setFullAddress] = useState<string | null>(null);
+  const [passNumber, setPassNumber] = useState<string | null>(null);
+  const [passPreviewOpen, setPassPreviewOpen] = useState(false);
   const [interestPaying, setInterestPaying] = useState(false);
   const [handoverPaying, setHandoverPaying] = useState(false);
   const [flowError, setFlowError] = useState<string | null>(null);
@@ -261,10 +263,13 @@ export default function RoomDetailPage() {
     setFlowError(null);
     setInterestPaying(true);
     try {
+      const isHighRent = (room.rent || 0) >= 20000;
+      const visitFee = isHighRent ? 499 : 299;
+
       const orderRes = await fetch("/api/interest/unlock?action=create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomId: room.id, userId, userName }),
+        body: JSON.stringify({ roomId: room.id, userId, userName, amount: visitFee }),
       });
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData.error || "Failed to create order");
@@ -301,6 +306,7 @@ export default function RoomDetailPage() {
           if (!verifyRes.ok) throw new Error(vData.error || "Verification failed");
           setInterestId(vData.interestId);
           setFullAddress(vData.fullAddress);
+          if (vData.passNumber) setPassNumber(vData.passNumber);
           setStep("interested");
           setInterestPaying(false);
         },
@@ -722,11 +728,72 @@ export default function RoomDetailPage() {
                                 ? <><div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin"/>Processing…</>
                                 : <><Zap size={13}/> Get Visit Pass — ₹{visitFee}</>}
                             </button>
+                            <button onClick={() => setPassPreviewOpen(true)}
+                              className="w-full mt-2 text-[10px] uppercase tracking-wider font-bold text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1.5 underline decoration-primary/30 underline-offset-2">
+                              <Eye size={12} /> View how pass looks like
+                            </button>
                           </>
                         );
                       })()}
                     </div>
                   )}
+
+                  {/* Pass Preview Modal */}
+                  <AnimatePresence>
+                    {passPreviewOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                          className="bg-background border border-border w-full max-w-sm overflow-hidden relative shadow-2xl">
+                          
+                          <button onClick={() => setPassPreviewOpen(false)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground z-10 p-1 bg-background/80 rounded-full">
+                            <X size={16} />
+                          </button>
+
+                          <div className="bg-primary/5 border-b border-primary/20 p-6 text-center">
+                            <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-full mx-auto mb-3">
+                              <Zap size={20} className="text-primary" />
+                            </div>
+                            <h3 className="font-black text-xl uppercase tracking-wider">Visit Pass</h3>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Takevolet Verified</p>
+                          </div>
+
+                          <div className="p-6 space-y-4 relative">
+                            {/* Watermark */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+                              <ShieldCheck size={120} />
+                            </div>
+
+                            <div className="flex justify-between items-center border-b border-border border-dashed pb-4 relative z-10">
+                              <div>
+                                <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Pass No.</p>
+                                <p className="font-mono text-primary font-bold">TV-PASS-XXXXXX</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Status</p>
+                                <p className="text-xs font-bold text-yellow-600 flex items-center gap-1 justify-end"><Lock size={10}/> Pending</p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-3 relative z-10">
+                              <div>
+                                <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Seeker</p>
+                                <p className="text-sm font-semibold">{userName}</p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">Property</p>
+                                <p className="text-sm font-semibold truncate">{room?.title}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="p-4 bg-secondary/30 border-t border-border flex justify-center">
+                            <p className="text-[9px] text-muted-foreground text-center italic max-w-[250px]">This is a preview. Get the pass to view the exact location and contact details.</p>
+                          </div>
+                        </motion.div>
+                      </div>
+                    )}
+                  </AnimatePresence>
+
                   {!room.is_rented_out && <p className="text-center text-[10px] text-muted-foreground mt-2">🔒 Razorpay · UPI · Cards · NetBanking</p>}
                 </div>
               )}
@@ -734,11 +801,14 @@ export default function RoomDetailPage() {
               {/* ── INTERESTED: Address revealed, visit & confirm ────────── */}
               {step === "interested" && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                  <div className="bg-green-50 border border-green-200 p-4 mb-4">
+                  <div className="bg-green-50 border border-green-200 p-4 mb-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-3 opacity-10"><Zap size={48} className="text-green-600"/></div>
                     <p className="text-xs font-bold text-green-700 mb-2 flex items-center gap-1">
-                      <CheckCircle2 size={12}/> Address Unlocked — ₹500 Paid
+                      <CheckCircle2 size={12}/> Visit Pass Generated
                     </p>
-                    <p className="text-sm font-semibold text-green-800">{fullAddress}</p>
+                    <p className="text-[10px] uppercase tracking-widest text-green-600 font-bold mb-3">Pass No: <span className="font-mono bg-green-100 border border-green-200 px-1.5 py-0.5 ml-1 text-green-800">{passNumber || "TV-PASS-XXXXXX"}</span></p>
+                    <p className="text-xs uppercase font-bold text-muted-foreground mb-1 mt-3 border-t border-green-200/50 pt-2">Full Address</p>
+                    <p className="text-sm font-semibold text-green-800 leading-relaxed">{fullAddress}</p>
                   </div>
                   <div className="flex gap-2 mb-4">
                     <a href={`tel:${room.profiles?.phone}`}
