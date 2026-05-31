@@ -3,10 +3,11 @@ import { fetchItemByIdAction } from "@/lib/server-actions"
 
 function getOptimizedOgImage(url: string) {
   if (!url || url.startsWith("/")) return url;
-  if (url.includes("cloudinary.com") && url.includes("/upload/")) {
-    return url.replace("/upload/", "/upload/c_fill,w_800,h_800,q_70,f_jpg/");
+  let optimized = url.replace("http://", "https://");
+  if (optimized.includes("cloudinary.com") && optimized.includes("/upload/")) {
+    return optimized.replace("/upload/", "/upload/c_fill,w_800,h_800,q_70,f_jpg/");
   }
-  return url;
+  return optimized;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {

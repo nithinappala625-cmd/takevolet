@@ -6,6 +6,7 @@ import {
   Calendar, Star, MessageCircle, ShieldCheck, Lock, User
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useUser } from "@/hooks/useUser";
@@ -76,16 +77,17 @@ export default function MarketplaceItemPage() {
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
               <div className="aspect-square bg-black rounded-sm overflow-hidden border border-border sticky top-32 relative flex items-center justify-center">
                 {/* Background Layer: Ambient Blur */}
-                <img
-                  src={item.image || ""}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 select-none pointer-events-none z-0"
-                />
+                <div className="absolute inset-0 w-full h-full blur-2xl opacity-40 scale-110 select-none pointer-events-none z-0">
+                  <Image src={item.image || ""} alt="" fill priority className="object-cover" />
+                </div>
                 {/* Foreground Layer: Crystal Clear Uncropped */}
-                <img
+                <Image
                   src={item.image || ""}
                   alt={item.title}
-                  className="max-w-full max-h-full w-auto h-auto object-contain relative z-10 mx-auto"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                  className="object-contain relative z-10 mx-auto"
                 />
               </div>
             </motion.div>
@@ -148,12 +150,9 @@ export default function MarketplaceItemPage() {
               {/* Seller Avatar + Name + Profession + Stars */}
               <div className="flex items-center gap-4 mb-5">
                 {sellerAvatar ? (
-                  <img
-                    src={sellerAvatar}
-                    alt={sellerName}
-                    referrerPolicy="no-referrer"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-primary/30"
-                  />
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-primary/30">
+                    <Image src={sellerAvatar} alt={sellerName} fill sizes="64px" className="object-cover" referrerPolicy="no-referrer" />
+                  </div>
                 ) : (
                   <div className="w-16 h-16 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
                     <span className="text-primary-foreground font-bold text-lg">

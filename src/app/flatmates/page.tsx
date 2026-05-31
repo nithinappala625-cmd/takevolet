@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { HYDERABAD_AREAS, BUDGET_RANGES } from "@/data/locations";
 import { MapPin, IndianRupee, Users, SlidersHorizontal, Search, X, ChevronDown, Loader2, Award, Briefcase, Heart, Check, Plus } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { getAllFlatmates } from "@/lib/flatmate-db";
 import type { Flatmate } from "@/data/mock";
@@ -361,17 +362,11 @@ export default function FlatmatesPage() {
                 {/* Images Banner */}
                 <div className="relative h-64 overflow-hidden bg-black shrink-0 flex items-center justify-center border-b border-border">
                   {/* Ambient Blur */}
-                  <img
-                    src={fm.images[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"}
-                    alt=""
-                    className="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-110 pointer-events-none transition-transform duration-500 group-hover:scale-125"
-                  />
+                  <div className="absolute inset-0 w-full h-full blur-xl opacity-40 scale-110 pointer-events-none transition-transform duration-500 group-hover:scale-125">
+                    <Image src={fm.images[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"} alt="" fill sizes="400px" className="object-cover" />
+                  </div>
                   {/* Clear Foreground */}
-                  <img
-                    src={fm.images[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"}
-                    alt={fm.title}
-                    className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mx-auto"
-                  />
+                  <Image src={fm.images[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"} alt={fm.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-contain group-hover:scale-105 transition-transform duration-500 mx-auto relative z-10" />
                   {/* Absolute overlays */}
                   <div className="absolute top-4 left-4 z-20 bg-background/90 backdrop-blur-md px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary border border-primary/20 flex items-center gap-1.5">
                     <Award size={12} /> Vacancies: {fm.vacancyCount}
@@ -453,11 +448,9 @@ export default function FlatmatesPage() {
                   {/* Poster details and CTA */}
                   <div className="border-t border-border pt-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2.5">
-                      <img
-                        src={fm.postedBy.avatar}
-                        alt={fm.postedBy.name}
-                        className="w-9 h-9 rounded-full border border-primary/20 object-cover"
-                      />
+                      <div className="relative w-9 h-9 rounded-full overflow-hidden border border-primary/20 shrink-0">
+                        <Image src={fm.postedBy.avatar} alt={fm.postedBy.name} fill sizes="36px" className="object-cover" />
+                      </div>
                       <div>
                         <p className="text-xs font-bold leading-none">{fm.postedBy.name}</p>
                         <p className="text-[10px] text-muted-foreground leading-none mt-1">

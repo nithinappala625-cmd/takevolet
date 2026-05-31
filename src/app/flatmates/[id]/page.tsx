@@ -9,6 +9,7 @@ import {
   AlertCircle, Loader2, Sparkles, Heart, Activity, Briefcase
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { getFlatmateById } from "@/lib/flatmate-db";
 import { checkFlatmateUnlockStatusAction } from "@/lib/server-actions";
@@ -351,16 +352,16 @@ export default function FlatmateDetailPage() {
               {/* Layer 1: Blurred Ambient Background */}
               <AnimatePresence mode="wait">
                 {allMedia[currentImageIndex] && !allMedia[currentImageIndex].match(/\.(mp4|webm|ogg)$/i) && (
-                  <motion.img
+                  <motion.div
                     key={`bg-${currentImageIndex}`}
-                    src={allMedia[currentImageIndex]}
-                    alt=""
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.4 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 select-none pointer-events-none"
-                  />
+                    className="absolute inset-0 w-full h-full blur-2xl scale-110 select-none pointer-events-none"
+                  >
+                    <Image src={allMedia[currentImageIndex]} alt="" fill priority className="object-cover" />
+                  </motion.div>
                 )}
               </AnimatePresence>
 
@@ -380,16 +381,16 @@ export default function FlatmateDetailPage() {
                       className="w-full h-full object-contain relative z-10"
                     />
                   ) : (
-                    <motion.img
+                    <motion.div
                       key={`fg-${currentImageIndex}`}
-                      src={allMedia[currentImageIndex]}
-                      alt={`Flat View ${currentImageIndex + 1}`}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.3 }}
-                      className="w-full h-full object-contain relative z-10"
-                    />
+                      className="w-full h-full relative z-10"
+                    >
+                      <Image src={allMedia[currentImageIndex]} alt={`Flat View ${currentImageIndex + 1}`} fill priority sizes="(max-width: 1024px) 100vw, 66vw" className="object-contain" />
+                    </motion.div>
                   )
                 ) : (
                   <div className="text-muted-foreground text-sm relative z-10">No media available</div>
@@ -512,11 +513,9 @@ export default function FlatmateDetailPage() {
               {/* Roommate Owner Profile Box */}
               <div className="border border-border p-6 bg-secondary/15 space-y-4">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={displayedAvatar}
-                    alt={displayedName}
-                    className="w-12 h-12 rounded-full border-2 border-primary/20 object-cover"
-                  />
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-primary/20">
+                    <Image src={displayedAvatar} alt={displayedName} fill sizes="48px" className="object-cover" referrerPolicy="no-referrer" />
+                  </div>
                   <div>
                     <p className="font-bold text-sm flex items-center gap-1.5">
                       {displayedName}

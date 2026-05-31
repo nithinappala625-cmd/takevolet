@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, IndianRupee, Calendar, Users, Sofa, Eye, UserCheck, Car, Bike, ArrowUpRight } from "lucide-react";
 import type { Room } from "@/lib/db";
 import { useState } from "react";
@@ -22,13 +23,13 @@ export default function RoomCard({ room }: { room: Room }) {
         {/* Ambient Blur */}
         {hasImage ? (
           <>
-            <img src={room.images![0]} alt=""
-              onError={() => setImageError(true)}
-              className="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-110 pointer-events-none transition-transform duration-500 group-hover:scale-125" />
+            <div className="absolute inset-0 w-full h-full blur-xl opacity-40 scale-110 pointer-events-none transition-transform duration-500 group-hover:scale-125 z-0">
+              <Image src={room.images![0]} alt="" fill sizes="400px" className="object-cover" onError={() => setImageError(true)} />
+            </div>
             {/* Clear Foreground */}
-            <img src={room.images![0]} alt={room.title} loading="lazy"
+            <Image src={room.images![0]} alt={room.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               onError={() => setImageError(true)}
-              className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mx-auto" />
+              className="object-contain group-hover:scale-105 transition-transform duration-500 mx-auto relative z-10" />
           </>
         ) : hasVideo ? (
           <video src={room.videos![0]} muted loop playsInline
@@ -128,8 +129,9 @@ export default function RoomCard({ room }: { room: Room }) {
           </div>
           <div className="flex items-center gap-3">
             {room.profiles?.avatar_url ? (
-              <img src={room.profiles.avatar_url} alt={room.profiles?.full_name || ""} loading="lazy" referrerPolicy="no-referrer"
-                className="w-10 h-10 rounded-full object-cover border-2 border-border" />
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-border shrink-0">
+                <Image src={room.profiles.avatar_url} alt={room.profiles?.full_name || ""} fill sizes="40px" referrerPolicy="no-referrer" className="object-cover" />
+              </div>
             ) : (
               <div className="w-10 h-10 rounded-full bg-primary border-2 border-border flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">{(room.profiles?.full_name || "?")[0]}</span>

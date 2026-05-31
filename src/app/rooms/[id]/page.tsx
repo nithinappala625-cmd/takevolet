@@ -9,6 +9,7 @@ import {
   BedDouble, ShieldCheck, AlertCircle, Loader2
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { fetchRoomByIdAction, checkRoomUnlockStatusAction } from "@/lib/server-actions";
 import type { Room } from "@/lib/db";
@@ -395,17 +396,23 @@ export default function RoomDetailPage() {
           {/* Background Layer: Ambient Blur (only for images) */}
           <AnimatePresence mode="wait">
             {allMedia[currentImageIndex] && !hasMediaError && !allMedia[currentImageIndex].match(/\.(mp4|webm|ogg)$/i) && (
-              <motion.img
+              <motion.div
                 key={`bg-${currentImageIndex}`}
-                src={allMedia[currentImageIndex]}
-                alt=""
-                onError={() => setMediaErrors(prev => ({ ...prev, [currentImageIndex]: true }))}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0.4 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 select-none pointer-events-none"
-              />
+                className="absolute inset-0 w-full h-full blur-2xl scale-110 select-none pointer-events-none"
+              >
+                <Image
+                  src={allMedia[currentImageIndex]}
+                  alt=""
+                  fill
+                  priority
+                  className="object-cover"
+                  onError={() => setMediaErrors(prev => ({ ...prev, [currentImageIndex]: true }))}
+                />
+              </motion.div>
             )}
           </AnimatePresence>
 
@@ -425,17 +432,24 @@ export default function RoomDetailPage() {
                   className="w-full h-full object-contain relative z-10"
                 />
               ) : (
-                <motion.img
+                <motion.div
                   key={`fg-${currentImageIndex}`}
-                  src={allMedia[currentImageIndex]}
-                  alt={`Room View ${currentImageIndex + 1}`}
-                  onError={() => setMediaErrors(prev => ({ ...prev, [currentImageIndex]: true }))}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
-                  className="w-full h-full object-contain relative z-10"
-                />
+                  className="w-full h-full relative z-10"
+                >
+                  <Image
+                    src={allMedia[currentImageIndex]}
+                    alt={`Room View ${currentImageIndex + 1}`}
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 66vw"
+                    className="object-contain"
+                    onError={() => setMediaErrors(prev => ({ ...prev, [currentImageIndex]: true }))}
+                  />
+                </motion.div>
               )
             ) : (
               <div className="absolute inset-0 w-full h-full bg-secondary/20 flex flex-col items-center justify-center text-muted-foreground z-10">
@@ -568,8 +582,8 @@ export default function RoomDetailPage() {
               <h2 className="text-lg font-bold mb-4 uppercase tracking-wide">Photos</h2>
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {images.map((img, i) => (
-                  <div key={i} onClick={() => openLightbox(i)} className="flex-shrink-0 w-32 h-24 overflow-hidden cursor-pointer border border-border group">
-                    <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div key={i} onClick={() => openLightbox(i)} className="flex-shrink-0 w-32 h-24 overflow-hidden cursor-pointer border border-border group relative">
+                    <Image src={img} alt="" fill sizes="128px" className="object-cover group-hover:scale-110 transition-transform duration-500" />
                   </div>
                 ))}
               </div>
@@ -588,7 +602,9 @@ export default function RoomDetailPage() {
                 return (
                   <div className="flex items-center gap-4 mb-5">
                     {p?.avatar_url || unlockedContact?.avatar ? (
-                      <img src={p?.avatar_url || unlockedContact?.avatar || ""} alt={p?.full_name || unlockedContact?.name || ""} referrerPolicy="no-referrer" className="w-16 h-16 rounded-full object-cover border-2 border-primary/30" />
+                      <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-primary/30">
+                        <Image src={p?.avatar_url || unlockedContact?.avatar || ""} alt={p?.full_name || unlockedContact?.name || ""} fill sizes="64px" className="object-cover" referrerPolicy="no-referrer" />
+                      </div>
                     ) : (
                       <div className="w-16 h-16 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
                         <span className="text-primary-foreground font-bold text-lg">{((p?.full_name || unlockedContact?.name || "?")[0])}</span>

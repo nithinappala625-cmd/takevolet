@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
       // Google profile avatars (Google OAuth)
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
+      // Cloudinary image uploads
+      { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
 
