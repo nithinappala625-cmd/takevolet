@@ -1,6 +1,14 @@
 import { Metadata } from 'next'
 import { getFlatmateById } from "@/lib/db"
 
+function getOptimizedOgImage(url: string) {
+  if (!url || url.startsWith("/")) return url;
+  if (url.includes("cloudinary.com") && url.includes("/upload/")) {
+    return url.replace("/upload/", "/upload/c_fill,w_800,h_800,q_70,f_jpg/");
+  }
+  return url;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   let title = "Flatmate Profile | Takevolet"
   let description = "Find your ideal bachelor flatmate in Hyderabad."
@@ -19,19 +27,28 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     }
   } catch(e) {}
 
+  const finalImage = getOptimizedOgImage(image);
+
   return {
     title,
     description,
     openGraph: {
       title,
       description,
-      images: [{ url: image }],
+      images: [
+        {
+          url: finalImage,
+          width: 800,
+          height: 800,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [image],
+      images: [finalImage],
     }
   }
 }
