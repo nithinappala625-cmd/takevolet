@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
@@ -12,32 +12,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ urls: placeholders, success: true });
     }
 
-    const uploadedUrls: string[] = [];
-
-    for (const file of files) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const base64 = buffer.toString("base64");
-      const dataUri = `data:${file.type};base64,${base64}`;
+    const uploadPromises = files.map(async (file) => {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+      formDataUpload.append("upload_preset", process.env.CLOUDINARY_UPLOAD_PRESET || "Takevolet");
+      formDataUpload.append("folder", `Takevolet/${folder}`);
 
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/auto/upload`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            file: dataUri,
-            upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET || "Takevolet",
-            folder: `Takevolet/${folder}`,
-          }),
+          body: formDataUpload,
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        uploadedUrls.push(data.secure_url);
+        return data.secure_url;
       }
-    }
+      return null;
+    });
+
+    const results = await Promise.all(uploadPromises);
+    const uploadedUrls = results.filter((url): url is string => url !== null);
 
     return NextResponse.json({ urls: uploadedUrls, success: true });
   } catch (error) {

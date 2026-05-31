@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: {
       title,
       description,
-      images: [image],
+      images: [{ url: image }],
     },
     twitter: {
       card: "summary_large_image",
