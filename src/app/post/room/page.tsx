@@ -139,8 +139,10 @@ export default function PostRoomPage() {
     // Upload videos
     const videoUrls: string[] = [];
     for (let i = 0; i < videoFiles.length; i++) {
-      setUploadProgress(`Uploading video ${i + 1} of ${videoFiles.length}…`);
-      const { url, error: upErr } = await uploadRoomMedia(user.id, videoFiles[i], "video");
+      setUploadProgress(`Uploading video ${i + 1} of ${videoFiles.length} (0%)…`);
+      const { url, error: upErr } = await uploadRoomMedia(user.id, videoFiles[i], "video", (progress) => {
+        setUploadProgress(`Uploading video ${i + 1} of ${videoFiles.length} (${Math.round(progress)}%)…`);
+      });
       if (upErr) { setError("Video upload failed."); setSubmitting(false); return; }
       if (url) videoUrls.push(url);
     }
@@ -489,7 +491,7 @@ export default function PostRoomPage() {
             </div>
             <input ref={videoRef} type="file" accept="video/*" multiple className="hidden"
               onChange={e => e.target.files && handleVideos(e.target.files)} />
-            <p className="text-[11px] text-muted-foreground">MP4, MOV up to 50MB each</p>
+            <p className="text-[11px] text-muted-foreground">MP4, MOV (No size limit)</p>
           </div>
 
           {/* ── COMMISSION INFO ────────────────────────────────── */}

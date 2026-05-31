@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { supabase } from "./supabase";
+import * as tus from "tus-js-client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -391,11 +392,57 @@ export async function deleteRoom(roomId: string): Promise<{ error: any }> {
 export async function uploadRoomMedia(
   userId: string,
   file: File,
-  type: "image" | "video"
+  type: "image" | "video",
+  onProgress?: (progress: number) => void
 ): Promise<{ url: string | null; error: any }> {
   const ext = file.name.split(".").pop();
   const path = `${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
+  if (type === "video") {
+    return new Promise(async (resolve) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const upload = new tus.Upload(file, {
+        endpoint: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/upload/resumable`,
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        headers: {
+          authorization: `Bearer ${session?.access_token || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'x-upsert': 'true',
+        },
+        uploadDataDuringCreation: true,
+        removeFingerprintOnSuccess: true,
+        metadata: {
+          bucketName: 'room-media',
+          objectName: path,
+          contentType: file.type,
+          cacheControl: '3600',
+        },
+        chunkSize: 6 * 1024 * 1024, // 6MB chunk size
+        onError: function (error) {
+          console.error('TUS upload error:', error);
+          resolve({ url: null, error: error });
+        },
+        onProgress: function (bytesUploaded, bytesTotal) {
+          const percentage = ((bytesUploaded / bytesTotal) * 100);
+          if (onProgress) onProgress(percentage);
+        },
+        onSuccess: function () {
+          const { data } = supabase.storage.from("room-media").getPublicUrl(path);
+          resolve({ url: data.publicUrl, error: null });
+        },
+      });
+
+      upload.findPreviousUploads().then(function (previousUploads) {
+        if (previousUploads.length) {
+          upload.resumeFromPreviousUpload(previousUploads[0]);
+        } else {
+          upload.start();
+        }
+      });
+    });
+  }
+
+  // Standard upload for images (usually small)
   const { error: uploadError } = await supabase.storage
     .from("room-media")
     .upload(path, file, { cacheControl: "3600", upsert: false });

@@ -181,8 +181,10 @@ export default function PostFlatmatePage() {
     const videoUrls: string[] = [];
     if (videoFiles.length > 0) {
       for (let i = 0; i < videoFiles.length; i++) {
-        setUploadProgress(`Uploading video ${i + 1} of ${videoFiles.length}…`);
-        const { url, error: upErr } = await uploadRoomMedia(user.id, videoFiles[i], "video");
+        setUploadProgress(`Uploading video ${i + 1} of ${videoFiles.length} (0%)…`);
+        const { url, error: upErr } = await uploadRoomMedia(user.id, videoFiles[i], "video", (progress) => {
+          setUploadProgress(`Uploading video ${i + 1} of ${videoFiles.length} (${Math.round(progress)}%)…`);
+        });
         if (upErr) { setError("Video upload failed."); setSubmitting(false); return; }
         if (url) videoUrls.push(url);
       }
@@ -419,7 +421,7 @@ export default function PostFlatmatePage() {
                   onChange={handleVideoSelect}
                   className="hidden"
                 />
-                <p className="text-[11px] text-muted-foreground">MP4, WebM, OGG — max 2 videos</p>
+                <p className="text-[11px] text-muted-foreground">MP4, WebM, OGG — max 2 videos (No size limit)</p>
               </div>
             </motion.div>
           )}
