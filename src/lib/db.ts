@@ -407,6 +407,7 @@ export async function uploadRoomMedia(
         retryDelays: [0, 3000, 5000, 10000, 20000],
         headers: {
           authorization: `Bearer ${session?.access_token || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
           'x-upsert': 'true',
         },
         uploadDataDuringCreation: true,
@@ -420,7 +421,7 @@ export async function uploadRoomMedia(
         chunkSize: 6 * 1024 * 1024, // 6MB chunk size
         onError: function (error) {
           console.error('TUS upload error:', error);
-          resolve({ url: null, error: error });
+          resolve({ url: null, error: error.message || error.toString() });
         },
         onProgress: function (bytesUploaded, bytesTotal) {
           const percentage = ((bytesUploaded / bytesTotal) * 100);

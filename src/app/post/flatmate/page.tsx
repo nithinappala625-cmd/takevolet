@@ -185,7 +185,7 @@ export default function PostFlatmatePage() {
         const { url, error: upErr } = await uploadRoomMedia(user.id, videoFiles[i], "video", (progress) => {
           setUploadProgress(`Uploading video ${i + 1} of ${videoFiles.length} (${Math.round(progress)}%)…`);
         });
-        if (upErr) { setError("Video upload failed."); setSubmitting(false); return; }
+        if (upErr) { setError("Video upload failed: " + (typeof upErr === 'string' ? upErr : upErr.message || "Unknown error")); setSubmitting(false); return; }
         if (url) videoUrls.push(url);
       }
     }
