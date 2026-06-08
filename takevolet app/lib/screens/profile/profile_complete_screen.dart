@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../../main.dart';
 import '../../data/locations.dart';
 
@@ -193,8 +194,36 @@ class _ProfileCompleteScreenState extends State<ProfileCompleteScreen> {
   }
 
   Future<void> _uploadAadhaarImage(XFile image) async {
+    if (_fullNameCtrl.text.trim().isEmpty || _dob == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please fill your Full Name and Date of Birth first before uploading Aadhaar.',
+              style: GoogleFonts.outfit()),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      setState(() => _aadhaarImage = null);
+      return;
+    }
+
     setState(() => _isUploadingImage = true);
     try {
+      final inputImage = InputImage.fromFilePath(image.path);
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+      final String text = recognizedText.text.toLowerCase();
+      
+      final bool hasAadhaarNumber = RegExp(r'\d{4}\s?\d{4}\s?\d{4}').hasMatch(text);
+      final String dobYear = _dob!.year.toString();
+      final bool hasDob = text.contains(dobYear);
+
+      textRecognizer.close();
+
+      if (!hasAadhaarNumber || !hasDob) {
+        throw Exception('Rejected: Document does not appear to be a valid Aadhaar. Ensure the photo is clear and contains your Aadhaar Number and Date of Birth.');
+      }
+
       final userId = supabase.auth.currentUser!.id;
       final ext = image.path.split('.').last;
       final filePath = '$userId/aadhaar_${DateTime.now().millisecondsSinceEpoch}.$ext';
@@ -208,7 +237,7 @@ class _ProfileCompleteScreenState extends State<ProfileCompleteScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Aadhaar uploaded successfully',
+            content: Text('Aadhaar verified and uploaded successfully',
                 style: GoogleFonts.outfit()),
             backgroundColor: Colors.green.shade700,
             behavior: SnackBarBehavior.floating,
@@ -218,15 +247,17 @@ class _ProfileCompleteScreenState extends State<ProfileCompleteScreen> {
         );
       }
     } catch (e) {
+      setState(() => _aadhaarImage = null);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Upload failed: ${e.toString()}',
+            content: Text(e.toString().replaceAll('Exception: ', ''),
                 style: GoogleFonts.outfit()),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -285,7 +316,7 @@ class _ProfileCompleteScreenState extends State<ProfileCompleteScreen> {
         'location': _location,
         'colony': _colony,
         'house_no': _houseNoCtrl.text.trim(),
-        'aadhaar_path': _aadhaarPath,
+        'aadhaar_url': _aadhaarPath,
       });
 
       if (mounted) {
