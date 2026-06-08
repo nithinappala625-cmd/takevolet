@@ -7,6 +7,7 @@ import '../../main.dart';
 import '../../utils/image_utils.dart';
 import '../../widgets/smart_image.dart';
 import '../info/static_screens.dart';
+import '../notifications/notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -245,34 +246,35 @@ class _HomeScreenState extends State<HomeScreen> {
               const Icon(Icons.notifications_none),
               Positioned(right: 0, top: 0, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
             ]),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🔔 No new notifications'), duration: Duration(seconds: 2))),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
           ),
         ],
       ),
       drawer: Drawer(
+        backgroundColor: Colors.white,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
-              child: const Column(
+              decoration: const BoxDecoration(color: Colors.white),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Icon(Icons.real_estate_agent, size: 50, color: Colors.white),
-                  SizedBox(height: 12),
-                  Text('Takevolet', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Image.asset('assets/images/tvl_real_logo.jpg', height: 50),
+                  const SizedBox(height: 12),
+                  const Text('Takevolet', style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
-            ListTile(leading: const Icon(Icons.info), title: const Text('About Us'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen())); }),
-            ListTile(leading: const Icon(Icons.article), title: const Text('Articles & Blog'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesScreen())); }),
-            ListTile(leading: const Icon(Icons.handshake), title: const Text('Partners'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const PartnersScreen())); }),
-            ListTile(leading: const Icon(Icons.contact_mail), title: const Text('Contact Us'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactScreen())); }),
-            const Divider(),
-            ListTile(leading: const Icon(Icons.privacy_tip), title: const Text('Privacy Policy'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyScreen())); }),
-            ListTile(leading: const Icon(Icons.gavel), title: const Text('Terms of Service'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen())); }),
-            ListTile(leading: const Icon(Icons.money_off), title: const Text('Refund Policy'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const RefundScreen())); }),
+            ListTile(leading: const Icon(Icons.info_outline, color: Colors.black87), title: const Text('About Us', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen())); }),
+            ListTile(leading: const Icon(Icons.article_outlined, color: Colors.black87), title: const Text('Articles & Blog', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesScreen())); }),
+            ListTile(leading: const Icon(Icons.handshake_outlined, color: Colors.black87), title: const Text('Partners', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const PartnersScreen())); }),
+            ListTile(leading: const Icon(Icons.contact_support_outlined, color: Colors.black87), title: const Text('Contact Us', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactScreen())); }),
+            const Divider(color: Colors.black12),
+            ListTile(leading: const Icon(Icons.privacy_tip_outlined, color: Colors.black87), title: const Text('Privacy Policy', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyScreen())); }),
+            ListTile(leading: const Icon(Icons.gavel_outlined, color: Colors.black87), title: const Text('Terms of Service', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen())); }),
+            ListTile(leading: const Icon(Icons.currency_exchange_outlined, color: Colors.black87), title: const Text('Refund Policy', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const RefundScreen())); }),
           ],
         ),
       ),
@@ -333,19 +335,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             margin: const EdgeInsets.symmetric(horizontal: 5.0),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              image: DecorationImage(image: NetworkImage(i), fit: BoxFit.cover),
+                              color: Colors.grey[200],
                             ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                gradient: LinearGradient(
-                                  colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-                                  begin: Alignment.bottomCenter, end: Alignment.topCenter,
+                            clipBehavior: Clip.antiAlias,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                SmartImage(imageUrl: i, fit: BoxFit.cover),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                                      begin: Alignment.bottomCenter, end: Alignment.topCenter,
+                                    ),
+                                  ),
+                                  alignment: Alignment.bottomLeft,
+                                  padding: const EdgeInsets.all(16),
+                                  child: const Text('Premium Rooms Available\nBook now and get ₹1000 off', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                                 ),
-                              ),
-                              alignment: Alignment.bottomLeft,
-                              padding: const EdgeInsets.all(16),
-                              child: const Text('Premium Rooms Available\nBook now and get ₹1000 off', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                              ],
                             ),
                           );
                         },

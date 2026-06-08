@@ -106,7 +106,7 @@ class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
   @override
   Widget build(BuildContext context) => const DynamicPageScreen(
-        slug: 'about',
+        slug: 'about-us',
         fallbackTitle: 'About Us',
         fallbackContent: 'Takevolet (RoomRelay) is the ultimate platform to find rooms, flatmates, and buy/sell items — all without paying brokerage.\n\nOur Mission\nEliminate middleman brokers and connect seekers directly with current tenants/owners using a secure escrow reward system.\n\nHow It Works\n• Posters list their rooms with real photos, rent details, and amenities\n• Seekers browse listings and pay a small fee (₹15) to unlock contact details\n• After a successful room handover, the poster earns a ₹1,000 commission\n\nWhy Takevolet?\n• Zero brokerage — no middlemen\n• Direct contact between seekers and posters\n• Verified listings with real photographs\n• Transparent pricing and amenities\n• Serving 15+ areas in Hyderabad\n\nBuilt by Nithin Pappala, proudly made in Hyderabad, India.\n\nContact: support@takevolet.online\nPhone: +91 79819 94870',
       );
@@ -135,69 +135,9 @@ class PartnersScreen extends StatelessWidget {
 class ContactScreen extends StatelessWidget {
   const ContactScreen({super.key});
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Contact Us')),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          const Text('Get in Touch', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text('We would love to hear from you!', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5EFD0),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Icon(Icons.email, color: Color(0xFFD4AF37), size: 20),
-                  SizedBox(width: 8),
-                  Text('support@takevolet.online', style: TextStyle(fontWeight: FontWeight.w600)),
-                ]),
-                SizedBox(height: 12),
-                Row(children: [
-                  Icon(Icons.phone, color: Color(0xFFD4AF37), size: 20),
-                  SizedBox(width: 8),
-                  Text('+91 79819 94870', style: TextStyle(fontWeight: FontWeight.w600)),
-                ]),
-                SizedBox(height: 12),
-                Row(children: [
-                  Icon(Icons.location_on, color: Color(0xFFD4AF37), size: 20),
-                  SizedBox(width: 8),
-                  Expanded(child: Text('Hyderabad, Telangana, India', style: TextStyle(fontWeight: FontWeight.w600))),
-                ]),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const TextField(decoration: InputDecoration(labelText: 'Name', border: OutlineInputBorder())),
-          const SizedBox(height: 16),
-          const TextField(decoration: InputDecoration(labelText: 'Email', border: OutlineInputBorder())),
-          const SizedBox(height: 16),
-          const TextField(
-            decoration: InputDecoration(labelText: 'Message', border: OutlineInputBorder()),
-            maxLines: 4,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Message Sent!')));
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD4AF37),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Send Message', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          )
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const DynamicPageScreen(
+        slug: 'contact-us',
+        fallbackTitle: 'Contact Us',
+        fallbackContent: 'Get in Touch\n\nWe would love to hear from you!\n\nEmail: support@takevolet.online\nPhone: +91 79819 94870\nLocation: Hyderabad, Telangana, India',
+      );
 }
