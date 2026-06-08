@@ -5,6 +5,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
+import '../../widgets/smart_image.dart';
 import '../info/static_screens.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,8 +16,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  
+  Future<List<Map<String, dynamic>>> _fetchAds(String placement) async {
+    return await supabase.from('ads').select().eq('placement', placement).eq('is_active', true).order('created_at', ascending: false);
+  }
+
   Future<List<Map<String, dynamic>>> _fetchData(String table) async {
-    return await supabase.from(table).select().order('created_at', ascending: false).limit(10);
+    var query = supabase.from(table).select();
+    if (table == 'rooms') query = query.eq('is_available', true);
+    if (table == 'flatmates') query = query.eq('is_available', true);
+    if (table == 'items') query = query.eq('is_available', true);
+    return await query.order('created_at', ascending: false).limit(10);
   }
 
   Future<void> _launchUrl(String url) async {
@@ -96,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 160,
               width: double.infinity,
               child: thumbnailUrl != null
-                  ? CachedNetworkImage(imageUrl: thumbnailUrl, fit: BoxFit.cover, placeholder: (context, url) => Container(color: Colors.grey[200]))
+                  ? SmartImage(imageUrl: thumbnailUrl, fit: BoxFit.cover)
                   : Container(color: Colors.grey[200], child: const Icon(Icons.home, size: 50, color: Colors.grey)),
             ),
             Padding(
@@ -143,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 160,
               width: double.infinity,
               child: thumbnailUrl != null
-                  ? CachedNetworkImage(imageUrl: thumbnailUrl, fit: BoxFit.cover, placeholder: (_, __) => Container(color: Colors.grey[200]))
+                  ? SmartImage(imageUrl: thumbnailUrl, fit: BoxFit.cover)
                   : Container(
                       color: const Color(0xFFF5EFD0),
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -197,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 120,
               width: double.infinity,
               child: thumbnailUrl != null
-                  ? CachedNetworkImage(imageUrl: thumbnailUrl, fit: BoxFit.cover, placeholder: (context, url) => Container(color: Colors.grey[200]))
+                  ? SmartImage(imageUrl: thumbnailUrl, fit: BoxFit.cover)
                   : Container(color: Colors.grey[200], child: const Icon(Icons.shopping_bag, size: 40, color: Colors.grey)),
             ),
             Padding(
@@ -289,47 +299,125 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             
+            
             // Advertisement Carousel
-            CarouselSlider(
-              options: CarouselOptions(
-                height: 180.0,
-                autoPlay: true,
-                enlargeCenterPage: true,
-                viewportFraction: 0.9,
-                aspectRatio: 16/9,
-                initialPage: 0,
-              ),
-              items: [
-                'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
-                'https://images.unsplash.com/photo-1502672260266-1c1c29408447?w=800&q=80',
-                'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80'
-              ].map((i) {
-                return Builder(
-                  builder: (BuildContext context) {
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        image: DecorationImage(image: NetworkImage(i), fit: BoxFit.cover),
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          gradient: LinearGradient(
-                            colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-                            begin: Alignment.bottomCenter, end: Alignment.topCenter,
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchAds('home_page'),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
+                }
+                
+                final ads = snapshot.data ?? [];
+                
+                if (ads.isEmpty) {
+                  // Fallback hardcoded carousel
+                  return CarouselSlider(
+                    options: CarouselOptions(
+                      height: 180.0,
+                      autoPlay: true,
+                      enlargeCenterPage: true,
+                      viewportFraction: 0.9,
+                      aspectRatio: 16/9,
+                      initialPage: 0,
+                    ),
+                    items: [
+                      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
+                      'https://images.unsplash.com/photo-1502672260266-1c1c29408447?w=800&q=80',
+                      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80'
+                    ].map((i) {
+                      return Builder(
+                        builder: (BuildContext context) {
+                          return Container(
+                            width: MediaQuery.of(context).size.width,
+                            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              image: DecorationImage(image: NetworkImage(i), fit: BoxFit.cover),
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                gradient: LinearGradient(
+                                  colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                                  begin: Alignment.bottomCenter, end: Alignment.topCenter,
+                                ),
+                              ),
+                              alignment: Alignment.bottomLeft,
+                              padding: const EdgeInsets.all(16),
+                              child: const Text('Premium Rooms Available\nBook now and get ₹1000 off', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                          );
+                        },
+                      );
+                    }).toList(),
+                  );
+                }
+
+                return CarouselSlider(
+                  options: CarouselOptions(
+                    height: 180.0,
+                    autoPlay: true,
+                    enlargeCenterPage: true,
+                    viewportFraction: 0.9,
+                    aspectRatio: 16/9,
+                    initialPage: 0,
+                  ),
+                  items: ads.map((ad) {
+                    return Builder(
+                      builder: (BuildContext context) {
+                        return GestureDetector(
+                          onTap: () {
+                            if (ad['url'] != null && ad['url'].isNotEmpty) {
+                              _launchUrl(ad['url']);
+                            }
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              color: Colors.grey[200],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                if (ad['image_url'] != null && ad['image_url'].isNotEmpty)
+                                  SmartImage(imageUrl: ad['image_url'], fit: BoxFit.cover)
+                                else
+                                  Container(color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
+                                  
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                                      begin: Alignment.bottomCenter, end: Alignment.topCenter,
+                                    ),
+                                  ),
+                                  alignment: Alignment.bottomLeft,
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(ad['title'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                                      if (ad['description'] != null && ad['description'].isNotEmpty)
+                                        Text(ad['description'], style: const TextStyle(color: Colors.white, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        alignment: Alignment.bottomLeft,
-                        padding: const EdgeInsets.all(16),
-                        child: const Text('Premium Rooms Available\nBook now and get ₹1000 off', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
+                        );
+                      },
                     );
-                  },
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
+
             const SizedBox(height: 16),
 
             _buildSectionHeader('Featured Rooms', () => context.go('/rooms')),
@@ -340,6 +428,56 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 24),
             _buildSectionHeader('Marketplace Items', () => context.go('/marketplace')),
             _buildHorizontalList(table: 'items', itemBuilder: _buildItemCard),
+            const SizedBox(height: 24),
+            // Bangalore Launch Banner
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6)),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text('🎉 COMING SOON', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('We are launching\nin Bangalore!', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, height: 1.2)),
+                        const SizedBox(height: 6),
+                        Text('Find rooms, flatmates & more in Bangalore soon.', style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Icon(Icons.location_city, color: Colors.white, size: 32),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 32),
           ],
         ),

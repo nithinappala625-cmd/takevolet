@@ -62,6 +62,55 @@ export async function checkRoomUnlockStatusAction(roomId: string, userId: string
   };
 }
 
+// ─── PAGES (Dynamic Static Pages) ────────────────────────────────────────────
+
+export async function fetchAllPagesAction() {
+  const { data, error } = await supabaseAdmin
+    .from("pages")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("fetchAllPagesAction:", error);
+    return [];
+  }
+  return data as any[];
+}
+
+export async function fetchPageBySlugAction(slug: string) {
+  const { data, error } = await supabaseAdmin
+    .from("pages")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  if (error || !data) return null;
+  return data as any;
+}
+
+export async function insertPageAction(pageData: any) {
+  const { error } = await supabaseAdmin
+    .from("pages")
+    .insert(pageData);
+  return { error };
+}
+
+export async function updatePageAction(id: string, pageData: any) {
+  const { error } = await supabaseAdmin
+    .from("pages")
+    .update({ ...pageData, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  return { error };
+}
+
+export async function deletePageAction(id: string) {
+  const { error } = await supabaseAdmin
+    .from("pages")
+    .delete()
+    .eq("id", id);
+  return { error };
+}
+
 export async function fetchAllFlatmatesAction() {
   const { data, error } = await supabaseAdmin
     .from("flatmates")

@@ -12,12 +12,12 @@ import {
 import { useUser } from "@/hooks/useUser";
 import { MOCK_ROOMS, MOCK_FLATMATES, MOCK_ITEMS } from "@/data/mock";
 import { HYDERABAD_AREAS } from "@/data/locations";
-import { insertAdAction, updateAdAction, deleteAdAction, fetchAllRoomsAction } from "@/lib/server-actions";
+import { insertAdAction, updateAdAction, deleteAdAction, fetchAllRoomsAction, fetchAllPagesAction, insertPageAction, updatePageAction, deletePageAction } from "@/lib/server-actions";
 import { uploadRoomMedia } from "@/lib/db";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
-type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "marketplace" | "partners" | "ads";
+type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "marketplace" | "partners" | "ads" | "pages";
 
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false);
@@ -37,13 +37,14 @@ export default function AdminPage() {
   const [localMarketplace, setLocalMarketplace] = useState<any[]>([]);
   const [localPartners, setLocalPartners] = useState<any[]>([]);
   const [localAds, setLocalAds] = useState<any[]>([]);
+  const [localPages, setLocalPages] = useState<any[]>([]);
 
   const [editItem, setEditItem] = useState<any | null>(null);
-  const [editType, setEditType] = useState<"room" | "flatmate" | "marketplace" | "ad" | null>(null);
+  const [editType, setEditType] = useState<"room" | "flatmate" | "marketplace" | "ad" | "page" | null>(null);
   const [editLoading, setEditLoading] = useState(false);
 
   const [deleteItem, setDeleteItem] = useState<any | null>(null);
-  const [deleteType, setDeleteType] = useState<"room" | "flatmate" | "marketplace" | "ad" | null>(null);
+  const [deleteType, setDeleteType] = useState<"room" | "flatmate" | "marketplace" | "ad" | "page" | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [newImgUrl, setNewImgUrl] = useState("");
@@ -107,6 +108,27 @@ export default function AdminPage() {
         return;
       }
 
+      if (editType === "page") {
+        const pageData = {
+          slug: editItem.slug,
+          title: editItem.title,
+          content: editItem.content,
+        };
+        let res;
+        if (editItem.id) {
+          res = await updatePageAction(editItem.id, pageData);
+        } else {
+          res = await insertPageAction(pageData);
+        }
+        if (res.error) throw new Error(res.error.message || "Failed to save page");
+        
+        await fetchPages();
+        setEditItem(null);
+        setEditType(null);
+        setEditLoading(false);
+        return;
+      }
+
       const res = await fetch("/api/admin/data", {
         method: "PUT",
         headers: {
@@ -123,6 +145,7 @@ export default function AdminPage() {
           advanceShare: editItem.advanceShare,
           price: editItem.price,
           rentPrice: editItem.rentPrice,
+          city: editItem.city,
           location: editItem.location,
           colony: editItem.colony,
           description: editItem.description,
@@ -180,6 +203,15 @@ export default function AdminPage() {
     }
   };
 
+  const fetchPages = async () => {
+    try {
+      const pages = await fetchAllPagesAction();
+      setLocalPages(pages);
+    } catch (e) {
+      console.error("Error fetching pages", e);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!deleteItem || !deleteType) return;
     setDeleteLoading(true);
@@ -188,6 +220,15 @@ export default function AdminPage() {
         const res = await deleteAdAction(deleteItem.id);
         if (res.error) throw new Error(res.error.message || "Failed to delete ad");
         await fetchAds();
+        setDeleteItem(null);
+        setDeleteType(null);
+        setDeleteLoading(false);
+        return;
+      }
+      if (deleteType === "page") {
+        const res = await deletePageAction(deleteItem.id);
+        if (res.error) throw new Error(res.error.message || "Failed to delete page");
+        await fetchPages();
         setDeleteItem(null);
         setDeleteType(null);
         setDeleteLoading(false);
@@ -233,6 +274,7 @@ export default function AdminPage() {
       fetchData();
       fetchPartners();
       fetchAds();
+      fetchPages();
     } else {
       setPwdError("Incorrect password. Access denied.");
     }
@@ -446,7 +488,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex border-b border-border mb-6 overflow-x-auto bg-background">
-          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "marketplace", "partners", "ads"] as Tab[]).map(tab => (
+          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "marketplace", "partners", "ads", "pages"] as Tab[]).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-6 py-3.5 text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-all border-b-2 ${
                 activeTab === tab ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground"
@@ -460,6 +502,7 @@ export default function AdminPage() {
                 : tab === "marketplace" ? `marketplace (${localMarketplace.length})`
                 : tab === "partners" ? `partners (${localPartners.length})`
                 : tab === "ads" ? `ads (${localAds.length})`
+                : tab === "pages" ? `pages (${localPages.length})`
                 : tab}
             </button>
           ))}
@@ -1156,7 +1199,7 @@ export default function AdminPage() {
                 <button onClick={fetchAds} className="flex items-center gap-2 text-xs font-bold text-primary hover:underline">
                   <RefreshCw size={12} /> Refresh
                 </button>
-                <button onClick={() => { setEditItem({ is_active: true, placement: "rooms_page" }); setEditType("ad"); }} className="bg-primary text-primary-foreground px-4 py-2 text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2">
+                <button onClick={() => { setEditItem({ is_active: true, placement: "home_page" }); setEditType("ad"); }} className="bg-primary text-primary-foreground px-4 py-2 text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2">
                   <Star size={14} /> Create Ad
                 </button>
               </div>
@@ -1218,6 +1261,35 @@ export default function AdminPage() {
           </motion.div>
         )}
 
+
+
+        {/* ── PAGES ── */}
+        {activeTab === "pages" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-sm font-bold uppercase tracking-widest">Static Pages ({localPages.length})</p>
+              <button onClick={() => { setEditItem({ slug: '', title: '', content: '' }); setEditType('page'); }}
+                className="bg-primary text-primary-foreground px-4 py-2 text-xs font-bold uppercase hover:opacity-90">
+                + Add Page
+              </button>
+            </div>
+            <div className="space-y-4">
+              {localPages.map((page: any) => (
+                <div key={page.id} className="bg-background border border-border p-4 flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-sm uppercase tracking-wider">{page.title}</p>
+                    <p className="text-xs text-muted-foreground font-mono">Slug: {page.slug}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditItem(page); setEditType("page"); }} className="text-[10px] uppercase font-bold text-primary hover:underline">Edit</button>
+                    <button onClick={() => { setDeleteItem(page); setDeleteType("page"); }} className="text-[10px] uppercase font-bold text-red-500 hover:underline">Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* ── EDIT MODAL ── */}
         <AnimatePresence>
           {editItem && (
@@ -1238,6 +1310,24 @@ export default function AdminPage() {
 
                 {/* Form */}
                 <form onSubmit={handleSaveEdit} className="p-6 overflow-y-auto space-y-4 flex-1">
+                  
+                  {editType === "page" && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Slug (e.g. about, privacy-policy)</label>
+                        <input type="text" required value={editItem.slug || ""} onChange={e => setEditItem({ ...editItem, slug: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Page Title</label>
+                        <input type="text" required value={editItem.title || ""} onChange={e => setEditItem({ ...editItem, title: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Page Content</label>
+                        <textarea rows={10} required value={editItem.content || ""} onChange={e => setEditItem({ ...editItem, content: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none font-mono" />
+                      </div>
+                    </div>
+                  )}
+
                   {editType === "ad" ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -1247,8 +1337,10 @@ export default function AdminPage() {
                         </div>
                         <div>
                           <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Placement</label>
-                          <select value={editItem.placement || "rooms_page"} onChange={e => setEditItem({ ...editItem, placement: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none">
+                          <select value={editItem.placement || "home_page"} onChange={e => setEditItem({ ...editItem, placement: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none">
+                            <option value="home_page">Home Page Carousel</option>
                             <option value="rooms_page">Rooms Listing Page (Carousel)</option>
+                            <option value="marketplace_banner">Marketplace Banner</option>
                             <option value="room_detail">Room Detail Page (Under Contact)</option>
                             <option value="handover_success">Handover Confirmed Page</option>
                           </select>
@@ -1304,6 +1396,14 @@ export default function AdminPage() {
                           className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
                         />
                       </div>
+                        <div className="mt-4">
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">City</label>
+                          <select value={editItem.city || "Hyderabad"} onChange={e => setEditItem({ ...editItem, city: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none">
+                            <option value="Hyderabad">Hyderabad</option>
+                            <option value="Bangalore">Bangalore</option>
+                          </select>
+                        </div>
+
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>

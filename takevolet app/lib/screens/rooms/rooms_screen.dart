@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import '../../widgets/smart_image.dart';
 
 class RoomsScreen extends StatefulWidget {
   const RoomsScreen({super.key});
@@ -381,6 +383,55 @@ class _RoomsScreenState extends State<RoomsScreen> {
                   ),
                 ]),
               ),
+
+            // Rooms Ad Banner
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: supabase.from('ads').select().eq('placement', 'rooms_page').eq('is_active', true).order('created_at', ascending: false),
+              builder: (context, snapshot) {
+                final ads = snapshot.data ?? [];
+                if (ads.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: CarouselSlider(
+                    options: CarouselOptions(
+                      height: 120,
+                      autoPlay: true,
+                      enlargeCenterPage: true,
+                      viewportFraction: 1.0,
+                    ),
+                    items: ads.map((ad) => Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.grey[200],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (ad['image_url'] != null && ad['image_url'].toString().isNotEmpty)
+                            SmartImage(imageUrl: ad['image_url'], fit: BoxFit.cover)
+                          else
+                            Container(color: const Color(0xFFD4AF37).withOpacity(0.1)),
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.black.withOpacity(0.5), Colors.transparent],
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                              ),
+                            ),
+                            alignment: Alignment.bottomLeft,
+                            padding: const EdgeInsets.all(12),
+                            child: Text(ad['title'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                          ),
+                        ],
+                      ),
+                    )).toList(),
+                  ),
+                );
+              },
+            ),
 
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
