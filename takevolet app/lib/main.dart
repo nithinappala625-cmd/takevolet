@@ -4,13 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'services/onesignal_service.dart';
+
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/rooms/rooms_screen.dart';
-import 'screens/home/room_details_screen.dart';
 import 'screens/flatmates/flatmates_screen.dart';
 import 'screens/marketplace/marketplace_screen.dart';
 import 'screens/profile/profile_dashboard_screen.dart';
@@ -19,9 +20,13 @@ import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/profile/earnings_screen.dart';
 import 'screens/profile/refer_screen.dart';
 import 'screens/profile/pricing_screen.dart';
+import 'screens/profile/profile_complete_screen.dart';
+import 'screens/profile/profile_edit_screen.dart';
+import 'screens/profile/unlock_history_screen.dart';
 import 'screens/info/static_screens.dart';
 import 'screens/rooms/room_detail_screen.dart';
 import 'screens/flatmates/flatmate_detail_screen.dart';
+import 'screens/marketplace/item_detail_screen.dart';
 import 'screens/add_room/add_room_screen.dart';
 import 'screens/add_flatmate/add_flatmate_screen.dart';
 import 'screens/add_item/add_item_screen.dart';
@@ -47,32 +52,23 @@ void main() async {
 
 final supabase = Supabase.instance.client;
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final _router = GoRouter(
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/signup',
-      builder: (context, state) => const SignupScreen(),
-    ),
-    GoRoute(
-      path: '/admin',
-      builder: (context, state) => const AdminDashboardScreen(),
-    ),
-    GoRoute(
-      path: '/user-dashboard',
-      builder: (context, state) => const UserDashboardScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
+    GoRoute(path: '/admin', builder: (context, state) => const AdminDashboardScreen()),
+    GoRoute(path: '/user-dashboard', builder: (context, state) => const UserDashboardScreen()),
     GoRoute(path: '/earnings', builder: (context, state) => const EarningsScreen()),
     GoRoute(path: '/refer', builder: (context, state) => const ReferScreen()),
     GoRoute(path: '/pricing', builder: (context, state) => const PricingScreen()),
+    GoRoute(path: '/profile-complete', builder: (context, state) => const ProfileCompleteScreen()),
+    GoRoute(path: '/profile-edit', builder: (context, state) => const ProfileEditScreen()),
+    GoRoute(path: '/unlock-history', builder: (context, state) => const UnlockHistoryScreen()),
     GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
     GoRoute(path: '/articles', builder: (context, state) => const ArticlesScreen()),
     GoRoute(path: '/partners', builder: (context, state) => const PartnersScreen()),
@@ -88,57 +84,39 @@ final _router = GoRouter(
       path: '/flatmate/:id',
       builder: (context, state) => FlatmateDetailScreen(id: state.pathParameters['id']!),
     ),
+    GoRoute(
+      path: '/item/:id',
+      builder: (context, state) => ItemDetailScreen(id: state.pathParameters['id']!),
+    ),
     ShellRoute(
-      builder: (context, state, child) {
-        return MainShell(child: child);
-      },
+      builder: (context, state, child) => MainShell(child: child),
       routes: [
-        GoRoute(
-          path: '/home',
-          builder: (context, state) => const HomeScreen(),
-        ),
-        GoRoute(
-          path: '/rooms',
-          builder: (context, state) => const RoomsScreen(),
-        ),
-        GoRoute(
-          path: '/flatmates',
-          builder: (context, state) => const FlatmatesScreen(),
-        ),
-        GoRoute(
-          path: '/marketplace',
-          builder: (context, state) => const MarketplaceScreen(),
-        ),
-        GoRoute(
-          path: '/profile',
-          builder: (context, state) => const ProfileDashboardScreen(),
-        ),
+        GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+        GoRoute(path: '/rooms', builder: (context, state) => const RoomsScreen()),
+        GoRoute(path: '/flatmates', builder: (context, state) => const FlatmatesScreen()),
+        GoRoute(path: '/marketplace', builder: (context, state) => const MarketplaceScreen()),
+        GoRoute(path: '/profile', builder: (context, state) => const ProfileDashboardScreen()),
       ],
     ),
-    GoRoute(
-      path: '/room/:id',
-      builder: (context, state) {
-        final id = state.pathParameters['id']!;
-        return RoomDetailsScreen(roomId: id);
-      },
-    ),
-    GoRoute(
-      path: '/add-room',
-      builder: (context, state) => const AddRoomScreen(),
-    ),
-    GoRoute(
-      path: '/add-flatmate',
-      builder: (context, state) => const AddFlatmateScreen(),
-    ),
-    GoRoute(
-      path: '/add-item',
-      builder: (context, state) => const AddItemScreen(),
-    ),
+    GoRoute(path: '/add-room', builder: (context, state) => const AddRoomScreen()),
+    GoRoute(path: '/add-flatmate', builder: (context, state) => const AddFlatmateScreen()),
+    GoRoute(path: '/add-item', builder: (context, state) => const AddItemScreen()),
   ],
 );
 
-class TakevoletApp extends StatelessWidget {
+class TakevoletApp extends StatefulWidget {
   const TakevoletApp({super.key});
+
+  @override
+  State<TakevoletApp> createState() => _TakevoletAppState();
+}
+
+class _TakevoletAppState extends State<TakevoletApp> {
+  @override
+  void initState() {
+    super.initState();
+    OneSignalService.initialize(rootNavigatorKey);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +124,7 @@ class TakevoletApp extends StatelessWidget {
       title: 'Takevolet',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFD4AF37), // Elegant Gold
+          seedColor: const Color(0xFFD4AF37),
           primary: const Color(0xFFD4AF37),
           surface: Colors.white,
           brightness: Brightness.light,
@@ -155,7 +133,7 @@ class TakevoletApp extends StatelessWidget {
         textTheme: GoogleFonts.outfitTextTheme(Theme.of(context).textTheme),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
-          foregroundColor: Colors.black, // Text color on AppBar
+          foregroundColor: Colors.black,
           elevation: 0,
           centerTitle: true,
         ),

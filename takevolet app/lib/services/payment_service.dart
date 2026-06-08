@@ -27,12 +27,17 @@ class PaymentService {
       final user = _supabase.auth.currentUser;
       final response = await _supabase.functions.invoke(
         'create-razorpay-order',
-        body: {'amount': 50000, 'receipt': 'receipt_$roomId'}, // 50000 paise = 500 INR
+        body: {
+          'amount': 50000, 
+          'roomId': roomId,
+          'planId': 'unlimited'
+        },
       );
 
       final data = response.data;
       if (data == null || data['id'] == null) {
-        throw Exception('Failed to create order');
+        final errorDetail = data?['error'] ?? 'No data returned';
+        throw Exception('Supabase failed to create order.\n\nError: $errorDetail\n\nDid you add RAZORPAY_KEY_ID to Supabase secrets and deploy the function?');
       }
 
       final orderId = data['id'];
@@ -51,9 +56,7 @@ class PaymentService {
               'payment_id': paymentResponse.paymentId,
               'signature': paymentResponse.signature,
               'room_id': roomId,
-              'seeker_id': user?.id,
-              'poster_id': posterId,
-              'room_title': roomTitle,
+              'user_id': user?.id,
             },
           );
           isSuccess = true;
@@ -75,7 +78,7 @@ class PaymentService {
 
       // 4. Launch Razorpay UI
       var options = {
-        'key': data['keyId'] ?? 'rzp_test_placeholder',
+        'key': data['keyId'] ?? 'rzp_test_Sq0dFrEKuO85Mh',
         'amount': 50000,
         'name': 'Takevolet',
         'description': 'Unlock Room Contact',
@@ -94,7 +97,18 @@ class PaymentService {
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context).pop(); // remove dialog
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Payment Error 🚨', style: TextStyle(color: Colors.red)),
+            content: Text(
+              'There was an error communicating with the payment server:\n\n$e\n\nPlease ensure your Supabase Edge Functions are properly deployed.',
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))
+            ],
+          ),
+        );
       }
     } finally {
       razorpay.clear(); // Removes all listeners

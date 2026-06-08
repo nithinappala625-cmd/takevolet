@@ -1,18 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 class MainShell extends StatelessWidget {
   final Widget child;
 
   const MainShell({super.key, required this.child});
 
-  void _showPostMenu(BuildContext context) {
+  Future<void> _handlePostNavigation(BuildContext context, String route) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      context.push('/login');
+      return;
+    }
+
+    try {
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('full_name, phone')
+          .eq('id', user.id)
+          .single();
+      
+      final isComplete = (profile['full_name'] ?? '').toString().isNotEmpty && 
+                         (profile['phone'] ?? '').toString().isNotEmpty;
+                         
+      if (!isComplete && context.mounted) {
+        context.push('/profile-complete');
+      } else if (context.mounted) {
+        context.push(route);
+      }
+    } catch (_) {
+      if (context.mounted) context.push('/profile-complete');
+    }
+  }
+
+  void _showPostMenu(BuildContext parentContext) {
     showModalBottomSheet(
-      context: context,
+      context: parentContext,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return Container(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -20,43 +49,43 @@ class MainShell extends StatelessWidget {
             children: [
               Text(
                 'What would you like to post?',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
               ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  child: Icon(Icons.home_work, color: Theme.of(context).colorScheme.primary),
+                  backgroundColor: Theme.of(sheetContext).colorScheme.primary.withOpacity(0.1),
+                  child: Icon(Icons.home_work, color: Theme.of(sheetContext).colorScheme.primary),
                 ),
                 title: const Text('Post a Room'),
                 subtitle: const Text('Find tenants for your property'),
                 onTap: () {
-                  Navigator.pop(context);
-                  context.push('/add-room');
+                  Navigator.pop(sheetContext);
+                  _handlePostNavigation(parentContext, '/add-room');
                 },
               ),
               ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  child: Icon(Icons.people, color: Theme.of(context).colorScheme.primary),
+                  backgroundColor: Theme.of(sheetContext).colorScheme.primary.withOpacity(0.1),
+                  child: Icon(Icons.people, color: Theme.of(sheetContext).colorScheme.primary),
                 ),
                 title: const Text('Find a Flatmate'),
                 subtitle: const Text('Share your current apartment'),
                 onTap: () {
-                  Navigator.pop(context);
-                  context.push('/add-flatmate');
+                  Navigator.pop(sheetContext);
+                  _handlePostNavigation(parentContext, '/add-flatmate');
                 },
               ),
               ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  child: Icon(Icons.shopping_bag, color: Theme.of(context).colorScheme.primary),
+                  backgroundColor: Theme.of(sheetContext).colorScheme.primary.withOpacity(0.1),
+                  child: Icon(Icons.shopping_bag, color: Theme.of(sheetContext).colorScheme.primary),
                 ),
                 title: const Text('Sell an Item'),
                 subtitle: const Text('Furniture, electronics, etc.'),
                 onTap: () {
-                  Navigator.pop(context);
-                  context.push('/add-item');
+                  Navigator.pop(sheetContext);
+                  _handlePostNavigation(parentContext, '/add-item');
                 },
               ),
               const SizedBox(height: 16),

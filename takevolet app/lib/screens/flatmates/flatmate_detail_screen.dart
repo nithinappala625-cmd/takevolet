@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../main.dart';
+import '../../utils/image_utils.dart';
+import '../../widgets/full_screen_image_viewer.dart';
 
 class FlatmateDetailScreen extends StatefulWidget {
   final String id;
@@ -14,7 +18,9 @@ class FlatmateDetailScreen extends StatefulWidget {
 
 class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
   Map<String, dynamic>? flatmate;
+  Map<String, dynamic>? posterProfile;
   bool isLoading = true;
+  bool _hasUnlocked = false;
 
   late Razorpay _razorpay;
   final PageController _pageController = PageController();
@@ -37,12 +43,30 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
     super.dispose();
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Payment Successful! Contact Unlocked.'),
-      backgroundColor: Colors.green,
-    ));
-    Navigator.pop(context);
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    try {
+      await supabase.functions.invoke('verify-razorpay-payment', body: {
+        'order_id': response.orderId,
+        'payment_id': response.paymentId,
+        'signature': response.signature,
+        'flatmate_id': widget.id,
+        'user_id': supabase.auth.currentUser?.id,
+      });
+    } catch (_) {}
+
+    if (context.mounted) {
+      try { Navigator.pop(context); } catch (_) {}
+    }
+
+    await _fetchPosterProfile();
+    setState(() => _hasUnlocked = true);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('✅ Contact Unlocked Successfully!'),
+        backgroundColor: Colors.green,
+      ));
+    }
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
@@ -54,160 +78,434 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('External Wallet Selected: ${response.walletName}'),
+      content: Text('External Wallet: ${response.walletName}'),
     ));
   }
 
   Future<void> _fetchFlatmate() async {
     try {
       final res = await supabase.from('flatmates').select().eq('id', widget.id).single();
-      setState(() {
-        flatmate = res;
-        isLoading = false;
-      });
+      setState(() => flatmate = res);
+
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        final unlocks = await supabase
+            .from('flatmate_contact_unlocks')
+            .select()
+            .eq('flatmate_id', widget.id)
+            .eq('user_id', userId);
+        if (unlocks != null && (unlocks as List).isNotEmpty) {
+          setState(() => _hasUnlocked = true);
+        }
+      }
+
+      await _fetchPosterProfile();
+      setState(() => isLoading = false);
     } catch (e) {
       setState(() => isLoading = false);
     }
   }
 
+  Future<void> _fetchPosterProfile() async {
+    if (flatmate == null) return;
+    try {
+      final profile = await supabase
+          .from('profiles')
+          .select('full_name, phone, whatsapp, avatar_url, profession, email')
+          .eq('id', flatmate!['user_id'])
+          .single();
+      setState(() => posterProfile = profile);
+    } catch (_) {}
+  }
+
   Future<void> _purchasePlan(int amount, String desc) async {
     showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
     try {
-      final response = await supabase.functions.invoke(
-        'create-razorpay-order',
-        body: {'amount': amount * 100, 'receipt': 'receipt_flatmate_${widget.id}'},
-      );
+      String planId = 'single';
+      if (amount == 55) planId = 'starter';
+      else if (amount == 105) planId = 'growth';
+      else if (amount >= 200) planId = 'unlimited';
+
+      final response = await supabase.functions.invoke('create-razorpay-order', body: {
+        'amount': amount * 100,
+        'flatmateId': widget.id,
+        'planId': planId,
+      });
       if (context.mounted) Navigator.pop(context);
 
       final data = response.data;
-      if (data == null || data['id'] == null) throw Exception('Failed to create order');
+      if (data == null || data['id'] == null) {
+        final errorDetail = data?['error'] ?? 'No order ID returned';
+        throw Exception('Failed to create order: $errorDetail');
+      }
 
       var options = {
-        'key': data['keyId'] ?? 'rzp_test_placeholder',
-        'amount': amount * 100, // paise
+        'key': data['keyId'] ?? 'rzp_test_Sq0dFrEKuO85Mh',
+        'amount': amount * 100,
         'name': 'Takevolet',
         'description': desc,
         'order_id': data['id'],
         'prefill': {
-          'contact': '9876543210',
-          'email': supabase.auth.currentUser?.email ?? 'test@test.com'
+          'contact': supabase.auth.currentUser?.phone ?? '',
+          'email': supabase.auth.currentUser?.email ?? 'user@takevolet.com'
         }
       };
       _razorpay.open(options);
     } catch (e) {
-      if (context.mounted) Navigator.pop(context);
-      debugPrint('Error opening Razorpay: $e');
+      if (context.mounted) {
+        try { Navigator.pop(context); } catch (_) {}
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Payment Error 🚨', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            content: Text('Could not start payment:\n\n$e\n\nMake sure Edge Functions are deployed with Razorpay keys.'),
+            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+          ),
+        );
+      }
     }
   }
 
   void _showUnlockDialog() {
-    final int rentShare = flatmate!['rent_share'] ?? flatmate!['price'] ?? 0;
+    final int rentShare = flatmate!['rent_share'] ?? 0;
     final int visitorPassPrice = rentShare < 10000 ? 299 : 499;
+
+    // Contact plans only
+    final List<Map<String, dynamic>> plans = [
+      {'title': 'Single Contact', 'subtitle': '1 Contact', 'price': 15, 'color': Colors.blue},
+      {'title': 'Starter Pack', 'subtitle': '10 Contacts', 'price': 55, 'color': Colors.orange},
+      {'title': 'Growth Pack', 'subtitle': '50 Contacts', 'price': 105, 'color': Colors.purple, 'isBestValue': true},
+      {'title': 'Unlimited', 'subtitle': 'Unlimited Contacts', 'price': 200, 'color': Colors.red},
+    ];
+
+    Map<String, dynamic>? selectedPlan = plans[2]; // Default to Growth Pack
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.85,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 20),
-              const Text('Unlock Contact', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              const Text('Choose a plan to contact the owner directly', style: TextStyle(color: Colors.grey)),
-              const SizedBox(height: 20),
-              Expanded(
-                child: ListView(
-                  children: [
-                    _buildPlanCard('Single Contact', '1 Contact', 15, Colors.blue),
-                    _buildPlanCard('Starter Pack', '10 Contacts', 55, Colors.orange),
-                    _buildPlanCard('Growth Pack', '50 Contacts', 105, Colors.purple),
-                    _buildPlanCard('Unlimited', 'Unlimited Contacts', 200, Colors.red),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Row(
-                        children: [
-                          Expanded(child: Divider()),
-                          Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('OR', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold))),
-                          Expanded(child: Divider()),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [Colors.amber.shade200, Colors.amber.shade400]),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.amber.shade700, width: 2),
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.star, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text('Premium Visitor Pass', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          const Text('Get a fully verified agent to show you the property in person.', style: TextStyle(color: Colors.black87)),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('₹$visitorPassPrice', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
-                              ElevatedButton(
-                                onPressed: () => _purchasePlan(visitorPassPrice, 'Premium Visitor Pass'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.black87,
-                                  foregroundColor: Colors.white,
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                children: [
+                  Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(height: 20),
+                  const Text('Unlock Contact', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const Text('Choose a plan to contact the flatmate', style: TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: plans.length,
+                      itemBuilder: (context, index) {
+                        final plan = plans[index];
+                        final isSelected = selectedPlan == plan;
+                        final isVisitor = plan['isVisitor'] == true;
+                        
+                        return GestureDetector(
+                          onTap: () {
+                            setModalState(() {
+                              selectedPlan = plan;
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: isVisitor ? (isSelected ? Colors.amber.shade50 : Colors.white) : (isSelected ? plan['color'].withOpacity(0.05) : Colors.white),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? plan['color'] : (plan['isBestValue'] == true ? plan['color'].withOpacity(0.5) : Colors.grey[200]!),
+                                width: isSelected ? 2 : 1,
+                              ),
+                              boxShadow: [if (isSelected) BoxShadow(color: plan['color'].withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))],
+                            ),
+                            child: Stack(
+                              children: [
+                                if (plan['isBestValue'] == true)
+                                  Positioned(
+                                    top: 0, right: 12,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(color: plan['color'], borderRadius: const BorderRadius.vertical(bottom: Radius.circular(6))),
+                                      child: const Text('BEST VALUE', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ),
+                                if (isSelected)
+                                  Positioned(
+                                    top: 16, right: 16,
+                                    child: Icon(Icons.check_circle, color: plan['color'], size: 24),
+                                  ),
+                                ListTile(
+                                  contentPadding: const EdgeInsets.all(16),
+                                  leading: CircleAvatar(
+                                    backgroundColor: plan['color'].withOpacity(0.1),
+                                    child: Icon(Icons.bolt, color: plan['color']),
+                                  ),
+                                  title: Text(plan['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: Text(plan['subtitle'], style: const TextStyle(color: Colors.grey)),
+                                  trailing: isSelected ? null : Text('₹${plan['price']}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: plan['color'])),
                                 ),
-                                child: const Text('Book Visit'),
-                              )
-                            ],
-                          )
-                        ],
-                      ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              )
-            ],
-          ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: selectedPlan != null ? () {
+                        Navigator.pop(context); // close modal first
+                        _purchasePlan(selectedPlan!['price'], selectedPlan!['title']);
+                      } : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: selectedPlan != null ? Theme.of(context).colorScheme.primary : Colors.grey,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Text(selectedPlan != null ? 'Proceed to Pay ₹${selectedPlan!['price']}' : 'Select a Plan', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildPlanCard(String title, String subtitle, int price, Color color) {
+  Widget _buildContactUnlockedCard() {
+    final name = posterProfile?['full_name'] ?? 'Flatmate';
+    final phone = posterProfile?['phone'] ?? '';
+    final whatsapp = posterProfile?['whatsapp'] ?? phone;
+    final profession = posterProfile?['profession'] ?? '';
+    final avatar = posterProfile?['avatar_url'];
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Colors.green.shade50, Colors.green.shade100.withOpacity(0.5)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.green.shade300),
+        boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.15), blurRadius: 16, offset: const Offset(0, 4))],
+      ),
+      child: Column(children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Colors.green.shade400, borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.check_circle, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Contact Unlocked ✅', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green)),
+            Text('You can now contact them', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          ])),
+        ]),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+          child: Column(children: [
+            Row(children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: const Color(0xFFD4AF37).withOpacity(0.2),
+                backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+                child: avatar == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : 'F', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFFD4AF37))) : null,
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                if (profession.isNotEmpty) Text(profession, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+              ])),
+            ]),
+            if (phone.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(10)),
+                child: Row(children: [
+                  Icon(Icons.phone, color: Colors.green[600], size: 18),
+                  const SizedBox(width: 10),
+                  Text(phone, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, letterSpacing: 0.5)),
+                ]),
+              ),
+            ],
+          ]),
+        ),
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(child: ElevatedButton.icon(
+            onPressed: phone.isNotEmpty ? () => launchUrl(Uri.parse('tel:$phone')) : null,
+            icon: const Icon(Icons.call, size: 18),
+            label: const Text('Call Now', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[600], foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0,
+            ),
+          )),
+          const SizedBox(width: 12),
+          Expanded(child: ElevatedButton.icon(
+            onPressed: whatsapp.isNotEmpty ? () => launchUrl(Uri.parse('https://wa.me/${whatsapp.replaceAll(RegExp(r'[^\d]'), '')}')) : null,
+            icon: const Icon(Icons.message, size: 18),
+            label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF25D366), foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0,
+            ),
+          )),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _buildPosterInfoCard() {
+    final name = (posterProfile?['full_name'] ?? '').toString().trim();
+    final displayName = name.isNotEmpty ? name : 'Takevolet Partner';
+    final profession = 'Takevolet Partner';
+    final avatar = posterProfile?['avatar_url'];
+    final rentShare = flatmate?['rent_share'] ?? 0;
+    final int visitorPassPrice = rentShare < 10000 ? 299 : 499;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(Icons.bolt, color: color)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey)),
-        trailing: ElevatedButton(
-          onPressed: () => _purchasePlan(price, title),
-          style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Colors.white),
-          child: Text('₹$price'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('POSTED BY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: const Color(0xFFD4AF37).withOpacity(0.2),
+                backgroundImage: avatar != null ? CachedNetworkImageProvider(avatar) : null,
+                child: avatar == null ? Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'T', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Color(0xFFD4AF37))) : null,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text(profession, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 13, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    const Row(
+                      children: [
+                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
+                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
+                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
+                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
+                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
+                        SizedBox(width: 4),
+                        Text('Verified', style: TextStyle(fontSize: 12, color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildProgressStep('1', 'INTERESTED', true),
+              Expanded(child: Divider(color: Theme.of(context).colorScheme.primary, thickness: 2)),
+              _buildProgressStep('2', 'VISIT ROOM', false),
+              Expanded(child: Divider(color: Colors.grey.shade300, thickness: 2)),
+              _buildProgressStep('3', 'CONFIRMED', false),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+            child: Row(
+              children: [
+                const Icon(Icons.lock, color: Colors.grey, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '+91 ••••• •••••',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade600, letterSpacing: 2),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          const SizedBox(height: 20),
+          const Text('UNLOCK OPTIONS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _purchasePlan(visitorPassPrice, 'Premium Visitor Pass'),
+                  icon: const Icon(Icons.star, size: 18),
+                  label: Text('Visitor Pass\n(₹$visitorPassPrice)', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _showUnlockDialog,
+                  icon: const Icon(Icons.lock_open, size: 18),
+                  label: const Text('Contact\nUnlock', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressStep(String number, String label, bool active) {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 12,
+          backgroundColor: active ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
+          child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: active ? Theme.of(context).colorScheme.primary : Colors.grey)),
+      ],
     );
   }
 
@@ -216,7 +514,12 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
     if (isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (flatmate == null) return Scaffold(appBar: AppBar(), body: const Center(child: Text('Flatmate not found')));
 
-    final images = (flatmate!['images'] as List<dynamic>?)?.cast<String>() ?? ['https://images.unsplash.com/photo-1502690266266-ce3f2824cd16?w=800&q=80'];
+    final images = ImageUtils.parseImages(flatmate!['images']);
+    if (images.isEmpty) {
+      final imgStr = flatmate!['image'] as String?;
+      if (imgStr != null && imgStr.isNotEmpty) images.add(imgStr);
+      else images.add('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80');
+    }
 
     return Scaffold(
       body: CustomScrollView(
@@ -225,207 +528,133 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
             expandedHeight: 300,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                children: [
-                  PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentImageIndex = index;
-                      });
-                    },
-                    itemCount: images.length,
-                    itemBuilder: (context, index) {
-                      return InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => Scaffold(
-                                backgroundColor: Colors.black,
-                                appBar: AppBar(
-                                  backgroundColor: Colors.black,
-                                  foregroundColor: Colors.white,
-                                ),
-                                body: Center(
-                                  child: InteractiveViewer(
-                                    panEnabled: true,
-                                    boundaryMargin: const EdgeInsets.all(20),
-                                    minScale: 0.5,
-                                    maxScale: 4,
-                                    child: CachedNetworkImage(
-                                      imageUrl: images[index],
-                                      fit: BoxFit.contain,
-                                      placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: Colors.white)),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                        child: CachedNetworkImage(
-                          imageUrl: images[index],
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(color: Colors.grey[200]),
-                        ),
-                      );
+              background: Stack(children: [
+                PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (i) => setState(() => _currentImageIndex = i),
+                  itemCount: images.length,
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => FullScreenImageViewer(
+                          imageUrls: images,
+                          initialIndex: index,
+                        )));
+                      },
+                      child: CachedNetworkImage(imageUrl: images[index], fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(color: Colors.grey[200])),
+                    );
+                  },
+                ),
+                if (images.length > 1) ...[
+                  Positioned(left: 10, top: 0, bottom: 0, child: Center(child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
+                    onPressed: () => _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
+                  ))),
+                  Positioned(right: 10, top: 0, bottom: 0, child: Center(child: IconButton(
+                    icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 28),
+                    onPressed: () => _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
+                  ))),
+                  Positioned(bottom: 20, left: 0, right: 0, child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(images.length, (i) => Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: _currentImageIndex == i ? 12 : 8, height: _currentImageIndex == i ? 12 : 8,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: _currentImageIndex == i ? Theme.of(context).colorScheme.primary : Colors.white.withOpacity(0.5)),
+                    )),
+                  )),
+                ],
+                Positioned(
+                  top: 40, right: 10,
+                  child: IconButton(
+                    icon: const Icon(Icons.share, color: Colors.white),
+                    onPressed: () {
+                      Share.share('Check out this flatmate listing on Takevolet! ${flatmate!['title']} for ₹${flatmate!['rent_share']}/share at ${flatmate!['location']}.');
                     },
                   ),
-                  if (images.length > 1) ...[
-                    // Left Arrow
-                    Positioned(
-                      left: 10,
-                      top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 30),
-                          onPressed: () {
-                            _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                          },
-                        ),
-                      ),
-                    ),
-                    // Right Arrow
-                    Positioned(
-                      right: 10,
-                      top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 30),
-                          onPressed: () {
-                            _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                          },
-                        ),
-                      ),
-                    ),
-                    // Dots Indicator
-                    Positioned(
-                      bottom: 20,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(images.length, (index) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: _currentImageIndex == index ? 12 : 8,
-                            height: _currentImageIndex == index ? 12 : 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _currentImageIndex == index ? Theme.of(context).colorScheme.primary : Colors.white.withOpacity(0.5),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                  ]
-                ],
-              ),
+                ),
+              ]),
             ),
           ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          flatmate!['title'] ?? 'Looking for Flatmate',
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Expanded(child: Text(flatmate!['title'] ?? 'Flatmate Needed', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              '₹${flatmate!['rent_share'] ?? flatmate!['price'] ?? 0}',
-                              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900, fontSize: 28),
-                            ),
-                            const Text('/month share', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
+                      child: Column(children: [
+                        Text('₹${flatmate!['rent_share']}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900, fontSize: 28)),
+                        const Text('/share', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ]),
+                    )
+                  ]),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.grey, size: 16),
-                      const SizedBox(width: 4),
-                      Text('${flatmate!['colony'] ?? ''}, ${flatmate!['location'] ?? ''}', style: const TextStyle(color: Colors.grey, fontSize: 16)),
-                    ],
-                  ),
+                  Row(children: [
+                    const Icon(Icons.location_on, color: Colors.grey, size: 16),
+                    const SizedBox(width: 4),
+                    Text('${flatmate!['colony'] ?? flatmate!['location'] ?? ''}', style: const TextStyle(color: Colors.grey, fontSize: 16)),
+                  ]),
                   const Divider(height: 32),
                   const Text('Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  Wrap(
+                    spacing: 12, runSpacing: 12,
                     children: [
-                      _buildFeatureIcon(Icons.wc, flatmate!['gender_preference'] ?? 'Any'),
-                      _buildFeatureIcon(Icons.search, flatmate!['looking_for'] ?? 'Any'),
-                      _buildFeatureIcon(Icons.house, 'Shared Flat'),
+                      _buildOverviewChip(Icons.wc, flatmate!['gender_pref'] ?? 'Any'),
+                      _buildOverviewChip(Icons.group, '${flatmate!['vacancy_count'] ?? 1} Vacancy'),
+                      _buildOverviewChip(Icons.home_work, 'Shared Flat'),
                     ],
                   ),
                   const SizedBox(height: 24),
                   const Text('Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  Text(flatmate!['description'] ?? 'No description provided.', style: const TextStyle(color: Colors.grey, height: 1.5)),
-                  const SizedBox(height: 100), // Space for bottom bar
-                ],
+                  Text(flatmate!['description'] ?? 'Looking for a compatible flatmate to share the space.', style: const TextStyle(color: Colors.grey, height: 1.5)),
+                  if (flatmate!['lifestyle_habits'] != null && (flatmate!['lifestyle_habits'] as List).isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Text('Lifestyle', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Wrap(spacing: 8, runSpacing: 8, children: (flatmate!['lifestyle_habits'] as List).map((h) => Chip(
+                      label: Text(h.toString(), style: const TextStyle(fontSize: 12)),
+                      backgroundColor: Colors.grey[100],
+                    )).toList()),
+                  ],
+                ]),
               ),
-            ),
+              if (_hasUnlocked) _buildContactUnlockedCard()
+              else _buildPosterInfoCard(),
+              const SizedBox(height: 100),
+            ]),
           )
         ],
       ),
-      bottomSheet: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -5))],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _showUnlockDialog,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Unlock Contact', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            )
-          ],
-        ),
-      ),
+      bottomSheet: const SizedBox.shrink(),
     );
   }
 
-  Widget _buildFeatureIcon(IconData icon, String label) {
-    return Column(
-      children: [
-        CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          child: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-      ],
+  Widget _buildOverviewChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        ],
+      ),
     );
   }
 }

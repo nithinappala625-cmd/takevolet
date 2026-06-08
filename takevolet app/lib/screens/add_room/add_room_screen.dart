@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../main.dart';
+import '../../data/locations.dart';
 
 class AddRoomScreen extends StatefulWidget {
-  const AddRoomScreen({super.key});
+  final Map<String, dynamic>? initialData;
+  const AddRoomScreen({super.key, this.initialData});
 
   @override
   State<AddRoomScreen> createState() => _AddRoomScreenState();
@@ -20,8 +22,6 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
   final _descController = TextEditingController();
   final _rentController = TextEditingController();
   final _advanceController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _colonyController = TextEditingController(); // REQUIRED
   final _addressController = TextEditingController();
   final _leavingDateController = TextEditingController(); // REQUIRED
   final _commissionController = TextEditingController(); 
@@ -31,9 +31,48 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
   String _genderPref = 'Any';
   String _furnishing = 'Semi-Furnished';
   String _parking = 'Bike Parking';
+  String _selectedCity = 'Hyderabad';
+  String _location = HYDERABAD_AREAS.first;
+  String? _colony;
 
   final List<File> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null) {
+      final data = widget.initialData!;
+      _titleController.text = data['title']?.toString() ?? '';
+      _descController.text = data['description']?.toString() ?? '';
+      _rentController.text = data['rent']?.toString() ?? '';
+      _advanceController.text = data['advance']?.toString() ?? '';
+      _addressController.text = data['full_address']?.toString() ?? '';
+      _leavingDateController.text = data['leaving_date']?.toString() ?? '';
+      _commissionController.text = data['commission']?.toString() ?? '';
+      _membersController.text = data['members_allowed']?.toString() ?? '1';
+      
+      _tenantType = data['tenant_type']?.toString() ?? 'bachelor';
+      _genderPref = data['gender_preference']?.toString() ?? 'Any';
+      _furnishing = data['furnishing']?.toString() ?? 'Semi-Furnished';
+      _parking = data['parking']?.toString() ?? 'Bike Parking';
+      
+      if (data['city'] == 'Bangalore') {
+        _selectedCity = 'Bangalore';
+        if (BANGALORE_AREAS.contains(data['location'])) {
+          _location = data['location'];
+        } else {
+          _location = BANGALORE_AREAS.first;
+        }
+      } else {
+        _selectedCity = 'Hyderabad';
+        if (HYDERABAD_AREAS.contains(data['location'])) {
+          _location = data['location'];
+        }
+      }
+      _colony = data['colony']?.toString() != '' ? data['colony']?.toString() : null;
+    }
+  }
 
   Future<void> _pickImages() async {
     final List<XFile> images = await _picker.pickMultiImage();
@@ -55,32 +94,45 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
             await supabase.storage.from('room-media').upload('Takevolet/rooms/$fileName', file);
             uploadedUrls.add(supabase.storage.from('room-media').getPublicUrl('Takevolet/rooms/$fileName'));
           }
+        } else if (widget.initialData != null && widget.initialData!['images'] != null) {
+          uploadedUrls = (widget.initialData!['images'] as List).cast<String>();
         } else {
           uploadedUrls.add('https://images.unsplash.com/photo-1502690266266-ce3f2824cd16?w=800&q=80');
         }
       } catch (e) {
-        uploadedUrls = ['https://images.unsplash.com/photo-1502690266266-ce3f2824cd16?w=800&q=80'];
+        if (widget.initialData != null && widget.initialData!['images'] != null) {
+          uploadedUrls = (widget.initialData!['images'] as List).cast<String>();
+        } else {
+          uploadedUrls = ['https://images.unsplash.com/photo-1502690266266-ce3f2824cd16?w=800&q=80'];
+        }
       }
 
-      await supabase.from('rooms').insert({
+      final roomData = {
         'user_id': user.id,
         'title': _titleController.text.isNotEmpty ? _titleController.text : 'Premium Room',
         'description': _descController.text,
         'rent': int.tryParse(_rentController.text) ?? 5000,
         'advance': int.tryParse(_advanceController.text) ?? 10000,
-        'location': _locationController.text.isNotEmpty ? _locationController.text : 'City Center',
-        'colony': _colonyController.text.isNotEmpty ? _colonyController.text : 'Default Colony', // FIX FOR BUG
+        'location': _location,
+        'colony': _colony ?? '', 
         'full_address': _addressController.text,
-        'leaving_date': _leavingDateController.text.isNotEmpty ? _leavingDateController.text : DateTime.now().add(const Duration(days: 30)).toIso8601String(), // FIX
+        'leaving_date': _leavingDateController.text.isNotEmpty ? _leavingDateController.text : DateTime.now().add(const Duration(days: 30)).toIso8601String(),
         'tenant_type': _tenantType,
         'gender_preference': _genderPref,
         'furnishing': _furnishing,
-        'parking': _parking, // FIX
-        'commission': int.tryParse(_commissionController.text) ?? 500, // FIX
+        'parking': _parking,
+        'commission': int.tryParse(_commissionController.text) ?? 500,
         'members_allowed': int.tryParse(_membersController.text) ?? 1,
         'images': uploadedUrls,
         'is_available': true,
-      });
+        'city': _selectedCity,
+      };
+
+      if (widget.initialData != null) {
+        await supabase.from('rooms').update(roomData).eq('id', widget.initialData!['id']);
+      } else {
+        await supabase.from('rooms').insert(roomData);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Room posted successfully!')));
@@ -104,8 +156,11 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colonies = getColonies(_location, city: _selectedCity);
+    final areas = _selectedCity == 'Bangalore' ? BANGALORE_AREAS : HYDERABAD_AREAS;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Post a Room')),
+      appBar: AppBar(title: Text(widget.initialData != null ? 'Edit Room' : 'Post a Room')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Theme(
@@ -177,9 +232,33 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                     content: Column(
                       children: [
                         const SizedBox(height: 16),
-                        TextField(controller: _locationController, decoration: _inputDeco('City/Area', Icons.location_city)),
+                        DropdownButtonFormField<String>(
+                          value: _selectedCity,
+                          decoration: _inputDeco('City *', Icons.location_city),
+                          isExpanded: true,
+                          items: ['Hyderabad', 'Bangalore'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                          onChanged: (v) => setState(() { 
+                            _selectedCity = v!; 
+                            _location = _selectedCity == 'Bangalore' ? BANGALORE_AREAS.first : HYDERABAD_AREAS.first;
+                            _colony = null; 
+                          }),
+                        ),
                         const SizedBox(height: 16),
-                        TextField(controller: _colonyController, decoration: _inputDeco('Colony/Society (Required)', Icons.holiday_village)), // FIX
+                        DropdownButtonFormField<String>(
+                          value: _location,
+                          decoration: _inputDeco('Area *', Icons.map),
+                          isExpanded: true,
+                          items: areas.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                          onChanged: (v) => setState(() { _location = v!; _colony = null; }),
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _colony,
+                          decoration: _inputDeco('Colony', Icons.holiday_village),
+                          isExpanded: true,
+                          items: colonies.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                          onChanged: (v) => setState(() => _colony = v),
+                        ),
                         const SizedBox(height: 16),
                         TextField(controller: _addressController, decoration: _inputDeco('Exact Address (Hidden)', Icons.location_on), maxLines: 2),
                         const SizedBox(height: 16),

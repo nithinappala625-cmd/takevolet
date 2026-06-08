@@ -1,4 +1,4 @@
-﻿// ─── UserStore ────────────────────────────────────────────────────────────────
+// ─── UserStore ────────────────────────────────────────────────────────────────
 // Persists user profile, posted rooms, and earnings to localStorage.
 // This is the single source of truth for the current user's data.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,6 +16,8 @@ export type UserProfile = {
   gender: "Male" | "Female" | "Other";
   avatar: string;
   createdAt: string;
+  ownerName?: string;
+  ownerPhone?: string;
 };
 
 export type PostedRoom = {

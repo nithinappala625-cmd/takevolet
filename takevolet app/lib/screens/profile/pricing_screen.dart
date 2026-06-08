@@ -11,6 +11,8 @@ class PricingScreen extends StatefulWidget {
 
 class _PricingScreenState extends State<PricingScreen> {
   late Razorpay _razorpay;
+  int? selectedPriceValue;
+  String? selectedPlanName;
 
   @override
   void initState() {
@@ -49,10 +51,13 @@ class _PricingScreenState extends State<PricingScreen> {
       if (context.mounted) Navigator.pop(context);
 
       final data = response.data;
-      if (data == null || data['id'] == null) throw Exception('Failed to create order');
+      if (data == null || data['id'] == null) {
+        final errorDetail = data?['error'] ?? 'No data returned';
+        throw Exception('Supabase failed to create order.\n\nError: $errorDetail\n\nDid you add RAZORPAY_KEY_ID to Supabase secrets and deploy the function?');
+      }
 
       var options = {
-        'key': data['keyId'] ?? 'rzp_test_placeholder',
+        'key': data['keyId'] ?? 'rzp_test_Sq0dFrEKuO85Mh',
         'amount': priceInRupees * 100,
         'name': 'Takevolet',
         'description': planName,
@@ -63,8 +68,17 @@ class _PricingScreenState extends State<PricingScreen> {
       };
       _razorpay.open(options);
     } catch (e) {
-      if (context.mounted) Navigator.pop(context);
-      debugPrint('Razorpay Error: $e');
+      if (context.mounted) {
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Payment Error 🚨', style: TextStyle(color: Colors.red)),
+            content: Text('There was an error:\n\n$e\n\nPlease ensure Edge Functions are deployed.'),
+            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+          ),
+        );
+      }
     }
   }
 
@@ -114,48 +128,67 @@ class _PricingScreenState extends State<PricingScreen> {
             isPopular: false,
             priceValue: 200,
           ),
+          const SizedBox(height: 100),
         ],
       ),
+      bottomSheet: selectedPriceValue != null
+          ? Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+              ),
+              child: SafeArea(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => _purchasePlan(selectedPriceValue!, selectedPlanName!),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Text('Pay ₹$selectedPriceValue Now'),
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 
   Widget _buildPricingCard(BuildContext context, {required String title, required String price, required String description, required bool isPopular, required int priceValue}) {
-    return Card(
-      elevation: isPopular ? 8 : 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: isPopular ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2) : BorderSide.none,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            if (isPopular)
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(20)),
-                child: const Text('MOST POPULAR', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(price, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
-            const SizedBox(height: 16),
-            Text(description, style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _purchasePlan(priceValue, title),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isPopular ? Theme.of(context).colorScheme.primary : Colors.grey[200],
-                  foregroundColor: isPopular ? Colors.white : Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+    final isSelected = selectedPriceValue == priceValue;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedPriceValue = priceValue;
+          selectedPlanName = title;
+        });
+      },
+      child: Card(
+        elevation: isSelected ? 8 : 2,
+        color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.05) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: isSelected ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2) : BorderSide.none,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              if (isPopular)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(20)),
+                  child: const Text('MOST POPULAR', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
-                child: const Text('Purchase Plan'),
-              ),
-            )
-          ],
+              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(price, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+              const SizedBox(height: 16),
+              Text(description, style: const TextStyle(color: Colors.grey)),
+            ],
+          ),
         ),
       ),
     );

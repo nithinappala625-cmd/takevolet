@@ -42,6 +42,8 @@ function RegisterContent() {
     gender: "Male",
     password: "",
     showPassword: false,
+    ownerName: "",
+    ownerPhone: "",
   });
 
   // If already registered, redirect
@@ -80,6 +82,8 @@ function RegisterContent() {
       gender: form.gender as "Male" | "Female" | "Other",
       avatar: avatarPreview || `https://i.pravatar.cc/150?u=${form.email}`,
       createdAt: new Date().toISOString(),
+      ownerName: form.ownerName.trim(),
+      ownerPhone: form.ownerPhone.trim(),
     };
 
     saveProfile(profile);
@@ -96,7 +100,7 @@ function RegisterContent() {
   const canNext = () => {
     if (step === 0) return form.name && form.email && form.phone && form.password.length >= 6;
     if (step === 1) return form.location && form.colony;
-    if (step === 2) return form.profession;
+    if (step === 2) return form.profession && form.ownerName && form.ownerPhone;
     return true;
   };
 
@@ -337,6 +341,28 @@ function RegisterContent() {
                       {g}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Owner Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-bold mb-2">House Owner Name *</label>
+                  <div className="relative">
+                    <User size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input type="text" required value={form.ownerName} onChange={e => update("ownerName", e.target.value)}
+                      placeholder="Owner Name"
+                      className="w-full bg-transparent border border-border pl-10 pr-4 py-3.5 outline-none focus:border-primary transition-colors text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-bold mb-2">House Owner Phone *</label>
+                  <div className="relative">
+                    <Phone size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input type="tel" required value={form.ownerPhone} onChange={e => update("ownerPhone", e.target.value)}
+                      placeholder="Owner Phone"
+                      className="w-full bg-transparent border border-border pl-10 pr-4 py-3.5 outline-none focus:border-primary transition-colors text-sm" />
+                  </div>
                 </div>
               </div>
 
