@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { insertRoom, uploadRoomMedia, getProfile, isProfileComplete } from "@/lib/db";
-import { LOCATIONS, getColonies } from "@/data/locations";
+import { CITIES, getAreas, getColonies } from "@/data/locations";
 import {
   Home, Upload, X, CheckCircle2, AlertCircle,
   Loader2, Plus, Trash2, Video, Image as ImageIcon,
@@ -31,6 +31,7 @@ export default function PostRoomPage() {
   const [uploadProgress, setUploadProgress] = useState("");
 
   // Location
+  const [city, setCity]           = useState("Hyderabad");
   const [location, setLocation]   = useState("");
   const [colony, setColony]       = useState("");
   const [houseNo, setHouseNo]     = useState("");
@@ -159,6 +160,7 @@ export default function PostRoomPage() {
       description: description.trim(),
       rent: +rent,
       advance: advance ? +advance : 0,
+      city,
       location,
       colony,
       house_no: houseNo.trim() || profile?.house_no || "",
@@ -307,13 +309,23 @@ export default function PostRoomPage() {
             </p>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
+                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5">City <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <select value={city} onChange={e => { setCity(e.target.value); setLocation(""); setColony(""); }}
+                    className="w-full border border-border px-4 py-3 text-sm focus:border-primary focus:outline-none appearance-none bg-background">
+                    {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
                 <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5">Area <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                   <select value={location} onChange={e => { setLocation(e.target.value); setColony(""); }}
                     className="w-full border border-border px-4 py-3 text-sm focus:border-primary focus:outline-none appearance-none bg-background">
                     <option value="">Select area</option>
-                    {LOCATIONS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+                    {getAreas(city).map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
               </div>

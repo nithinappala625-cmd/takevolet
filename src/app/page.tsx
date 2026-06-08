@@ -14,7 +14,7 @@ const stats = [
   { value: "5,200+", label: "Bachelors Registered" },
   { value: "₹0", label: "Brokerage Fee" },
   { value: "1,800+", label: "Rooms Handed Over" },
-  { value: "90+", label: "Hyderabad Areas" },
+  { value: "2", label: "Major Cities" },
 ];
 
 const howItWorks = [
@@ -68,7 +68,7 @@ export default function LandingPage() {
       width: "1024",
       height: "1024"
     },
-    description: "Takevolet Technologies is the official owner and operator of Takevolet (takevolet.online), the premier zero brokerage bachelor room handover platform in Hyderabad.",
+    description: "Takevolet Technologies is the official owner and operator of Takevolet (takevolet.online), the premier zero brokerage bachelor room handover platform in Hyderabad and Bangalore.",
     founder: {
       "@type": "Person",
       name: "Nithin Patel",
@@ -93,7 +93,7 @@ export default function LandingPage() {
     "@id": "https://takevolet.online/#localbusiness",
     name: "Takevolet",
     image: "https://takevolet.online/logo.png",
-    description: "Zero brokerage platform for bachelor room handovers in Hyderabad. Owned and operated exclusively by Takevolet Technologies.",
+    description: "Zero brokerage platform for bachelor room handovers in Hyderabad and Bangalore. Owned and operated exclusively by Takevolet Technologies.",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Hyderabad",
@@ -117,11 +117,11 @@ export default function LandingPage() {
       {
         "@type": "Question",
         "name": "What is Takevolet?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Takevolet is Hyderabad's #1 zero-brokerage platform for bachelor room handovers, flatmate matching, and used furniture marketplace. Founded in 2026, it connects bachelors leaving their rooms directly with bachelors searching — no brokers, no commission." }
+        "acceptedAnswer": { "@type": "Answer", "text": "Takevolet is the #1 zero-brokerage platform for bachelor room handovers, flatmate matching, and used furniture marketplace. Founded in 2026, it connects bachelors leaving their rooms directly with bachelors searching — no brokers, no commission." }
       },
       {
         "@type": "Question",
-        "name": "How do I find a bachelor room in Hyderabad without a broker?",
+        "name": "How do I find a bachelor room without a broker?",
         "acceptedAnswer": { "@type": "Answer", "text": "Use Takevolet — browse rooms filtered by area, budget, furnishing, and members allowed. Unlock the poster's contact from just ₹15. Call or WhatsApp them directly. Zero brokerage, always." }
       },
       {
@@ -131,8 +131,8 @@ export default function LandingPage() {
       },
       {
         "@type": "Question",
-        "name": "Which areas in Hyderabad does Takevolet cover?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Takevolet covers 90+ areas in Hyderabad including Madhapur, Gachibowli, Kondapur, KPHB, Kukatpally, Ameerpet, SR Nagar, Dilsukhnagar, Uppal, Malkajgiri, Secunderabad, Begumpet, Jubilee Hills, Banjara Hills, and more." }
+        "name": "Which areas does Takevolet cover?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Takevolet covers major areas across Hyderabad (like Madhapur, Gachibowli, Kukatpally) and Bangalore (like Koramangala, Indiranagar, Whitefield)." }
       },
       {
         "@type": "Question",
@@ -146,8 +146,8 @@ export default function LandingPage() {
   const howToJsonLd = {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    "name": "How to Hand Over a Bachelor Room in Hyderabad Using Takevolet",
-    "description": "A step-by-step guide to handing over your bachelor room in Hyderabad on Takevolet and earning commission.",
+    "name": "How to Hand Over a Bachelor Room Using Takevolet",
+    "description": "A step-by-step guide to handing over your bachelor room on Takevolet and earning commission.",
     "step": [
       { "@type": "HowToStep", "name": "Bachelor Leaving?", "text": "Post your room with photos, leaving date, rent, advance, and how many members the room allows. It takes 2 minutes." },
       { "@type": "HowToStep", "name": "Bachelor Searching?", "text": "Browse rooms by area, budget, members allowed, furnishing, and gender preference. Filter exactly what you need." },
@@ -175,7 +175,7 @@ export default function LandingPage() {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-2xl">
             <div className="inline-flex items-center space-x-2 border border-border px-4 py-1.5 rounded-full mb-8">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs uppercase tracking-[0.2em] font-medium text-muted-foreground">Built for Bachelors in Hyderabad</span>
+              <span className="text-xs uppercase tracking-[0.2em] font-medium text-muted-foreground">Built for Bachelors</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-light tracking-tight mb-6 leading-[1.1]">
@@ -206,7 +206,7 @@ export default function LandingPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">5,200+ bachelors</p>
-                <p className="text-xs text-muted-foreground">already using Takevolet in Hyderabad</p>
+                <p className="text-xs text-muted-foreground">already using Takevolet</p>
               </div>
             </div>
           </motion.div>
@@ -299,8 +299,8 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-px bg-border">
             {[
-              { icon: Home, title: "Rooms Handover", desc: "Relay your room directly to the next bachelor when leaving, or browse rooms in 90+ Hyderabad areas with direct poster contact and zero brokerage fee." },
-              { icon: Users, title: "Flatmate Matchmaking", desc: "Have a vacancy in your flat or looking to share? Connect directly with compatible single bachelors in Hyderabad based on age, profession, and lifestyle." },
+              { icon: Home, title: "Rooms Handover", desc: "Relay your room directly to the next bachelor when leaving, or browse rooms in Hyderabad and Bangalore with direct poster contact and zero brokerage fee." },
+              { icon: Users, title: "Flatmate Matchmaking", desc: "Have a vacancy in your flat or looking to share? Connect directly with compatible single bachelors based on age, profession, and lifestyle." },
               { icon: ShoppingBag, title: "Bachelors Marketplace", desc: "Moving out or setting up? Don't carry it or buy brand new. List and shop for furniture, appliances, and electronics directly to/from nearby bachelors." },
             ].map((f, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
@@ -388,7 +388,7 @@ export default function LandingPage() {
               <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Premium Roommate Matchmaking</p>
               <h2 className="text-4xl font-light">Find compatible <span className="font-bold">Flatmates</span></h2>
               <p className="text-muted-foreground font-light mt-3 max-w-xl text-sm leading-relaxed">
-                Connect with verified bachelors in Hyderabad who have a vacancy in their flat. Filter by budget, professional background, and lifestyle habits.
+                Connect with verified bachelors who have a vacancy in their flat. Filter by budget, professional background, and lifestyle habits.
               </p>
             </div>
             <div className="flex gap-4">
@@ -510,7 +510,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 md:px-12">
           <div className="mb-12">
             <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Neighbourhoods</p>
-            <h2 className="text-3xl font-light">Bachelor rooms across <span className="font-bold">all of Hyderabad.</span></h2>
+            <h2 className="text-3xl font-light">Bachelor rooms across <span className="font-bold">Hyderabad & Bangalore.</span></h2>
           </div>
           <div className="flex flex-wrap gap-2">
             {HYDERABAD_AREAS.slice(0, 40).map((area, i) => (
@@ -530,7 +530,7 @@ export default function LandingPage() {
       <section className="border-t border-border bg-foreground text-background py-28">
         <div className="container mx-auto px-6 md:px-12 text-center">
           <h2 className="text-4xl md:text-5xl font-light mb-6">
-            Are you a bachelor in <span className="font-bold italic">Hyderabad?</span>
+            Are you a <span className="font-bold italic">Bachelor?</span>
           </h2>
           <p className="text-background/50 mb-10 max-w-xl mx-auto font-light text-lg">
             Whether you&apos;re leaving your room or searching for one — Takevolet is the only platform you need. Zero brokerage. Direct contact. Commission rewards.
@@ -615,7 +615,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col justify-between">
               <div className="space-y-2.5 mb-6">
-                {["Starting at ₹15 per contact — cheapest in Hyderabad", "Instant unlock via Razorpay — UPI, Cards, NetBanking", "No house numbers for privacy — colony/area only", "Use contacts across any room on Takevolet"].map((item, i) => (
+                {["Starting at ₹15 per contact", "Instant unlock via Razorpay — UPI, Cards, NetBanking", "No house numbers for privacy — colony/area only", "Use contacts across any room on Takevolet"].map((item, i) => (
                   <div key={i} className="flex items-center gap-2.5 text-sm text-background/70">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                     {item}
@@ -650,7 +650,7 @@ export default function LandingPage() {
                 />
                 <span className="text-base font-bold tracking-[0.2em] uppercase">Take<span className="text-primary">volet</span></span>
               </div>
-              <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">Bachelor room handovers &amp; marketplace in Hyderabad. Zero brokerage.</p>
+              <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">Bachelor room handovers &amp; marketplace. Zero brokerage.</p>
               <div className="flex items-center gap-4 mb-4">
                 <Link href="https://www.instagram.com/take_volet?igsh=MTBxdG1qMWd3MnBrZg==" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

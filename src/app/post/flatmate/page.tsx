@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { insertFlatmate } from "@/lib/flatmate-db";
 import { uploadRoomMedia, getProfile, isProfileComplete, type Profile } from "@/lib/db";
-import { LOCATIONS, getColonies } from "@/data/locations";
+import { CITIES, getAreas, getColonies } from "@/data/locations";
 import {
   Users, Upload, X, CheckCircle2, AlertCircle,
   Loader2, Plus, IndianRupee, Sparkles, ChevronDown, ChevronRight, ChevronLeft, MapPin, Video
@@ -53,6 +53,7 @@ export default function PostFlatmatePage() {
   const [description, setDescription] = useState("");
   const [rentShare, setRentShare] = useState("");
   const [advanceShare, setAdvanceShare] = useState("");
+  const [city, setCity] = useState("Hyderabad");
   const [location, setLocation] = useState("");
   const [colony, setColony] = useState("");
   const [vacancyCount, setVacancyCount] = useState(1);
@@ -196,6 +197,7 @@ export default function PostFlatmatePage() {
       description: description.trim(),
       rentShare: Number(rentShare),
       advanceShare: Number(advanceShare),
+      city,
       location,
       colony,
       vacancyCount,
@@ -442,7 +444,30 @@ export default function PostFlatmatePage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5">
-                      Hyderabad Area <span className="text-red-500">*</span>
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                      <select
+                        value={city}
+                        onChange={(e) => {
+                          setCity(e.target.value);
+                          setLocation("");
+                          setColony("");
+                        }}
+                        className="w-full border border-border px-4 py-3 text-sm focus:border-primary focus:outline-none appearance-none bg-background cursor-pointer"
+                      >
+                        {CITIES.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5">
+                      Area <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -455,9 +480,9 @@ export default function PostFlatmatePage() {
                         className="w-full border border-border px-4 py-3 text-sm focus:border-primary focus:outline-none appearance-none bg-background cursor-pointer"
                       >
                         <option value="">Select general area</option>
-                        {LOCATIONS.map((l) => (
-                          <option key={l.value} value={l.value}>
-                            {l.label}
+                        {getAreas(city).map((a) => (
+                          <option key={a} value={a}>
+                            {a}
                           </option>
                         ))}
                       </select>

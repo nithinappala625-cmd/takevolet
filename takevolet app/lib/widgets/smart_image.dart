@@ -17,7 +17,11 @@ class SmartImage extends StatelessWidget {
     if (imageUrl.startsWith('data:image/')) {
       // It's a base64 string from the website
       try {
-        final base64String = imageUrl.split(',').last;
+        String base64String = imageUrl.split(',').last;
+        base64String = base64String.replaceAll(RegExp(r'\s+'), '');
+        while (base64String.length % 4 != 0) {
+          base64String += '=';
+        }
         final bytes = base64Decode(base64String);
         return Image.memory(
           bytes,

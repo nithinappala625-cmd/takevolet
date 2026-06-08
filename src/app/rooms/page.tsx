@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { HYDERABAD_AREAS, FURNISHING_OPTIONS, MEMBERS_ALLOWED, BUDGET_RANGES, GENDER_PREFERENCE, PARKING_OPTIONS } from "@/data/locations";
+import { CITIES, getAreas, FURNISHING_OPTIONS, MEMBERS_ALLOWED, BUDGET_RANGES, GENDER_PREFERENCE, PARKING_OPTIONS } from "@/data/locations";
 import { MapPin, IndianRupee, Calendar, Users, Sofa, ArrowUpRight, SlidersHorizontal, Search, X, ChevronDown, Eye, UserCheck, Car, Bike, Lock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -11,6 +11,7 @@ import RoomCard from "@/components/RoomCard";
 import { PremiumAdCarousel } from "@/components/PremiumAdCarousel";
 
 export default function RoomsPage() {
+  const [selectedCity, setSelectedCity] = useState("Hyderabad");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedFurnishing, setSelectedFurnishing] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<number | "">("")
@@ -42,6 +43,9 @@ export default function RoomsPage() {
     const desc       = room.description || "";
     const col        = room.colony || "";
     const mAllowed   = room.members_allowed || 2;
+    const roomCity   = room.city || "Hyderabad";
+    
+    const matchesCity       = roomCity === selectedCity;
     const matchesLocation   = !selectedLocation   || loc === selectedLocation;
     const matchesFurnishing = !selectedFurnishing || furn === selectedFurnishing;
     const matchesMembers    = !selectedMembers    || mAllowed >= Number(selectedMembers);
@@ -60,13 +64,13 @@ export default function RoomsPage() {
       if (range) matchesBudget = room.rent >= range.min && room.rent <= range.max;
     }
     const matchesTenantType = (room.tenant_type || 'bachelor') === activeTab;
-    return matchesLocation && matchesFurnishing && matchesMembers && matchesBudget && matchesSearch && matchesGender && matchesParking && matchesTenantType;
+    return matchesCity && matchesLocation && matchesFurnishing && matchesMembers && matchesBudget && matchesSearch && matchesGender && matchesParking && matchesTenantType;
   });
 
   const activeFilters = [selectedLocation, selectedFurnishing, selectedMembers, selectedBudget, selectedGender, selectedParking].filter(Boolean).length;
 
   const clearFilters = () => {
-    setSelectedLocation(""); setSelectedFurnishing(""); setSelectedMembers("");
+    setSelectedCity("Hyderabad"); setSelectedLocation(""); setSelectedFurnishing(""); setSelectedMembers("");
     setSelectedBudget(""); setSelectedGender(""); setSelectedParking(""); setSearchQuery("");
   };
 
@@ -145,9 +149,10 @@ export default function RoomsPage() {
         <AnimatePresence>
           {showFilters && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden mb-10">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6 border border-border bg-secondary/30">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 p-6 border border-border bg-secondary/30">
                 {[
-                  { label: "Location", value: selectedLocation, onChange: setSelectedLocation, options: HYDERABAD_AREAS, placeholder: "All Areas" },
+                  { label: "City", value: selectedCity, onChange: (val: string) => { setSelectedCity(val); setSelectedLocation(""); }, options: CITIES, placeholder: "All Cities" },
+                  { label: "Location", value: selectedLocation, onChange: setSelectedLocation, options: getAreas(selectedCity), placeholder: "All Areas" },
                   { label: "Budget Range", value: selectedBudget, onChange: setSelectedBudget, options: BUDGET_RANGES.map(r => r.label), placeholder: "Any Budget" },
                   { label: "Members (up to)", value: String(selectedMembers), onChange: (v: string) => setSelectedMembers(v ? Number(v) : ""), options: MEMBERS_ALLOWED.map(String), placeholder: "Any" },
                   { label: "Furnishing", value: selectedFurnishing, onChange: setSelectedFurnishing, options: FURNISHING_OPTIONS, placeholder: "Any Type" },

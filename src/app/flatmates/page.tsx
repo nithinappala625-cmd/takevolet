@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { HYDERABAD_AREAS, BUDGET_RANGES } from "@/data/locations";
+import { CITIES, getAreas, BUDGET_RANGES } from "@/data/locations";
 import { MapPin, IndianRupee, Users, SlidersHorizontal, Search, X, ChevronDown, Loader2, Award, Briefcase, Heart, Check, Plus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -32,6 +32,7 @@ export default function FlatmatesPage() {
   const [showFilters, setShowFilters] = useState(true);
 
   // Filter states
+  const [selectedCity, setSelectedCity] = useState("Hyderabad");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedBudget, setSelectedBudget] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
@@ -88,6 +89,8 @@ export default function FlatmatesPage() {
   };
 
   const filteredFlatmates = flatmates.filter((fm) => {
+    const fmCity = fm.city || "Hyderabad";
+    const matchesCity = fmCity === selectedCity;
     const matchesLocation = !selectedLocation || fm.location === selectedLocation;
     const matchesGender =
       !selectedGender ||
@@ -127,6 +130,7 @@ export default function FlatmatesPage() {
       fm.postedBy.profession.toLowerCase().includes(searchQuery.toLowerCase());
 
     return (
+      matchesCity &&
       matchesLocation &&
       matchesGender &&
       matchesProfession &&
@@ -141,6 +145,7 @@ export default function FlatmatesPage() {
     selectedHabits.length;
 
   const clearFilters = () => {
+    setSelectedCity("Hyderabad");
     setSelectedLocation("");
     setSelectedBudget("");
     setSelectedGender("");
@@ -249,10 +254,17 @@ export default function FlatmatesPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     {
+                      label: "City",
+                      value: selectedCity,
+                      onChange: (val: string) => { setSelectedCity(val); setSelectedLocation(""); },
+                      options: CITIES,
+                      placeholder: "All Cities",
+                    },
+                    {
                       label: "Area Location",
                       value: selectedLocation,
                       onChange: setSelectedLocation,
-                      options: HYDERABAD_AREAS,
+                      options: getAreas(selectedCity),
                       placeholder: "All Areas",
                     },
                     {
@@ -277,7 +289,7 @@ export default function FlatmatesPage() {
                       placeholder: "Any Profession",
                     },
                   ].map((filter, i) => (
-                    <div key={i}>
+                    <div key={i} className={i === 0 ? "col-span-2 md:col-span-1" : ""}>
                       <label className="block text-[10px] uppercase tracking-widest font-bold mb-2 text-muted-foreground">
                         {filter.label}
                       </label>

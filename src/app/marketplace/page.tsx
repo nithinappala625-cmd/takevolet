@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CATEGORIES, ITEM_CONDITIONS } from "@/data/locations";
+import { CITIES, CATEGORIES, ITEM_CONDITIONS } from "@/data/locations";
 import { IndianRupee, ArrowUpRight, Tag, MapPin, Phone, Repeat } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import { getAllItems, MarketplaceItemType } from "@/lib/item-db";
 import { PremiumAdCarousel } from "@/components/PremiumAdCarousel";
 
 export default function MarketplacePage() {
+  const [selectedCity, setSelectedCity] = useState("Hyderabad");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedType, setSelectedType] = useState<"" | "sell" | "rent" | "both">("");
   const [items, setItems] = useState<MarketplaceItemType[]>([]);
@@ -22,9 +23,11 @@ export default function MarketplacePage() {
   }, []);
 
   const filteredItems = items.filter(item => {
+    const itemCity = item.city || "Hyderabad";
+    const matchesCity = itemCity === selectedCity;
     const matchesCategory = !selectedCategory || item.category === selectedCategory;
     const matchesType = !selectedType || item.listing_type === selectedType || item.listing_type === "both";
-    return matchesCategory && matchesType;
+    return matchesCity && matchesCategory && matchesType;
   });
 
   return (
@@ -41,7 +44,7 @@ export default function MarketplacePage() {
               Bachelor <span className="font-bold">Essentials</span>
             </motion.h1>
             <p className="text-muted-foreground font-light max-w-xl">
-              Bachelors leaving Hyderabad sell their items at the lowest prices. Buy or rent — fridges, coolers, beds, electronics, and more.
+              Bachelors leaving {selectedCity} sell their items at the lowest prices. Buy or rent — fridges, coolers, beds, electronics, and more.
             </p>
           </div>
           <a href="/post"
@@ -71,6 +74,14 @@ export default function MarketplacePage() {
 
         {/* Categories */}
         <div className="flex flex-wrap gap-2 mb-10">
+          <div className="flex gap-2 pr-4 border-r border-border mr-2">
+            {CITIES.map(city => (
+              <button key={city} onClick={() => setSelectedCity(city)}
+                className={`px-4 py-2 text-xs font-medium uppercase tracking-wider border transition-all ${selectedCity === city ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"}`}>
+                {city}
+              </button>
+            ))}
+          </div>
           <button onClick={() => setSelectedCategory("")}
             className={`px-4 py-2 text-xs font-medium uppercase tracking-wider border transition-all ${!selectedCategory ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"}`}>
             All Categories

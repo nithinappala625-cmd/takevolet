@@ -10,6 +10,7 @@ export type MarketplaceItemType = {
   category: string;
   condition: string;
   location: string;
+  city?: string;
   image: string;
   images: string[];
   listing_type: "sell" | "rent" | "both";
@@ -40,6 +41,7 @@ export async function saveItem(
         price: item.price,
         rent_price: item.rent_price || null,
         location: item.location,
+        city: item.city || "Hyderabad",
         image: item.image,
         images: item.images,
         listing_type: item.listing_type,

@@ -1,4 +1,4 @@
-// Comprehensive Hyderabad locations — major areas + smaller sub-areas
+// Comprehensive Hyderabad & Bangalore locations — major areas + smaller sub-areas
 
 export const HYDERABAD_AREAS = [
   // IT Corridor
@@ -118,12 +118,62 @@ export const HYDERABAD_AREAS = [
 ];
 
 // ─── For dropdowns (profile complete + post room forms) ───────────────────────
+export const CITIES = ["Hyderabad", "Bangalore"];
+
+export const BANGALORE_AREAS = [
+  "Koramangala",
+  "Indiranagar",
+  "HSR Layout",
+  "Whitefield",
+  "Marathahalli",
+  "BTM Layout",
+  "Jayanagar",
+  "JP Nagar",
+  "Electronic City",
+  "Bellandur",
+  "Malleswaram",
+  "Rajajinagar",
+  "Hebbal",
+  "Kalyan Nagar",
+  "Banashankari",
+  "Basavanagudi",
+  "Yelahanka",
+  "Kammanahalli",
+  "RT Nagar",
+  "CV Raman Nagar",
+  "Brookefield",
+  "Mahadevapura",
+  "Domlur",
+  "Ulsoor",
+  "KR Puram",
+  "Benson Town",
+  "Frazer Town",
+  "Vidyaranyapura",
+  "Sanjaynagar",
+  "Vijayanagar",
+  "Basaveshwaranagar",
+  "Kengeri",
+  "Sahakar Nagar",
+  "Bommanahalli",
+  "Mathikere",
+  "Peenya",
+  "Yeshwanthpur",
+  "Vasanth Nagar"
+];
+
 export const LOCATIONS: { value: string; label: string }[] = [...new Set(HYDERABAD_AREAS)]
   .sort((a, b) => a.localeCompare(b))
   .map(area => ({
     value: area,
     label: area
   }));
+
+export function getAreas(city: string): string[] {
+  if (city === "Bangalore") {
+    return [...new Set(BANGALORE_AREAS)].sort((a, b) => a.localeCompare(b));
+  }
+  return [...new Set(HYDERABAD_AREAS)].sort((a, b) => a.localeCompare(b));
+}
 
 
 const COLONIES_MAP: Record<string, string[]> = {

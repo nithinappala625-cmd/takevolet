@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { HYDERABAD_AREAS, CATEGORIES, ITEM_CONDITIONS } from "@/data/locations";
+import { CITIES, getAreas, CATEGORIES, ITEM_CONDITIONS } from "@/data/locations";
 import { IndianRupee, MapPin, Camera, CheckCircle2, ArrowLeft, X, Upload, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
@@ -46,12 +46,17 @@ export default function PostItemPage() {
     condition: "Good",
     price: "",
     rentPrice: "",
+    city: "Hyderabad",
     location: "",
     description: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    if (e.target.name === "city") {
+      setForm(prev => ({ ...prev, city: e.target.value, location: "" }));
+    } else {
+      setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    }
   };
 
   const handleFiles = (files: FileList) => {
@@ -88,6 +93,7 @@ export default function PostItemPage() {
       condition: form.condition,
       price: Number(form.price) || 0,
       rent_price: Number(form.rentPrice) || undefined,
+      city: form.city,
       location: form.location,
       image: uploadedFiles.length > 0 ? uploadedFiles[0].preview : "https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80",
       images: uploadedFiles.length > 0 ? uploadedFiles.map(f => f.preview) : ["https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80"],
@@ -210,15 +216,25 @@ export default function PostItemPage() {
             )}
           </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest font-bold mb-3">Location</label>
-            <div className="relative">
-              <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <select required name="location" value={form.location} onChange={handleChange}
-                className="w-full bg-transparent border border-border pl-10 pr-5 py-4 outline-none focus:border-primary transition-colors text-sm font-light appearance-none cursor-pointer">
-                <option value="">Select area</option>
-                {HYDERABAD_AREAS.map(area => <option key={area} value={area}>{area}</option>)}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs uppercase tracking-widest font-bold mb-3">City</label>
+              <select required name="city" value={form.city} onChange={handleChange}
+                className="w-full bg-transparent border border-border px-5 py-4 outline-none focus:border-primary transition-colors text-sm font-light appearance-none cursor-pointer">
+                {CITIES.map(city => <option key={city} value={city}>{city}</option>)}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-xs uppercase tracking-widest font-bold mb-3">Area</label>
+              <div className="relative">
+                <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <select required name="location" value={form.location} onChange={handleChange}
+                  className="w-full bg-transparent border border-border pl-10 pr-5 py-4 outline-none focus:border-primary transition-colors text-sm font-light appearance-none cursor-pointer">
+                  <option value="">Select area</option>
+                  {getAreas(form.city).map(area => <option key={area} value={area}>{area}</option>)}
+                </select>
+              </div>
             </div>
           </div>
 

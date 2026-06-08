@@ -514,6 +514,7 @@ export type Flatmate = {
   advanceShare: number;
   location: string;
   colony: string;
+  city?: string;
   vacancyCount: number;
   professionPref: string;
   genderPref: string;

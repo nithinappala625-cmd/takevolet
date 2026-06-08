@@ -5,6 +5,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
+import '../info/static_screens.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -254,14 +255,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            ListTile(leading: const Icon(Icons.info), title: const Text('About Us'), onTap: () { Navigator.pop(context); _launchUrl('https://takevolet.online/about'); }),
-            ListTile(leading: const Icon(Icons.article), title: const Text('Articles & Blog'), onTap: () { Navigator.pop(context); _launchUrl('https://takevolet.online/articles'); }),
-            ListTile(leading: const Icon(Icons.handshake), title: const Text('Partners'), onTap: () { Navigator.pop(context); _launchUrl('https://takevolet.online/partners'); }),
-            ListTile(leading: const Icon(Icons.contact_mail), title: const Text('Contact Us'), onTap: () { Navigator.pop(context); _launchUrl('https://takevolet.online/contact'); }),
+            ListTile(leading: const Icon(Icons.info), title: const Text('About Us'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen())); }),
+            ListTile(leading: const Icon(Icons.article), title: const Text('Articles & Blog'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticlesScreen())); }),
+            ListTile(leading: const Icon(Icons.handshake), title: const Text('Partners'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const PartnersScreen())); }),
+            ListTile(leading: const Icon(Icons.contact_mail), title: const Text('Contact Us'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactScreen())); }),
             const Divider(),
-            ListTile(leading: const Icon(Icons.privacy_tip), title: const Text('Privacy Policy'), onTap: () { Navigator.pop(context); _launchUrl('https://takevolet.online/privacy-policy'); }),
-            ListTile(leading: const Icon(Icons.gavel), title: const Text('Terms of Service'), onTap: () { Navigator.pop(context); _launchUrl('https://takevolet.online/terms-of-service'); }),
-            ListTile(leading: const Icon(Icons.money_off), title: const Text('Refund Policy'), onTap: () { Navigator.pop(context); _launchUrl('https://takevolet.online/refund-policy'); }),
+            ListTile(leading: const Icon(Icons.privacy_tip), title: const Text('Privacy Policy'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyScreen())); }),
+            ListTile(leading: const Icon(Icons.gavel), title: const Text('Terms of Service'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen())); }),
+            ListTile(leading: const Icon(Icons.money_off), title: const Text('Refund Policy'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const RefundScreen())); }),
           ],
         ),
       ),

@@ -44,6 +44,7 @@ export type Room = {
   advance?: number;
   location: string;
   colony: string;
+  city?: string;
   house_no?: string;
   full_address?: string;
   leaving_date: string;
