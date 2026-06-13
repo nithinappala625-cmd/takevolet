@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { insertRoom, uploadRoomMedia, getProfile, isProfileComplete } from "@/lib/db";
+import { compressImage } from "@/lib/imageCompression";
 import { CITIES, getAreas, getColonies } from "@/data/locations";
 import {
   Home, Upload, X, CheckCircle2, AlertCircle,
@@ -88,13 +89,18 @@ export default function PostRoomPage() {
   const toggleFurniture = (f: string) =>
     setSelectedFurniture(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
 
-  const handlePhotos = (files: FileList) => {
-    const newFiles = Array.from(files).slice(0, 8 - photoFiles.length);
-    newFiles.forEach(f => {
-      const url = URL.createObjectURL(f);
-      setPhotoPreviews(prev => [...prev, url]);
-    });
-    setPhotoFiles(prev => [...prev, ...newFiles]);
+  const handlePhotos = async (files: FileList) => {
+    const newFiles = Array.from(files).slice(0, 6 - photoFiles.length);
+    for (const f of newFiles) {
+      try {
+        const compressed = await compressImage(f);
+        const url = URL.createObjectURL(compressed);
+        setPhotoPreviews(prev => [...prev, url]);
+        setPhotoFiles(prev => [...prev, compressed]);
+      } catch (e) {
+        console.error("Compression failed", e);
+      }
+    }
   };
 
   const handleVideos = (files: FileList) => {
@@ -452,9 +458,9 @@ export default function PostRoomPage() {
 
           {/* ── PHOTOS ─────────────────────────────────────────── */}
           <div className="border border-border p-6">
-            <p className="text-[10px] uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
-              <ImageIcon size={12} className="text-primary" /> Room Photos (up to 8)
-            </p>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 mb-3">
+              <ImageIcon size={12} className="text-primary" /> Room Photos (up to 6)
+            </h3>
             <div className="grid grid-cols-4 gap-2 mb-3">
               {photoPreviews.map((src, i) => (
                 <div key={i} className="relative aspect-square">

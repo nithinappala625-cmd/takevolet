@@ -24,7 +24,7 @@ serve(async (req) => {
     };
     
     const plan = VALID_PLANS[planId] ?? { paise: 1500 };
-    const finalAmount = amount ? Math.min(amount, 20000) : plan.paise;
+    const finalAmount = amount ? amount : plan.paise;
     
     const auth = btoa(`${KEY_ID}:${KEY_SECRET}`);
     const receipt = `rcpt_${(roomId || flatmateId || "order").slice(0, 15)}_${Date.now().toString().slice(-8)}`;

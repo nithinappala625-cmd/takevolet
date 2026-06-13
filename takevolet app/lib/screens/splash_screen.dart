@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../main.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -36,6 +37,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _redirect() async {
+    // Request all permissions before proceeding
+    try {
+      await [
+        Permission.location,
+        Permission.camera,
+        Permission.microphone,
+        Permission.contacts,
+      ].request();
+    } catch (_) {
+      // Ignore if permissions are not available on this platform
+    }
+
     await Future.delayed(const Duration(milliseconds: 3000));
     if (!mounted) return;
     final session = supabase.auth.currentSession;

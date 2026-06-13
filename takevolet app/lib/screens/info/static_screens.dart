@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../main.dart';
 
+import 'package:flutter_markdown/flutter_markdown.dart';
+
 /// A simple static text renderer.
 class StaticScreen extends StatelessWidget {
   final String title;
@@ -14,9 +16,15 @@ class StaticScreen extends StatelessWidget {
       appBar: AppBar(title: Text(title)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Text(
-          content,
-          style: const TextStyle(fontSize: 16, height: 1.6),
+        child: MarkdownBody(
+          data: content,
+          styleSheet: MarkdownStyleSheet(
+            p: const TextStyle(fontSize: 16, height: 1.6),
+            h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+            h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+            h3: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            listBullet: const TextStyle(fontSize: 16, height: 1.6),
+          ),
         ),
       ),
     );

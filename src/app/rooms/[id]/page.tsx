@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { fetchRoomByIdAction, checkRoomUnlockStatusAction } from "@/lib/server-actions";
+import { fetchRoomByIdAction, checkRoomUnlockStatusAction, getUserContactBalanceAction, unlockContactWithBalanceAction } from "@/lib/server-actions";
 import type { Room } from "@/lib/db";
 import { useUser } from "@/hooks/useUser";
 
@@ -55,11 +55,11 @@ export default function RoomDetailPage() {
   // ── Pricing Plans ────────────────────────────────────────────────────────
   const PLANS = [
     { id: "single",    label: "1 Contact",         contacts: 1,      price: 15,  paise: 1500,  badge: "",            perContact: "₹15" },
-    { id: "starter",   label: "10 Contacts",       contacts: 10,     price: 55,  paise: 5500,  badge: "",            perContact: "₹5.50" },
-    { id: "growth",    label: "50 Contacts",       contacts: 50,     price: 105, paise: 10500, badge: "Popular",     perContact: "₹2.10" },
+    { id: "starter",   label: "5 Contacts",        contacts: 5,      price: 35,  paise: 3500,  badge: "Popular",     perContact: "₹7" },
+    { id: "growth",    label: "50 Contacts",       contacts: 50,     price: 105, paise: 10500, badge: "",            perContact: "₹2.10" },
     { id: "unlimited", label: "Unlimited Contacts", contacts: 999999, price: 200, paise: 20000, badge: "🔥 Best Deal",perContact: "₹0" },
   ];
-  const [selectedPlan, setSelectedPlan] = useState(PLANS[2]);
+  const [selectedPlan, setSelectedPlan] = useState(PLANS[1]);
 
   // ── Load room: Supabase first, then MOCK fallback ─────────────────────────
   useEffect(() => {
@@ -72,6 +72,8 @@ export default function RoomDetailPage() {
           setContactUnlocked(true);
           setUnlockedContact(contact);
         }
+        const balance = await getUserContactBalanceAction(userId);
+        setContactsLeft(balance);
       }
 
       // 1. Try Supabase
@@ -134,6 +136,32 @@ export default function RoomDetailPage() {
       script.onerror = () => resolve(false);
       document.body.appendChild(script);
     });
+  };
+
+  // ── Unlock With Balance ───────────────────────────────────────────────────
+  const handleUnlockWithBalance = async () => {
+    if (userId === "guest" || !room) return;
+    setPaying(true);
+    setPayError(null);
+    try {
+      const res = await unlockContactWithBalanceAction(room.id, userId, "room");
+      if (res.success) {
+        setPaySuccess(true);
+        const contact = await checkRoomUnlockStatusAction(room.id, userId);
+        if (contact) {
+          setContactUnlocked(true);
+          setUnlockedContact(contact);
+        }
+        setContactsLeft(prev => prev - 1);
+        setTimeout(() => setPaymentModal(false), 2000);
+      } else {
+        setPayError(res.error || "Failed to unlock with balance");
+      }
+    } catch (err) {
+      setPayError("An error occurred");
+    } finally {
+      setPaying(false);
+    }
   };
 
   // ── Real Razorpay Payment Flow ────────────────────────────────────────────
@@ -686,34 +714,51 @@ export default function RoomDetailPage() {
                       </div>
 
                       {/* PRIMARY: Contact Plans */}
-                      <p className="text-[10px] uppercase tracking-widest font-bold mb-3">Choose Contact Plan</p>
-                      <div className="space-y-2 mb-4">
-                        {PLANS.map(plan => (
-                          <label key={plan.id}
-                            className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${
-                              selectedPlan.id === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                            }`}>
-                            <input type="radio" name="plan" checked={selectedPlan.id === plan.id}
-                              onChange={() => setSelectedPlan(plan)} className="accent-primary" />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold">{plan.label}</span>
-                                {plan.badge && (
-                                  <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 font-bold uppercase tracking-wider">{plan.badge}</span>
-                                )}
-                              </div>
-                              <span className="text-[10px] text-muted-foreground">{plan.perContact}/contact</span>
-                            </div>
-                            <span className="font-black text-primary">₹{plan.price}</span>
-                          </label>
-                        ))}
-                      </div>
+                      {contactsLeft > 0 ? (
+                        <>
+                          <div className="bg-primary/10 border border-primary/20 p-4 mb-4">
+                            <p className="text-sm font-bold text-primary mb-1">You have {contactsLeft} contact unlock{contactsLeft > 1 ? "s" : ""} remaining!</p>
+                            <p className="text-xs text-muted-foreground">You don't need to pay again. Use your existing balance.</p>
+                          </div>
+                          {payError && <p className="text-xs text-red-500 mb-3 flex items-center gap-1"><AlertCircle size={11}/>{payError}</p>}
+                          <button onClick={handleUnlockWithBalance} disabled={paying}
+                            className="w-full bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 mb-3">
+                            {paying ? <Loader2 size={15} className="animate-spin" /> : <Phone size={15} />}
+                            Unlock using 1 Balance
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-[10px] uppercase tracking-widest font-bold mb-3">Choose Contact Plan</p>
+                          <div className="space-y-2 mb-4">
+                            {PLANS.map(plan => (
+                              <label key={plan.id}
+                                className={`flex items-center gap-3 p-3 border cursor-pointer transition-all ${
+                                  selectedPlan.id === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                                }`}>
+                                <input type="radio" name="plan" checked={selectedPlan.id === plan.id}
+                                  onChange={() => setSelectedPlan(plan)} className="accent-primary" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold">{plan.label}</span>
+                                    {plan.badge && (
+                                      <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 font-bold uppercase tracking-wider">{plan.badge}</span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground">{plan.perContact}/contact</span>
+                                </div>
+                                <span className="font-black text-primary">₹{plan.price}</span>
+                              </label>
+                            ))}
+                          </div>
 
-                      {payError && <p className="text-xs text-red-500 mb-3 flex items-center gap-1"><AlertCircle size={11}/>{payError}</p>}
-                      <button onClick={() => setPaymentModal(true)}
-                        className="w-full bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 mb-3">
-                        <Phone size={15}/> Unlock Contact — ₹{selectedPlan.price}
-                      </button>
+                          {payError && <p className="text-xs text-red-500 mb-3 flex items-center gap-1"><AlertCircle size={11}/>{payError}</p>}
+                          <button onClick={() => setPaymentModal(true)}
+                            className="w-full bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 mb-3">
+                            <Phone size={15}/> Unlock Contact — ₹{selectedPlan.price}
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
 

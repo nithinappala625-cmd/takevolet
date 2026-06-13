@@ -181,6 +181,7 @@ export async function GET(request: Request) {
         gender:        p.gender || "—",
         dob:           p.dob || "—",
         members_count: p.members_count || 1,
+        contact_balance: p.contact_balance || 0,
         aadhaar_url:   docUrl,
         aadhaar_back_url: docBackUrl,
         is_verified:   p.is_verified || false,
@@ -229,10 +230,26 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { action, payoutId, notes } = body;
+  const { action, payoutId, notes, userId, userData } = body;
 
-  if (!action || !payoutId) {
-    return NextResponse.json({ error: "action and payoutId are required" }, { status: 400 });
+  if (!action) {
+    return NextResponse.json({ error: "action is required" }, { status: 400 });
+  }
+
+  if (action === "update_user") {
+    if (!userId || !userData) return NextResponse.json({ error: "userId and userData required" }, { status: 400 });
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .update(userData)
+      .eq("id", userId)
+      .select()
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, user: data });
+  }
+
+  if (!payoutId) {
+    return NextResponse.json({ error: "payoutId is required for this action" }, { status: 400 });
   }
 
   const statusMap: Record<string, string> = {
@@ -243,7 +260,7 @@ export async function POST(request: Request) {
 
   const newStatus = statusMap[action];
   if (!newStatus) {
-    return NextResponse.json({ error: "Invalid action. Use: approve, reject, processing" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid action. Use: approve, reject, processing, update_user" }, { status: 400 });
   }
 
   const { data, error } = await supabaseAdmin
@@ -321,6 +338,7 @@ export async function PUT(request: Request) {
     professionPref,
     images,
     videos,
+    userData, // added for user type
   } = body;
 
   if (!type || !id) {
@@ -345,6 +363,15 @@ export async function PUT(request: Request) {
         images,
         videos,
       })
+      .eq("id", id)
+      .select()
+      .single();
+    data = res.data;
+    error = res.error;
+  } else if (type === "user") {
+    const res = await supabaseAdmin
+      .from("profiles")
+      .update(userData)
       .eq("id", id)
       .select()
       .single();

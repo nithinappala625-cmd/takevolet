@@ -23,6 +23,7 @@ create table if not exists public.profiles (
   members_count int default 1,
   gender        text,
   dob           text,          -- Date of birth
+  contact_balance int default 0, -- Balance of contacts unlocked
   aadhaar_url   text,          -- Supabase storage path for aadhaar photo (front)
   aadhaar_back_url text,       -- Supabase storage path for aadhaar photo (back)
   is_verified   boolean default false,

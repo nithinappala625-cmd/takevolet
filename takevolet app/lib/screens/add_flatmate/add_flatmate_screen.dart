@@ -90,11 +90,11 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
 
   Future<void> _pickImages() async {
     final picker = ImagePicker();
-    final picked = await picker.pickMultiImage(imageQuality: 75, maxWidth: 1200);
+    final picked = await picker.pickMultiImage(imageQuality: 70, maxWidth: 1280, maxHeight: 1280);
     if (picked.isNotEmpty) {
       setState(() {
         _images.addAll(picked.map((x) => File(x.path)));
-        if (_images.length > 5) _images = _images.sublist(0, 5);
+        if (_images.length > 6) _images = _images.sublist(0, 6);
       });
     }
   }
@@ -254,9 +254,9 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
                         ),
                       if (_images.isNotEmpty) const SizedBox(height: 12),
                       OutlinedButton.icon(
-                        onPressed: _images.length < 5 ? _pickImages : null,
+                        onPressed: _images.length < 6 ? _pickImages : null,
                         icon: const Icon(Icons.add_a_photo),
-                        label: Text(_images.isEmpty ? 'Add Photos (up to 5)' : 'Add More (${_images.length}/5)'),
+                        label: Text(_images.isEmpty ? 'Add Photos (up to 6)' : 'Add More (${_images.length}/6)'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: _gold,
                           side: BorderSide(color: _gold.withOpacity(0.5)),

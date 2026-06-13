@@ -7,7 +7,7 @@ import {
   Clock, X, AlertCircle, RefreshCw, Eye, EyeOff, LogOut,
   Wallet, ArrowUpRight, Building2, Phone, Mail, Send,
   BarChart2, Activity, Download, ChevronDown, Star, Lock,
-  ShoppingBag, ShieldCheck
+  ShoppingBag, ShieldCheck, Edit2
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { MOCK_ROOMS, MOCK_FLATMATES, MOCK_ITEMS } from "@/data/mock";
@@ -40,7 +40,7 @@ export default function AdminPage() {
   const [localPages, setLocalPages] = useState<any[]>([]);
 
   const [editItem, setEditItem] = useState<any | null>(null);
-  const [editType, setEditType] = useState<"room" | "flatmate" | "marketplace" | "ad" | "page" | null>(null);
+  const [editType, setEditType] = useState<"user" | "room" | "flatmate" | "marketplace" | "ad" | "page" | null>(null);
   const [editLoading, setEditLoading] = useState(false);
 
   const [deleteItem, setDeleteItem] = useState<any | null>(null);
@@ -129,34 +129,52 @@ export default function AdminPage() {
         return;
       }
 
+      const payload = {
+        type: editType,
+        id: editItem.id,
+      } as any;
+
+      if (editType === "user") {
+        payload.userData = {
+          full_name: editItem.name,
+          phone: editItem.phone,
+          whatsapp: editItem.whatsapp,
+          email: editItem.email,
+          contact_balance: Number(editItem.contact_balance) || 0,
+          location: editItem.location,
+          colony: editItem.colony,
+          house_no: editItem.house_no,
+          profession: editItem.profession,
+          gender: editItem.gender,
+          dob: editItem.dob,
+          members_count: Number(editItem.members_count) || 1,
+        };
+      } else {
+        Object.assign(payload, {
+          title: editItem.title,
+          rent: editItem.rent,
+          advance: editItem.advance,
+          rentShare: editItem.rentShare,
+          advanceShare: editItem.advanceShare,
+          location: editItem.location,
+          colony: editItem.colony,
+          description: editItem.description,
+          furnishing: editItem.furnishing,
+          genderPreference: editItem.gender_preference,
+          genderPref: editItem.genderPref,
+          professionPref: editItem.professionPref,
+          images: editItem.images,
+          videos: editItem.videos,
+        });
+      }
+
       const res = await fetch("/api/admin/data", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "x-admin-password": ADMIN_PASSWORD,
         },
-        body: JSON.stringify({
-          type: editType,
-          id: editItem.id,
-          title: editItem.title,
-          rent: editItem.rent,
-          advance: editItem.advance,
-          rentShare: editItem.rentShare,
-          advanceShare: editItem.advanceShare,
-          price: editItem.price,
-          rentPrice: editItem.rentPrice,
-          city: editItem.city,
-          location: editItem.location,
-          colony: editItem.colony,
-          description: editItem.description,
-          furnishing: editItem.furnishing,
-          genderPreference: editItem.genderPreference || editItem.gender_preference || editItem.genderPref || editItem.gender_pref,
-          genderPref: editItem.genderPref || editItem.gender_pref,
-          professionPref: editItem.professionPref,
-          images: editItem.images,
-          videos: editItem.videos,
-          image: editItem.image,
-        }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (json.success) {
@@ -166,8 +184,6 @@ export default function AdminPage() {
           setLocalFlatmates(prev => prev.map(item => item.id === editItem.id ? { ...item, ...editItem } : item));
         } else if (editType === "marketplace") {
           setLocalMarketplace(prev => prev.map(item => item.id === editItem.id ? { ...item, ...editItem } : item));
-        } else if (editType === "ad") {
-          fetchAds();
         }
         setEditItem(null);
         setEditType(null);
@@ -354,7 +370,7 @@ export default function AdminPage() {
 
   // ━━━ SECURITY GATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if (userLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><RefreshCw className="animate-spin text-primary" /></div>;
-  if (!user || user.email !== "nithinappala625@gmail.com") {
+  if (!user || user.email?.toLowerCase() !== "nithinappala625@gmail.com") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
         <Lock size={48} className="text-red-500 mb-4" />
@@ -848,84 +864,149 @@ export default function AdminPage() {
             ) : (
               <div className="bg-background border border-border overflow-x-auto">
                 <div className="min-w-[1000px]">
-                  <div className="grid grid-cols-12 gap-2 p-4 border-b border-border bg-secondary/30 text-[9px] uppercase tracking-widest font-bold text-muted-foreground">
-                    <div className="col-span-2">Name</div>
-                    <div className="col-span-2">Contact</div>
-                    <div className="col-span-1">Location</div>
-                    <div className="col-span-1">House No</div>
-                    <div className="col-span-2">Owner Info</div>
-                    <div className="col-span-1">Profile</div>
-                    <div className="col-span-2">Payout Info</div>
-                    <div className="col-span-1">KYC</div>
+                  <div className="grid grid-cols-[2fr_2fr_1.5fr_1.5fr_1fr_2fr_1fr_0.5fr] gap-2 p-4 border-b border-border bg-secondary/30 text-[9px] uppercase tracking-widest font-bold text-muted-foreground">
+                    <div>Name & Balance</div>
+                    <div>Contact</div>
+                    <div>Location</div>
+                    <div>House Info</div>
+                    <div>Profile</div>
+                    <div>Payout Info</div>
+                    <div>KYC</div>
+                    <div className="text-right">Action</div>
                   </div>
                 {users.map((u: any) => (
-                  <div key={u.id} className="grid grid-cols-12 gap-2 p-4 border-b border-border last:border-0 items-center hover:bg-secondary/10">
-                    <div className="col-span-2">
-                      <p className="text-sm font-semibold truncate">{u.name}</p>
-                      <p className="text-[10px] text-muted-foreground">DOB: {u.dob}</p>
-                      <p className="text-[10px] text-muted-foreground">{fmtDate(u.created_at)}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-xs font-mono">{u.phone}</p>
-                      {u.whatsapp && <p className="text-[10px] text-green-600 font-bold mt-0.5">WA: {u.whatsapp}</p>}
-                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">{u.email}</p>
-                    </div>
-                    <div className="col-span-1">
-                      <p className="text-xs font-semibold">{u.colony}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{u.location}</p>
-                    </div>
-                    <div className="col-span-1">
-                      <p className="text-xs font-mono text-primary truncate">{u.house_no}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-xs font-semibold truncate">{u.owner_name || "N/A"}</p>
-                      <p className="text-[10px] font-mono text-muted-foreground">{u.owner_phone || "No phone"}</p>
-                    </div>
-                    <div className="col-span-1">
-                      <p className="text-[10px] truncate">{u.gender}</p>
-                      <p className="text-[10px] truncate text-muted-foreground">{u.profession}</p>
-                      <p className="text-[10px] text-muted-foreground">{u.members_count} mem</p>
-                    </div>
-                    <div className="col-span-2">
-                      {u.payout_method === "upi" && (
-                        <div>
-                          <p className="text-[10px] font-bold text-primary uppercase">UPI</p>
-                          <p className="text-[10px] font-mono truncate">{u.upi_id}</p>
-                        </div>
-                      )}
-                      {u.payout_method === "bank" && (
-                        <div>
-                          <p className="text-[10px] font-bold text-primary uppercase">Bank</p>
-                          <p className="text-[10px] font-mono truncate">A/C: {u.bank_account}</p>
-                          <p className="text-[10px] font-mono truncate">IFSC: {u.bank_ifsc}</p>
-                        </div>
-                      )}
-                      {u.payout_method === "qrcode" && u.payout_qr_code && (
-                        <div>
-                          <p className="text-[10px] font-bold text-primary uppercase mb-1">QR Code</p>
-                          <a href={u.payout_qr_code} target="_blank" rel="noopener noreferrer" className="block w-10 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View QR">
-                            <img src={u.payout_qr_code} alt="QR Code" className="w-full h-full object-cover" />
+                  <div key={u.id} className="border-b border-border last:border-0 hover:bg-secondary/10">
+                    <div className="grid grid-cols-[2fr_2fr_1.5fr_1.5fr_1fr_2fr_1fr_0.5fr] gap-2 p-4 items-center">
+                      <div>
+                        <p className="text-sm font-semibold truncate">{u.name}</p>
+                        <p className="text-[10px] text-muted-foreground">Bal: <span className="text-primary font-bold">{u.contact_balance}</span></p>
+                        <p className="text-[10px] text-muted-foreground">{fmtDate(u.created_at)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-mono">{u.phone}</p>
+                        {u.whatsapp && <p className="text-[10px] text-green-600 font-bold mt-0.5">WA: {u.whatsapp}</p>}
+                        <p className="text-[10px] text-muted-foreground truncate mt-0.5">{u.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold">{u.colony}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{u.location}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-mono text-primary truncate">{u.house_no}</p>
+                        <p className="text-[10px] truncate">{u.owner_name}</p>
+                        <p className="text-[10px] font-mono text-muted-foreground">{u.owner_phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] truncate">{u.gender}</p>
+                        <p className="text-[10px] truncate text-muted-foreground">{u.profession}</p>
+                        <p className="text-[10px] text-muted-foreground">{u.members_count} mem</p>
+                      </div>
+                      <div>
+                        {u.payout_method === "upi" && (
+                          <div>
+                            <p className="text-[10px] font-bold text-primary uppercase">UPI</p>
+                            <p className="text-[10px] font-mono truncate">{u.upi_id}</p>
+                          </div>
+                        )}
+                        {u.payout_method === "bank" && (
+                          <div>
+                            <p className="text-[10px] font-bold text-primary uppercase">Bank</p>
+                            <p className="text-[10px] font-mono truncate">A/C: {u.bank_account}</p>
+                            <p className="text-[10px] font-mono truncate">IFSC: {u.bank_ifsc}</p>
+                          </div>
+                        )}
+                        {u.payout_method === "qrcode" && u.payout_qr_code && (
+                          <div>
+                            <p className="text-[10px] font-bold text-primary uppercase mb-1">QR Code</p>
+                            <a href={u.payout_qr_code} target="_blank" rel="noopener noreferrer" className="block w-10 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View QR">
+                              <img src={u.payout_qr_code} alt="QR Code" className="w-full h-full object-cover" />
+                            </a>
+                          </div>
+                        )}
+                        {!u.payout_method && (
+                          <p className="text-[10px] text-muted-foreground italic">None saved</p>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        {u.aadhaar_url ? (
+                          <a href={u.aadhaar_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View Front">
+                            <img src={u.aadhaar_url} alt="Front" className="w-full h-full object-cover" />
                           </a>
-                        </div>
-                      )}
-                      {!u.payout_method && (
-                        <p className="text-[10px] text-muted-foreground italic">None saved</p>
-                      )}
+                        ) : (
+                          <span className="text-[9px] bg-yellow-100 text-yellow-700 font-bold px-1 py-0.5">Pend</span>
+                        )}
+                        {u.aadhaar_back_url && (
+                          <a href={u.aadhaar_back_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View Back">
+                            <img src={u.aadhaar_back_url} alt="Back" className="w-full h-full object-cover" />
+                          </a>
+                        )}
+                      </div>
+                      <div className="text-right flex justify-end">
+                        <button onClick={() => { setEditType("user"); setEditItem(u); }} className="p-2 hover:bg-secondary rounded transition-colors text-muted-foreground hover:text-primary">
+                          <Edit2 size={14} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="col-span-1 flex gap-1">
-                      {u.aadhaar_url ? (
-                        <a href={u.aadhaar_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View Front">
-                          <img src={u.aadhaar_url} alt="Front" className="w-full h-full object-cover" />
-                        </a>
-                      ) : (
-                        <span className="text-[9px] bg-yellow-100 text-yellow-700 font-bold px-1 py-0.5">Pend</span>
-                      )}
-                      {u.aadhaar_back_url && (
-                        <a href={u.aadhaar_back_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-border overflow-hidden hover:opacity-80 transition-opacity" title="View Back">
-                          <img src={u.aadhaar_back_url} alt="Back" className="w-full h-full object-cover" />
-                        </a>
-                      )}
-                    </div>
+
+                    {/* Expandable Edit Form for Users */}
+                    {editType === "user" && editItem?.id === u.id && (
+                      <div className="p-4 bg-secondary/20 border-t border-border">
+                        <form onSubmit={handleSaveEdit} className="grid grid-cols-4 gap-4">
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">Name</label>
+                            <input type="text" className="w-full p-2 bg-background border border-border text-xs" value={editItem.name || ""} onChange={e => setEditItem({...editItem, name: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">Phone</label>
+                            <input type="text" className="w-full p-2 bg-background border border-border text-xs" value={editItem.phone || ""} onChange={e => setEditItem({...editItem, phone: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">WhatsApp</label>
+                            <input type="text" className="w-full p-2 bg-background border border-border text-xs" value={editItem.whatsapp || ""} onChange={e => setEditItem({...editItem, whatsapp: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">Email</label>
+                            <input type="text" className="w-full p-2 bg-background border border-border text-xs" value={editItem.email || ""} onChange={e => setEditItem({...editItem, email: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">Contact Balance</label>
+                            <input type="number" className="w-full p-2 bg-background border border-border text-xs" value={editItem.contact_balance || 0} onChange={e => setEditItem({...editItem, contact_balance: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">Location</label>
+                            <input type="text" className="w-full p-2 bg-background border border-border text-xs" value={editItem.location || ""} onChange={e => setEditItem({...editItem, location: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">Colony</label>
+                            <input type="text" className="w-full p-2 bg-background border border-border text-xs" value={editItem.colony || ""} onChange={e => setEditItem({...editItem, colony: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">House No</label>
+                            <input type="text" className="w-full p-2 bg-background border border-border text-xs" value={editItem.house_no || ""} onChange={e => setEditItem({...editItem, house_no: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">Profession</label>
+                            <input type="text" className="w-full p-2 bg-background border border-border text-xs" value={editItem.profession || ""} onChange={e => setEditItem({...editItem, profession: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">Gender</label>
+                            <input type="text" className="w-full p-2 bg-background border border-border text-xs" value={editItem.gender || ""} onChange={e => setEditItem({...editItem, gender: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">DOB</label>
+                            <input type="date" className="w-full p-2 bg-background border border-border text-xs" value={editItem.dob || ""} onChange={e => setEditItem({...editItem, dob: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">Members Count</label>
+                            <input type="number" className="w-full p-2 bg-background border border-border text-xs" value={editItem.members_count || 1} onChange={e => setEditItem({...editItem, members_count: e.target.value})} />
+                          </div>
+                          <div className="col-span-4 flex justify-end gap-3 mt-2">
+                            <button type="button" onClick={() => { setEditType(null); setEditItem(null); }} className="px-4 py-2 border border-border text-xs uppercase font-bold hover:bg-secondary">Cancel</button>
+                            <button type="submit" disabled={editLoading} className="px-4 py-2 bg-primary text-primary-foreground text-xs uppercase font-bold hover:opacity-90">{editLoading ? "Saving..." : "Save User"}</button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
                   </div>
                 ))}
                 </div>

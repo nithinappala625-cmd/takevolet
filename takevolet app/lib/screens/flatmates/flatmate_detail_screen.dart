@@ -21,6 +21,8 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
   Map<String, dynamic>? posterProfile;
   bool isLoading = true;
   bool _hasUnlocked = false;
+  int _contactBalance = 0;
+  int _pendingAmount = 0;
 
   late Razorpay _razorpay;
   final PageController _pageController = PageController();
@@ -44,13 +46,25 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId != null) {
+      try {
+        if (_pendingAmount == 35 || _pendingAmount == 55) {
+          await supabase.from('profiles').update({'contact_balance': _contactBalance + 5}).eq('id', userId);
+          if (mounted) setState(() => _contactBalance += 5);
+        } else if (_pendingAmount == 15 || _pendingAmount == 30) {
+          await supabase.from('flatmate_contact_unlocks').insert({'flatmate_id': widget.id, 'user_id': userId});
+        }
+      } catch (e) {}
+    }
+
     try {
       await supabase.functions.invoke('verify-razorpay-payment', body: {
         'order_id': response.orderId,
         'payment_id': response.paymentId,
         'signature': response.signature,
         'flatmate_id': widget.id,
-        'user_id': supabase.auth.currentUser?.id,
+        'user_id': userId,
       });
     } catch (_) {}
 
@@ -119,18 +133,26 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
   }
 
   Future<void> _purchasePlan(int amount, String desc) async {
+    _pendingAmount = amount;
     showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
     try {
-      String planId = 'single';
-      if (amount == 55) planId = 'starter';
-      else if (amount == 105) planId = 'growth';
-      else if (amount >= 200) planId = 'unlimited';
+      String? planId;
+      if (desc != 'Visitor Pass' && desc != 'Premium Visitor Pass') {
+        if (amount == 35 || amount == 55 || amount == 65 || amount == 110) planId = 'starter';
+        else if (amount == 105 || amount == 210) planId = 'growth';
+        else if (amount >= 200) planId = 'unlimited';
+        else planId = 'single';
+      }
 
-      final response = await supabase.functions.invoke('create-razorpay-order', body: {
+      final Map<String, dynamic> bodyPayload = {
         'amount': amount * 100,
         'flatmateId': widget.id,
-        'planId': planId,
-      });
+      };
+      if (planId != null) {
+        bodyPayload['planId'] = planId;
+      }
+
+      final response = await supabase.functions.invoke('create-razorpay-order', body: bodyPayload);
       if (context.mounted) Navigator.pop(context);
 
       final data = response.data;
@@ -167,13 +189,54 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
   }
 
   void _showUnlockDialog() {
-    final int rentShare = flatmate!['rent_share'] ?? 0;
-    final int visitorPassPrice = rentShare < 10000 ? 299 : 499;
+    if (_contactBalance > 0) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Unlock Contact'),
+          content: Text('You have $_contactBalance contacts remaining.\nUse 1 to unlock this contact?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  await supabase.from('flatmate_contact_unlocks').insert({'flatmate_id': widget.id, 'user_id': supabase.auth.currentUser!.id});
+                  await supabase.from('profiles').update({'contact_balance': _contactBalance - 1}).eq('id', supabase.auth.currentUser!.id);
+                  setState(() {
+                    _contactBalance--;
+                    _hasUnlocked = true;
+                  });
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Contact Unlocked!'), backgroundColor: Colors.green));
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+                  }
+                }
+              },
+              child: const Text('Unlock'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+      final String location = (flatmate?['location'] ?? '').toLowerCase();
+      final String city = (flatmate?['city'] ?? '').toLowerCase();
+      final bool isBangalore = location.contains('bangalore') || location.contains('bengaluru') || city.contains('bangalore') || city.contains('bengaluru');
 
     // Contact plans only
-    final List<Map<String, dynamic>> plans = [
+    final List<Map<String, dynamic>> plans = isBangalore ? [
+      {'title': 'Single Contact', 'subtitle': '1 Contact', 'price': 30, 'color': Colors.blue},
+      {'title': 'Starter Pack', 'subtitle': '5 Contacts', 'price': 65, 'color': Colors.orange},
+      {'title': 'Growth Pack', 'subtitle': '50 Contacts', 'price': 210, 'color': Colors.purple, 'isBestValue': true},
+      {'title': 'Unlimited', 'subtitle': 'Unlimited Contacts', 'price': 400, 'color': Colors.red},
+    ] : [
       {'title': 'Single Contact', 'subtitle': '1 Contact', 'price': 15, 'color': Colors.blue},
-      {'title': 'Starter Pack', 'subtitle': '10 Contacts', 'price': 55, 'color': Colors.orange},
+      {'title': 'Starter Pack', 'subtitle': '5 Contacts', 'price': 35, 'color': Colors.orange},
       {'title': 'Growth Pack', 'subtitle': '50 Contacts', 'price': 105, 'color': Colors.purple, 'isBestValue': true},
       {'title': 'Unlimited', 'subtitle': 'Unlimited Contacts', 'price': 200, 'color': Colors.red},
     ];
@@ -380,8 +443,21 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
     final displayName = name.isNotEmpty ? name : 'Takevolet Partner';
     final profession = 'Takevolet Partner';
     final avatar = posterProfile?['avatar_url'];
-    final rentShare = flatmate?['rent_share'] ?? 0;
-    final int visitorPassPrice = rentShare < 10000 ? 299 : 499;
+    final int rentShare = flatmate!['rent_share'] ?? 0;
+    final String location = (flatmate!['location'] ?? '').toLowerCase();
+    final String city = (flatmate!['city'] ?? '').toLowerCase();
+    final bool isBangalore = location.contains('bangalore') || location.contains('bengaluru') || city.contains('bangalore') || city.contains('bengaluru');
+    
+    // Show only visiting charges on button (not total)
+    int visitingCharges = 0;
+    int platformFee = 0;
+    if (isBangalore) {
+      if (rentShare <= 20000) { visitingCharges = 600; platformFee = 2400; }
+      else { visitingCharges = 1000; platformFee = 4000; }
+    } else {
+      if (rentShare <= 20000) { visitingCharges = 300; platformFee = 1200; }
+      else { visitingCharges = 500; platformFee = 2000; }
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -465,9 +541,9 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => _purchasePlan(visitorPassPrice, 'Premium Visitor Pass'),
+                  onPressed: () => _purchasePlan(visitingCharges, 'Visitor Pass'),
                   icon: const Icon(Icons.star, size: 18),
-                  label: Text('Visitor Pass\n(₹$visitorPassPrice)', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  label: Text('Visitor Pass\n(₹$visitingCharges)', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber.shade700,
                     foregroundColor: Colors.white,
@@ -488,6 +564,14 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                   ),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 14, color: Colors.grey.shade500),
+              const SizedBox(width: 6),
+              Expanded(child: Text('Visiting charges: ₹$visitingCharges, Platform fee: ₹$platformFee', style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontStyle: FontStyle.italic))),
             ],
           ),
         ],

@@ -62,6 +62,36 @@ export async function checkRoomUnlockStatusAction(roomId: string, userId: string
   };
 }
 
+export async function getUserContactBalanceAction(userId: string) {
+  if (!userId || userId === "guest") return 0;
+  const { data } = await supabaseAdmin.from("profiles").select("contact_balance").eq("id", userId).single();
+  return data?.contact_balance || 0;
+}
+
+export async function unlockContactWithBalanceAction(listingId: string, userId: string, type: "room" | "flatmate") {
+  if (!userId || userId === "guest") return { success: false, error: "Unauthorized" };
+  
+  const balance = await getUserContactBalanceAction(userId);
+  if (balance <= 0) return { success: false, error: "Insufficient balance" };
+  
+  // Decrement balance
+  await supabaseAdmin.from("profiles").update({ contact_balance: balance - 1 }).eq("id", userId);
+  
+  // Add unlock record
+  const table = type === "room" ? "contact_unlocks" : "flatmate_contact_unlocks";
+  const idField = type === "room" ? "room_id" : "flatmate_id";
+  
+  await supabaseAdmin.from(table).upsert({
+    [idField]: listingId,
+    user_id: userId,
+    razorpay_order_id: "balance_" + Date.now(),
+    razorpay_payment_id: "balance_" + Date.now(),
+    created_at: new Date().toISOString(),
+  }, { onConflict: `${idField},user_id`, ignoreDuplicates: true });
+  
+  return { success: true };
+}
+
 // ─── PAGES (Dynamic Static Pages) ────────────────────────────────────────────
 
 export async function fetchAllPagesAction() {

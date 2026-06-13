@@ -136,9 +136,27 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── 4. Persist unlock to Supabase (non-blocking — don't crash on failure) ─
+    // ── 4. Persist unlock to Supabase & Handle Balances ──────────────────────
     if (userId && userId !== "guest") {
       try {
+        let packContacts = 1;
+        try {
+          const Razorpay = require("razorpay");
+          const rzp = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: KEY_SECRET });
+          const order = await rzp.orders.fetch(razorpay_order_id);
+          if (order?.notes?.packContacts) {
+            packContacts = parseInt(order.notes.packContacts, 10) || 1;
+          }
+        } catch (e) {
+          console.error("[Razorpay] Failed to fetch order notes", e);
+        }
+
+        if (packContacts > 1) {
+          const { data: profile } = await supabaseAdmin.from("profiles").select("contact_balance").eq("id", userId).single();
+          const currentBalance = profile?.contact_balance || 0;
+          await supabaseAdmin.from("profiles").update({ contact_balance: currentBalance + (packContacts - 1) }).eq("id", userId);
+        }
+
         if (roomId) {
           await supabaseAdmin.from("contact_unlocks").upsert({
             room_id:    roomId,

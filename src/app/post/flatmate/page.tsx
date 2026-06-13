@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { insertFlatmate } from "@/lib/flatmate-db";
 import { uploadRoomMedia, getProfile, isProfileComplete, type Profile } from "@/lib/db";
+import { compressImage } from "@/lib/imageCompression";
 import { CITIES, getAreas, getColonies } from "@/data/locations";
 import {
   Users, Upload, X, CheckCircle2, AlertCircle,
@@ -107,14 +108,19 @@ export default function PostFlatmatePage() {
     );
   };
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const files = Array.from(e.target.files);
-    setPhotoFiles((prev) => [...prev, ...files].slice(0, 4));
-    
-    // Convert to object URLs for fast local preview
-    const urls = files.map((file) => URL.createObjectURL(file));
-    setPhotoPreviews((prev) => [...prev, ...urls].slice(0, 4));
+    const files = Array.from(e.target.files).slice(0, 6 - photoFiles.length);
+    for (const f of files) {
+      try {
+        const compressed = await compressImage(f);
+        const url = URL.createObjectURL(compressed);
+        setPhotoPreviews((prev) => [...prev, url]);
+        setPhotoFiles((prev) => [...prev, compressed]);
+      } catch (err) {
+        console.error("Compression failed", err);
+      }
+    }
   };
 
   const removePhoto = (idx: number) => {
@@ -381,7 +387,7 @@ export default function PostFlatmatePage() {
                   onChange={handlePhotoSelect}
                   className="hidden"
                 />
-                <p className="text-[11px] text-muted-foreground">JPG, PNG, WebP — max 4 photos</p>
+                <p className="text-[11px] text-muted-foreground">JPG, PNG, WebP — max 6 photos</p>
               </div>
 
               {/* Videos */}

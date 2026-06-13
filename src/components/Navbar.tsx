@@ -210,7 +210,7 @@ const Navbar = () => {
                     <Link href="/post/room" className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors text-sm font-medium">
                       <Home size={14} /> Post a Room
                     </Link>
-                    {user.email === "nithinappala625@gmail.com" && (
+                    {user.email?.toLowerCase() === "nithinappala625@gmail.com" && (
                       <Link href="/admin" className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/50 transition-colors text-sm font-medium border-t border-border">
                         <Shield size={14} className="text-primary" /> Admin Panel
                       </Link>
@@ -258,7 +258,7 @@ const Navbar = () => {
                       <LayoutDashboard size={15} /> My Dashboard
                     </Link>
                   )}
-                  {user.email === "nithinappala625@gmail.com" && (
+                  {user.email?.toLowerCase() === "nithinappala625@gmail.com" && (
                     <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-base uppercase tracking-widest font-medium hover:text-primary transition-colors flex items-center gap-2">
                       <Shield size={15} className="text-primary" /> Admin Panel
                     </Link>

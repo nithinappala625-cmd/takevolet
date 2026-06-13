@@ -209,40 +209,41 @@ class _ProfileDashboardScreenState extends State<ProfileDashboardScreen> {
             _buildMenuItem(Icons.person_outline, profileComplete ? 'Edit Profile' : 'Complete Profile', const Color(0xFFD4AF37),
                 () => context.push(profileComplete ? '/profile-edit' : '/profile-complete')),
 
-            _buildMenuItem(Icons.admin_panel_settings, 'Admin Panel', Colors.redAccent, () {
-              final TextEditingController passwordController = TextEditingController();
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Text('Admin Access'),
-                  content: TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Admin Password',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      prefixIcon: const Icon(Icons.lock),
+            if (user?.email?.toLowerCase() == 'nithinappala625@gmail.com')
+              _buildMenuItem(Icons.admin_panel_settings, 'Admin Panel', Colors.redAccent, () {
+                final TextEditingController passwordController = TextEditingController();
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    title: const Text('Admin Access'),
+                    content: TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'Admin Password',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.lock),
+                      ),
                     ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (passwordController.text == 'Nithin@RoomRelay2026') {
+                            Navigator.pop(ctx);
+                            context.push('/admin');
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Incorrect Password'), backgroundColor: Colors.red));
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                        child: const Text('Login'),
+                      ),
+                    ],
                   ),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (passwordController.text == 'Nithin@RoomRelay2026') {
-                          Navigator.pop(ctx);
-                          context.push('/admin');
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Incorrect Password'), backgroundColor: Colors.red));
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-                      child: const Text('Login'),
-                    ),
-                  ],
-                ),
-              );
-            }),
+                );
+              }),
 
             const SizedBox(height: 8),
             const Divider(),

@@ -75,8 +75,17 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
   }
 
   Future<void> _pickImages() async {
-    final List<XFile> images = await _picker.pickMultiImage();
-    if (images.isNotEmpty) setState(() => _selectedImages.addAll(images.map((e) => File(e.path))));
+    final List<XFile> images = await _picker.pickMultiImage(
+      imageQuality: 70,
+      maxWidth: 1280,
+      maxHeight: 1280,
+    );
+    if (images.isNotEmpty) {
+      final availableSlots = 6 - _selectedImages.length;
+      if (availableSlots > 0) {
+        setState(() => _selectedImages.addAll(images.take(availableSlots).map((e) => File(e.path))));
+      }
+    }
   }
 
   Future<void> _submitRoom() async {
@@ -287,7 +296,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                               children: [
                                 Icon(Icons.add_a_photo, size: 50, color: Theme.of(context).colorScheme.primary),
                                 const SizedBox(height: 8),
-                                Text('Select Images', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+                                Text('Select Images (up to 6)', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),

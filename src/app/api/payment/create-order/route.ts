@@ -43,15 +43,14 @@ export async function POST(request: Request) {
     // ─── Validate plan & amount ───────────────────────────────────────────────
     // Amount must be in paise. Accepted plans:
     const VALID_PLANS: Record<string, { paise: number; contacts: number; label: string }> = {
-      single:    { paise: 1000,  contacts: 1,      label: "1 Contact" },
-      starter:   { paise: 13900, contacts: 50,     label: "50 Contacts" },
-      growth:    { paise: 28000, contacts: 100,    label: "100 Contacts" },
-      pro:       { paise: 40000, contacts: 500,    label: "500 Contacts" },
-      unlimited: { paise: 50000, contacts: 999999, label: "Unlimited Contacts" },
+      single:    { paise: 1500,  contacts: 1,      label: "1 Contact" },
+      starter:   { paise: 3500,  contacts: 5,      label: "5 Contacts" },
+      growth:    { paise: 10500, contacts: 50,     label: "50 Contacts" },
+      unlimited: { paise: 20000, contacts: 999999, label: "Unlimited Contacts" },
     };
 
-    const plan = VALID_PLANS[planId] ?? VALID_PLANS["growth"]; // default to 100 contacts
-    const AMOUNT_PAISE = amount && amount > 0 ? Math.min(amount, 50000) : plan.paise; // use client amount, but cap at ₹500
+    const plan = VALID_PLANS[planId] ?? VALID_PLANS["starter"]; // default to 5 contacts
+    const AMOUNT_PAISE = amount && amount > 0 ? Math.min(amount, 50000) : plan.paise;
 
     // Create a unique receipt ID (max 40 chars per Razorpay spec)
     const targetId = roomId || flatmateId;
@@ -67,9 +66,9 @@ export async function POST(request: Request) {
         flatmateId: flatmateId || "",
         userId: userId || "guest",
         type,                          // "contact_unlock"
-        packContacts: "5",
+        packContacts: plan.contacts.toString(),
         validityDays: "30",
-        planId: planId || "growth",
+        planId: planId || "starter",
         amountPaise: AMOUNT_PAISE.toString()
       },
     });

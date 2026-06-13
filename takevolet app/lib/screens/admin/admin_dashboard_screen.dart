@@ -47,12 +47,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   Future<void> _loadData() async {
     try {
       // Fetch profiles safely — if aadhar columns don't exist, fall back to basic select
-      List usersListRaw = [];
-      try {
-        usersListRaw = await supabaseAdmin.from('profiles').select('id, full_name, email, phone, avatar_url, created_at, aadhar_url, aadhar_back_url, kyc_status');
-      } catch (_) {
-        // Fallback: fetch without KYC columns if they don't exist yet
-        usersListRaw = await supabaseAdmin.from('profiles').select('id, full_name, email, phone, avatar_url, created_at');
+      List<Map<String, dynamic>> usersListRaw = [];
+      final adminData = await supabaseAdmin.from('profiles').select('role').eq('id', Supabase.instance.client.auth.currentUser?.id ?? '');
+      
+      if (adminData.isNotEmpty && adminData.first['role'] == 'admin') {
+        usersListRaw = List<Map<String, dynamic>>.from(await supabaseAdmin.from('profiles').select('id, full_name, email, phone, avatar_url, created_at, aadhar_url, aadhar_back_url, kyc_status, contact_balance, location, colony, house_no, profession, members_count'));
+      } else {
+        // Fallback for demo or non-super admin
+        usersListRaw = List<Map<String, dynamic>>.from(await supabaseAdmin.from('profiles').select('id, full_name, email, phone, avatar_url, created_at, contact_balance, location, colony, house_no, profession, members_count'));
       }
 
       // These core tables must succeed
@@ -362,6 +364,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                     Text(joinDate, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                   ],
                 ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () => _editUserDialog(u),
+                )
               ],
             ),
           ),
@@ -370,6 +376,57 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
+  void _editUserDialog(Map<String, dynamic> u) {
+    final TextEditingController nameCtrl = TextEditingController(text: u['full_name']);
+    final TextEditingController phoneCtrl = TextEditingController(text: u['phone']);
+    final TextEditingController balanceCtrl = TextEditingController(text: u['contact_balance']?.toString() ?? '0');
+    final TextEditingController locCtrl = TextEditingController(text: u['location']);
+    final TextEditingController colCtrl = TextEditingController(text: u['colony']);
+    final TextEditingController profCtrl = TextEditingController(text: u['profession']);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit User'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name')),
+              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone')),
+              TextField(controller: balanceCtrl, decoration: const InputDecoration(labelText: 'Contact Balance')),
+              TextField(controller: locCtrl, decoration: const InputDecoration(labelText: 'Location')),
+              TextField(controller: colCtrl, decoration: const InputDecoration(labelText: 'Colony')),
+              TextField(controller: profCtrl, decoration: const InputDecoration(labelText: 'Profession')),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await supabaseAdmin.from('profiles').update({
+                  'full_name': nameCtrl.text,
+                  'phone': phoneCtrl.text,
+                  'contact_balance': int.tryParse(balanceCtrl.text) ?? 0,
+                  'location': locCtrl.text,
+                  'colony': colCtrl.text,
+                  'profession': profCtrl.text,
+                }).eq('id', u['id']);
+                _loadData();
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User updated successfully')));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+              }
+            },
+            child: const Text('Save'),
+          )
+        ],
+      ),
+    );
+  }
 
   // ─── ROOMS TAB ─────────────────────────────────────────────────
   Widget _buildRoomsTab() {

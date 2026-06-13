@@ -13,6 +13,7 @@ class _PricingScreenState extends State<PricingScreen> {
   late Razorpay _razorpay;
   int? selectedPriceValue;
   String? selectedPlanName;
+  bool _isBangalorePricing = false;
 
   @override
   void initState() {
@@ -92,41 +93,80 @@ class _PricingScreenState extends State<PricingScreen> {
           const Text('Choose Your Plan', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
           const SizedBox(height: 8),
           const Text('Unlock contacts seamlessly and save big compared to individual unlocks.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() { _isBangalorePricing = false; selectedPriceValue = null; }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: !_isBangalorePricing ? Colors.white : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: !_isBangalorePricing ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : [],
+                      ),
+                      child: Text('Hyderabad', style: TextStyle(fontWeight: !_isBangalorePricing ? FontWeight.bold : FontWeight.normal, color: !_isBangalorePricing ? Colors.black : Colors.grey)),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() { _isBangalorePricing = true; selectedPriceValue = null; }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _isBangalorePricing ? Colors.white : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: _isBangalorePricing ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : [],
+                      ),
+                      child: Text('Bangalore', style: TextStyle(fontWeight: _isBangalorePricing ? FontWeight.bold : FontWeight.normal, color: _isBangalorePricing ? Colors.black : Colors.grey)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
           _buildPricingCard(
             context,
             title: 'Single Contact',
-            price: '₹15',
+            price: _isBangalorePricing ? '₹30' : '₹15',
             description: 'Get 1 Contact Unlock',
             isPopular: false,
-            priceValue: 15,
+            priceValue: _isBangalorePricing ? 30 : 15,
           ),
           const SizedBox(height: 16),
           _buildPricingCard(
             context,
             title: 'Starter Pack',
-            price: '₹55',
-            description: 'Get 10 Contact Unlocks (₹5.50 each)',
+            price: _isBangalorePricing ? '₹110' : '₹55',
+            description: _isBangalorePricing ? 'Get 10 Contact Unlocks (₹11.00 each)' : 'Get 10 Contact Unlocks (₹5.50 each)',
             isPopular: false,
-            priceValue: 55,
+            priceValue: _isBangalorePricing ? 110 : 55,
           ),
           const SizedBox(height: 16),
           _buildPricingCard(
             context,
             title: 'Growth Pack',
-            price: '₹105',
-            description: 'Get 50 Contact Unlocks (₹2.10 each)',
+            price: _isBangalorePricing ? '₹210' : '₹105',
+            description: _isBangalorePricing ? 'Get 50 Contact Unlocks (₹4.20 each)' : 'Get 50 Contact Unlocks (₹2.10 each)',
             isPopular: true,
-            priceValue: 105,
+            priceValue: _isBangalorePricing ? 210 : 105,
           ),
           const SizedBox(height: 16),
           _buildPricingCard(
             context,
             title: 'Unlimited',
-            price: '₹200',
+            price: _isBangalorePricing ? '₹400' : '₹200',
             description: 'Unlimited Unlocks',
             isPopular: false,
-            priceValue: 200,
+            priceValue: _isBangalorePricing ? 400 : 200,
           ),
           const SizedBox(height: 100),
         ],

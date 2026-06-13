@@ -38,61 +38,130 @@ class MainShell extends StatelessWidget {
   void _showPostMenu(BuildContext parentContext) {
     showModalBottomSheet(
       context: parentContext,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (sheetContext) {
         return Container(
-          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'What would you like to post?',
-                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              Container(
+                width: 48,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               const SizedBox(height: 24),
-              ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Theme.of(sheetContext).colorScheme.primary.withOpacity(0.1),
-                  child: Icon(Icons.home_work, color: Theme.of(sheetContext).colorScheme.primary),
+              Text(
+                'What would you like to post?',
+                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
                 ),
-                title: const Text('Post a Room'),
-                subtitle: const Text('Find tenants for your property'),
+              ),
+              const SizedBox(height: 24),
+              _buildPostOption(
+                context: sheetContext,
+                icon: Icons.home_work_rounded,
+                title: 'Post a Room',
+                subtitle: 'Find tenants for your property',
+                color: const Color(0xFF4A90E2),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _handlePostNavigation(parentContext, '/add-room');
                 },
               ),
-              ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Theme.of(sheetContext).colorScheme.primary.withOpacity(0.1),
-                  child: Icon(Icons.people, color: Theme.of(sheetContext).colorScheme.primary),
-                ),
-                title: const Text('Find a Flatmate'),
-                subtitle: const Text('Share your current apartment'),
+              const SizedBox(height: 16),
+              _buildPostOption(
+                context: sheetContext,
+                icon: Icons.people_alt_rounded,
+                title: 'Find a Flatmate',
+                subtitle: 'Share your current apartment',
+                color: const Color(0xFFF39C12),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _handlePostNavigation(parentContext, '/add-flatmate');
                 },
               ),
-              ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Theme.of(sheetContext).colorScheme.primary.withOpacity(0.1),
-                  child: Icon(Icons.shopping_bag, color: Theme.of(sheetContext).colorScheme.primary),
-                ),
-                title: const Text('Sell an Item'),
-                subtitle: const Text('Furniture, electronics, etc.'),
+              const SizedBox(height: 16),
+              _buildPostOption(
+                context: sheetContext,
+                icon: Icons.shopping_bag_rounded,
+                title: 'Sell an Item',
+                subtitle: 'Furniture, electronics, etc.',
+                color: const Color(0xFF8E44AD),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _handlePostNavigation(parentContext, '/add-item');
                 },
               ),
-              const SizedBox(height: 16),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPostOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 26),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Colors.black87)),
+                    const SizedBox(height: 4),
+                    Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.shade300, size: 18),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

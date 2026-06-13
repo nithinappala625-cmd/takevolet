@@ -8,7 +8,7 @@ import 'services/onesignal_service.dart';
 
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
-import 'screens/auth/signup_screen.dart';
+import 'screens/auth/otp_verification_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/rooms/rooms_screen.dart';
@@ -60,7 +60,10 @@ final _router = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-    GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
+    GoRoute(
+      path: '/otp_verification',
+      builder: (context, state) => OtpVerificationScreen(phoneNumber: state.extra as String),
+    ),
     GoRoute(path: '/admin', builder: (context, state) => const AdminDashboardScreen()),
     GoRoute(path: '/user-dashboard', builder: (context, state) => const UserDashboardScreen()),
     GoRoute(path: '/earnings', builder: (context, state) => const EarningsScreen()),
