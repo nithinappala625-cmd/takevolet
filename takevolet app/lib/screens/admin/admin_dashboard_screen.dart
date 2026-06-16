@@ -46,24 +46,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
   Future<void> _loadData() async {
     try {
-      // Fetch profiles safely — if aadhar columns don't exist, fall back to basic select
       List<Map<String, dynamic>> usersListRaw = [];
-      final adminData = await supabaseAdmin.from('profiles').select('role').eq('id', Supabase.instance.client.auth.currentUser?.id ?? '');
-      
-      if (adminData.isNotEmpty && adminData.first['role'] == 'admin') {
-        usersListRaw = List<Map<String, dynamic>>.from(await supabaseAdmin.from('profiles').select('id, full_name, email, phone, avatar_url, created_at, aadhar_url, aadhar_back_url, kyc_status, contact_balance, location, colony, house_no, profession, members_count'));
-      } else {
-        // Fallback for demo or non-super admin
-        usersListRaw = List<Map<String, dynamic>>.from(await supabaseAdmin.from('profiles').select('id, full_name, email, phone, avatar_url, created_at, contact_balance, location, colony, house_no, profession, members_count'));
+      try {
+        usersListRaw = List<Map<String, dynamic>>.from(await supabaseAdmin.from('profiles').select());
+      } catch (e) {
+        debugPrint('Admin users load error: $e');
       }
 
-      // These core tables must succeed
-      final roomsList = await supabaseAdmin.from('rooms').select('id, title, user_id, rent, location, colony, is_available, created_at, images');
-      final flatmatesList = await supabaseAdmin.from('flatmates').select('id, title, user_id, rent_share, location, is_available, created_at, images');
-      final unlocksList = await supabaseAdmin.from('contact_unlocks').select('id, user_id, room_id, created_at');
+      List<Map<String, dynamic>> roomsList = [];
+      try {
+        roomsList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('rooms').select());
+      } catch (e) {
+        debugPrint('Admin rooms load error: $e');
+      }
+
+      List<Map<String, dynamic>> flatmatesList = [];
+      try {
+        flatmatesList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('flatmates').select());
+      } catch (e) {
+        debugPrint('Admin flatmates load error: $e');
+      }
+
+      List<Map<String, dynamic>> unlocksList = [];
+      try {
+        unlocksList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('contact_unlocks').select());
+      } catch (e) {
+        debugPrint('Admin unlocks load error: $e');
+      }
 
       List<Map<String, dynamic>> carouselsList = [];
       try { carouselsList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('carousels').select().order('created_at', ascending: false)); } catch (_) {}
+      
       List<Map<String, dynamic>> payoutsList = [];
       try { payoutsList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('payout_requests').select().order('created_at', ascending: false)); } catch (_) {}
 
@@ -73,13 +86,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       ).toList();
 
       setState(() {
-        users = List<Map<String, dynamic>>.from(usersListRaw);
-        rooms = List<Map<String, dynamic>>.from(roomsList);
-        flatmates = List<Map<String, dynamic>>.from(flatmatesList);
-        unlocks = List<Map<String, dynamic>>.from(unlocksList);
+        users = usersListRaw;
+        rooms = roomsList;
+        flatmates = flatmatesList;
+        unlocks = unlocksList;
         payouts = payoutsList;
         carousels = carouselsList;
-        kycList = List<Map<String, dynamic>>.from(kycSubmissions);
+        kycList = kycSubmissions;
 
         totalUsers = users.length;
         totalRooms = rooms.length;
@@ -176,16 +189,38 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.25)),
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.05), color.withOpacity(0.15)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: color.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 12),
-        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: color)),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(color: color.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 26, color: color.withOpacity(0.9))),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(color: Colors.grey.shade800, fontSize: 13, fontWeight: FontWeight.w700)),
       ]),
     );
   }

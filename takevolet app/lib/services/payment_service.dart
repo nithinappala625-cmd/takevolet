@@ -78,7 +78,7 @@ class PaymentService {
 
       // 4. Launch Razorpay UI
       var options = {
-        'key': data['keyId'] ?? 'rzp_test_Sq0dFrEKuO85Mh',
+        'key': data['keyId'],
         'amount': 50000,
         'name': 'Takevolet',
         'description': 'Unlock Room Contact',

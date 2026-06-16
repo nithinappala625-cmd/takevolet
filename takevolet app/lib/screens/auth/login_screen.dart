@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import '../../main.dart';
 
@@ -241,10 +243,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    Text(
-                      'By continuing, you agree to our Terms of Service\nand Privacy Policy.',
+                    RichText(
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12, height: 1.5),
+                      text: TextSpan(
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12, height: 1.5),
+                        children: [
+                          const TextSpan(text: 'By continuing, you agree to our '),
+                          TextSpan(
+                            text: 'Terms of Service',
+                            style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                            recognizer: TapGestureRecognizer()..onTap = () async {
+                              final uri = Uri.parse('https://takevolet.online/terms-and-conditions');
+                              if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            },
+                          ),
+                          const TextSpan(text: '\nand '),
+                          TextSpan(
+                            text: 'Privacy Policy.',
+                            style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                            recognizer: TapGestureRecognizer()..onTap = () async {
+                              final uri = Uri.parse('https://takevolet.online/privacy-policy');
+                              if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

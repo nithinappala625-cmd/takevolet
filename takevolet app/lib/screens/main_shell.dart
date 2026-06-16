@@ -93,15 +93,16 @@ class MainShell extends StatelessWidget {
               const SizedBox(height: 16),
               _buildPostOption(
                 context: sheetContext,
-                icon: Icons.shopping_bag_rounded,
-                title: 'Sell an Item',
-                subtitle: 'Furniture, electronics, etc.',
-                color: const Color(0xFF8E44AD),
+                icon: Icons.assignment_rounded,
+                title: 'Post a Requirement',
+                subtitle: 'Looking for a room or flatmate?',
+                color: const Color(0xFF27AE60),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  _handlePostNavigation(parentContext, '/add-item');
+                  _handlePostNavigation(parentContext, '/add-requirement');
                 },
               ),
+              const SizedBox(height: 24),
             ],
           ),
         );
@@ -168,9 +169,9 @@ class MainShell extends StatelessWidget {
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/rooms')) return 1;
-    if (location.startsWith('/flatmates')) return 2;
-    if (location.startsWith('/marketplace')) return 3;
+    if (location.startsWith('/feed')) return 1;
+    if (location.startsWith('/rooms')) return 2;
+    if (location.startsWith('/flatmates')) return 3;
     if (location.startsWith('/profile')) return 4;
     return 0;
   }
@@ -181,13 +182,13 @@ class MainShell extends StatelessWidget {
         context.go('/home');
         break;
       case 1:
-        context.go('/rooms');
+        context.go('/feed');
         break;
       case 2:
-        context.go('/flatmates');
+        context.go('/rooms');
         break;
       case 3:
-        context.go('/marketplace');
+        context.go('/flatmates');
         break;
       case 4:
         context.go('/profile');
@@ -217,9 +218,9 @@ class MainShell extends StatelessWidget {
         indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.feed_outlined), selectedIcon: Icon(Icons.feed), label: 'Feed'),
           NavigationDestination(icon: Icon(Icons.bed_outlined), selectedIcon: Icon(Icons.bed), label: 'Rooms'),
           NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Flatmates'),
-          NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Market'),
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

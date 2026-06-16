@@ -162,7 +162,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
       }
 
       var options = {
-        'key': data['keyId'] ?? 'rzp_test_Sq0dFrEKuO85Mh',
+        'key': data['keyId'],
         'amount': amount * 100,
         'name': 'Takevolet',
         'description': desc,

@@ -178,7 +178,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       }
 
       var options = {
-        'key': data['keyId'] ?? 'rzp_test_Sq0dFrEKuO85Mh',
+        'key': data['keyId'],
         'amount': amount * 100,
         'name': 'Takevolet',
         'description': desc,
@@ -565,6 +565,228 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     );
   }
 
+  Widget _buildPremiumPlans() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Center(
+            child: Text('PREMIUM ROOM HUNTING', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F5A3E), letterSpacing: 1.2)),
+          ),
+          const SizedBox(height: 16),
+          _buildPlan1Card(),
+          const SizedBox(height: 16),
+          _buildPlan2Card(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlan1Card() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F5A3E), // Dark green from poster
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: const BoxDecoration(
+              color: Color(0xFF0A3E2A),
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+            ),
+            child: const Column(
+              children: [
+                Text('PLAN 1', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                SizedBox(height: 4),
+                Text('GENERAL ROOM HUNT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.white,
+            child: Column(
+              children: [
+                const Text('GET ROOM LOCATION ADDRESS & OWNER CONTACT', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.black87)),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFFFD700), borderRadius: BorderRadius.circular(4)),
+                  child: const Text('WE SHARE, YOU VISIT & CHECK!', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: _buildPriceBox('ROOM RENT UNDER ₹10,000', '₹300', 'VISIT 5 HOUSES', '₹1,200', '₹500', 'VISIT 10 HOUSES')),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildPriceBox('ROOM RENT ABOVE ₹10,000', '₹300', 'VISIT 5 HOUSES', '₹2,200', '₹500', 'VISIT 10 HOUSES')),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(color: const Color(0xFF0F5A3E), borderRadius: BorderRadius.circular(8)),
+                  child: const Text('PAY PLATFORM FEE AFTER ROOM CONFIRMED', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+                )
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceBox(String header, String p1, String v1, String fee, String p2, String v2) {
+    return Container(
+      decoration: BoxDecoration(border: Border.all(color: const Color(0xFF0F5A3E), width: 2), borderRadius: BorderRadius.circular(8)),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            color: const Color(0xFF0F5A3E),
+            child: Text(header, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 9)),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Pay\n$p1', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0F5A3E))),
+                    Text(v1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
+                  ],
+                ),
+                const Divider(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Pay\n$p2', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0F5A3E))),
+                    Text(v2, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                  decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(4)),
+                  child: Text('Confirmed Fee: $fee', style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.bold, fontSize: 9)),
+                )
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlan2Card() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F5A3E), // Dark green
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: const BoxDecoration(
+              color: Color(0xFF0A3E2A),
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+            ),
+            child: const Column(
+              children: [
+                Text('PLAN 2', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                SizedBox(height: 4),
+                Text('PERSONAL ROOM HUNT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.white,
+            child: Column(
+              children: [
+                const Text('BASED ON YOUR REQUIREMENT • BUDGET • LOCATION', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.black87)),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFFFD700), borderRadius: BorderRadius.circular(4)),
+                  child: const Text('WE SEARCH. WE VISIT. WE HANDOVER.', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: _buildPlan2PriceBox('RENT UNDER ₹10,000', '₹599', '₹1,200')),
+                    const SizedBox(width: 8),
+                    const Text('OR', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildPlan2PriceBox('RENT ABOVE ₹10,000', '₹799', '₹2,500')),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(color: const Color(0xFF0F5A3E), borderRadius: BorderRadius.circular(8)),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.verified, color: Colors.white, size: 16),
+                          SizedBox(width: 6),
+                          Text('50% REFUND IF NOT SATISFIED', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlan2PriceBox(String header, String dayPrice, String fee) {
+    return Container(
+      decoration: BoxDecoration(border: Border.all(color: const Color(0xFF0F5A3E), width: 2), borderRadius: BorderRadius.circular(8)),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            color: const Color(0xFF0F5A3E),
+            child: Text(header, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 9)),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Text(dayPrice, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Color(0xFF0F5A3E))),
+                const Text('PER DAY (4 HOURS)', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                const Text('₹149 PER HOUR', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
+                const Divider(),
+                const Text('PLATFORM FEE', style: TextStyle(fontSize: 8, color: Colors.grey, fontWeight: FontWeight.bold)),
+                Text(fee, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                const Text('(To be paid after room confirmed)', textAlign: TextAlign.center, style: TextStyle(fontSize: 7, color: Colors.grey)),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   Widget _buildProgressStep(String number, String label, bool active) {
     return Column(
       children: [
@@ -790,7 +1012,11 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
                 // CONTACT UNLOCKED CARD
                 if (_hasUnlocked) _buildContactUnlockedCard()
-                else _buildPosterInfoCard(),
+                else ...[
+                  _buildPosterInfoCard(),
+                  const SizedBox(height: 16),
+                  _buildPremiumPlans(),
+                ],
 
                 const SizedBox(height: 24),
               ],

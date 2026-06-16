@@ -30,6 +30,8 @@ import 'screens/marketplace/item_detail_screen.dart';
 import 'screens/add_room/add_room_screen.dart';
 import 'screens/add_flatmate/add_flatmate_screen.dart';
 import 'screens/add_item/add_item_screen.dart';
+import 'screens/feed/feed_screen.dart';
+import 'screens/add_requirement/add_requirement_screen.dart';
 
 // Supabase Configuration
 const supabaseUrl = 'https://vwcqovrbvhztpkultqjl.supabase.co';
@@ -98,12 +100,14 @@ final _router = GoRouter(
         GoRoute(path: '/rooms', builder: (context, state) => const RoomsScreen()),
         GoRoute(path: '/flatmates', builder: (context, state) => const FlatmatesScreen()),
         GoRoute(path: '/marketplace', builder: (context, state) => const MarketplaceScreen()),
+        GoRoute(path: '/feed', builder: (context, state) => const FeedScreen()),
         GoRoute(path: '/profile', builder: (context, state) => const ProfileDashboardScreen()),
       ],
     ),
     GoRoute(path: '/add-room', builder: (context, state) => const AddRoomScreen()),
     GoRoute(path: '/add-flatmate', builder: (context, state) => const AddFlatmateScreen()),
     GoRoute(path: '/add-item', builder: (context, state) => const AddItemScreen()),
+    GoRoute(path: '/add-requirement', builder: (context, state) => const AddRequirementScreen()),
   ],
 );
 

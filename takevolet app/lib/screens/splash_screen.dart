@@ -53,6 +53,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     if (!mounted) return;
     final session = supabase.auth.currentSession;
     if (session != null) {
+      // Sync Google Avatar if present
+      try {
+        final user = session.user;
+        final avatarUrl = user.userMetadata?['avatar_url'] ?? user.userMetadata?['picture'];
+        if (avatarUrl != null && avatarUrl.toString().isNotEmpty) {
+          final profile = await supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle();
+          if (profile != null && (profile['avatar_url'] == null || profile['avatar_url'].toString().isEmpty)) {
+            await supabase.from('profiles').update({'avatar_url': avatarUrl}).eq('id', user.id);
+          }
+        }
+      } catch (_) {}
+
       context.go('/home');
     } else {
       context.go('/login');

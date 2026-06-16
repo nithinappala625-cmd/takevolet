@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:timeago/timeago.dart' as timeago;
 import '../../main.dart';
 import '../../utils/image_utils.dart';
 import '../../widgets/smart_image.dart';
@@ -28,6 +29,28 @@ class _HomeScreenState extends State<HomeScreen> {
     if (table == 'flatmates') query = query.eq('is_available', true);
     if (table == 'items') query = query.eq('is_available', true);
     return await query.order('created_at', ascending: false).limit(10);
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchRecentRequirements() async {
+    final reqs = await supabase.from('requirements').select().order('created_at', ascending: false).limit(2);
+    List<Map<String, dynamic>> finalReqs = List<Map<String, dynamic>>.from(reqs);
+    if (finalReqs.isNotEmpty) {
+      final userIds = finalReqs.map((e) => e['user_id']).where((id) => id != null).toSet().toList();
+      if (userIds.isNotEmpty) {
+        try {
+          final profiles = await supabase.from('profiles').select('id, full_name, avatar_url').inFilter('id', userIds);
+          final profileMap = { for (var p in profiles) p['id']: p };
+          for (var r in finalReqs) {
+            final pid = r['user_id'];
+            if (profileMap.containsKey(pid)) {
+              r['avatar_url'] = profileMap[pid]?['avatar_url'];
+              r['name'] = profileMap[pid]?['full_name'] ?? r['name'];
+            }
+          }
+        } catch (_) {}
+      }
+    }
+    return finalReqs;
   }
 
   Future<void> _launchUrl(String url) async {
@@ -434,61 +457,123 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildSectionHeader('Find Flatmates', () => context.go('/flatmates')),
             _buildHorizontalList(table: 'flatmates', itemBuilder: _buildFlatmateCard),
             const SizedBox(height: 24),
-            _buildSectionHeader('Marketplace Items', () => context.go('/marketplace')),
-            _buildHorizontalList(table: 'items', itemBuilder: _buildItemCard),
+            _buildSectionHeader('Recent Requirements', () => context.go('/feed')),
+            _buildRecentRequirements(),
             const SizedBox(height: 24),
-            // Bangalore Launch Banner
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6)),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text('🎉 COMING SOON', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text('We are launching\nin Bangalore!', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, height: 1.2)),
-                        const SizedBox(height: 6),
-                        Text('Find rooms, flatmates & more in Bangalore soon.', style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: const Icon(Icons.location_city, color: Colors.white, size: 32),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 32),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRecentRequirements() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchRecentRequirements(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));
+        final reqs = snapshot.data;
+        if (reqs == null || reqs.isEmpty) return const Center(child: Text('No recent requirements.'));
+        return Column(
+          children: reqs.map((req) => _buildReqCard(req)).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildReqCard(Map<String, dynamic> req) {
+    final name = req['name'] ?? 'Unknown';
+    final location = req['preferred_locations'] ?? 'Any location';
+    final budget = req['budget'] ?? 'Negotiable';
+    final description = req['description'] ?? '';
+    final createdAtStr = req['created_at'];
+    final avatarUrl = req['avatar_url'];
+    final roomType = req['room_type'] ?? 'Any';
+    
+    String timeAgo = '';
+    if (createdAtStr != null) {
+      try {
+        timeAgo = timeago.format(DateTime.parse(createdAtStr));
+      } catch (_) {}
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 6)),
+        ],
+        border: Border.all(color: Colors.grey.shade200, width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: const Color(0xFFD4AF37).withOpacity(0.2),
+                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                  child: avatarUrl == null 
+                      ? Text(name.isNotEmpty ? name[0].toUpperCase() : 'U', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37), fontSize: 16))
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      if (timeAgo.isNotEmpty) Text(timeAgo, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
+                  child: Text('Looking for Room', style: TextStyle(color: Colors.blue.shade700, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            if (description.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(description, style: TextStyle(fontSize: 14, color: Colors.grey.shade800), maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                _buildSmallTag(Icons.location_on, location, Colors.red),
+                _buildSmallTag(Icons.currency_rupee, budget, Colors.green),
+                _buildSmallTag(Icons.house_siding, roomType, Colors.purple),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmallTag(IconData icon, String text, MaterialColor color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color.shade700),
+          const SizedBox(width: 4),
+          Text(text, style: TextStyle(color: color.shade800, fontSize: 11, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }

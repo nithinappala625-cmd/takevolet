@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart';
 
 class ProfileDashboardScreen extends StatefulWidget {
@@ -79,8 +80,9 @@ class _ProfileDashboardScreenState extends State<ProfileDashboardScreen> {
       return profile!['avatar_url'];
     }
     final meta = user?.userMetadata;
-    if (meta != null && (meta['avatar_url'] ?? '').isNotEmpty) {
-      return meta['avatar_url'];
+    if (meta != null) {
+      if ((meta['avatar_url'] ?? '').isNotEmpty) return meta['avatar_url'];
+      if ((meta['picture'] ?? '').isNotEmpty) return meta['picture'];
     }
     return null;
   }
@@ -248,6 +250,18 @@ class _ProfileDashboardScreenState extends State<ProfileDashboardScreen> {
             const SizedBox(height: 8),
             const Divider(),
 
+            const SizedBox(height: 12),
+            const Text('Legal & Support', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 8),
+
+            _buildMenuItem(Icons.privacy_tip_outlined, 'Privacy Policy', Colors.blueGrey, () => _launchUrl('https://takevolet.online/privacy-policy')),
+            _buildMenuItem(Icons.gavel_outlined, 'Terms & Conditions', Colors.blueGrey, () => _launchUrl('https://takevolet.online/terms-and-conditions')),
+            _buildMenuItem(Icons.receipt_long_outlined, 'Refund Policy', Colors.blueGrey, () => _launchUrl('https://takevolet.online/refund-policy')),
+            _buildMenuItem(Icons.contact_support_outlined, 'Contact Us', Colors.blueGrey, () => _launchUrl('https://takevolet.online/contact-us')),
+
+            const SizedBox(height: 12),
+            const Divider(),
+
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
@@ -257,6 +271,46 @@ class _ProfileDashboardScreenState extends State<ProfileDashboardScreen> {
               title: const Text('Sign Out', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
               trailing: const Icon(Icons.chevron_right, color: Colors.red),
               onTap: _signOut,
+            ),
+            
+            const SizedBox(height: 12),
+            
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.black.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.delete_forever, color: Colors.black87, size: 20),
+              ),
+              title: const Text('Delete Account', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+              subtitle: const Text('Permanently remove your data', style: TextStyle(fontSize: 11, color: Colors.grey)),
+              trailing: const Icon(Icons.chevron_right, color: Colors.black87),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+                    content: const Text('Are you sure you want to delete your account? This action cannot be undone. All your listings, earnings, and profile data will be permanently removed.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                      ElevatedButton(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          // Handle account deletion by calling edge function or sending request
+                          try {
+                            await supabase.rpc('delete_user_account');
+                            await supabase.auth.signOut();
+                            if (mounted) context.go('/login');
+                          } catch (e) {
+                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete account. Please contact support@takevolet.online.'), backgroundColor: Colors.red));
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 32),
@@ -294,5 +348,14 @@ class _ProfileDashboardScreenState extends State<ProfileDashboardScreen> {
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap,
     );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not launch $url')));
+      }
+    }
   }
 }

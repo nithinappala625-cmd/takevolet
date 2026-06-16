@@ -58,7 +58,7 @@ class _PricingScreenState extends State<PricingScreen> {
       }
 
       var options = {
-        'key': data['keyId'] ?? 'rzp_test_Sq0dFrEKuO85Mh',
+        'key': data['keyId'],
         'amount': priceInRupees * 100,
         'name': 'Takevolet',
         'description': planName,
