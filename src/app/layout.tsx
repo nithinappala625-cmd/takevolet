@@ -5,6 +5,7 @@ import "./globals.css";
 import NavbarWrapper from "@/components/NavbarWrapper";
 import { Suspense } from "react";
 import { MetaPixel } from "@/components/MetaPixel";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -363,6 +364,7 @@ export default function RootLayout({
         {/* End Google Tag Manager (noscript) */}
         <NavbarWrapper />
         <main className="min-h-screen">{children}</main>
+        <SpeedInsights />
       </body>
     </html>
   );
