@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
       // Supabase Storage (public bucket CDN)
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "https", hostname: "*.supabase.in" },
+      // Cloudflare R2 Storage (New Image Host)
+      { protocol: "https", hostname: "pub-6e2dfd0939c946adb7029c6cdae04896.r2.dev" },
       // Google profile avatars (Google OAuth)
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
