@@ -1,44 +1,53 @@
 import { NextResponse } from "next/server";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-export async function POST(request: Request) {
+const S3 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || "",
+  },
+});
+
+export async function POST(req: Request) {
   try {
-    const formData = await request.formData();
-    const files = formData.getAll("file") as File[];
-    const folder = (formData.get("folder") as string) || "Takevolet";
+    const { filename, contentType } = await req.json();
 
-    if (!process.env.CLOUDINARY_CLOUD_NAME) {
-      // Return placeholder URLs if Cloudinary not configured
-      const placeholders = files.map((_, i) => `https://images.unsplash.com/photo-150269026626${i}?w=800&q=80`);
-      return NextResponse.json({ urls: placeholders, success: true });
+    if (!filename || !contentType) {
+      return NextResponse.json(
+        { error: "Filename and contentType are required" },
+        { status: 400 }
+      );
     }
 
-    const uploadPromises = files.map(async (file) => {
-      const formDataUpload = new FormData();
-      formDataUpload.append("file", file);
-      formDataUpload.append("upload_preset", process.env.CLOUDINARY_UPLOAD_PRESET || "Takevolet");
-      formDataUpload.append("folder", `Takevolet/${folder}`);
+    const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME;
 
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/auto/upload`,
-        {
-          method: "POST",
-          body: formDataUpload,
-        }
-      );
+    if (!process.env.CLOUDFLARE_R2_ACCOUNT_ID) {
+      return NextResponse.json({ error: "Missing R2 credentials" }, { status: 500 });
+    }
 
-      if (response.ok) {
-        const data = await response.json();
-        return data.secure_url;
-      }
-      return null;
+    const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: filename, // e.g., 'Takevolet/rooms/image.jpg'
+      ContentType: contentType,
     });
 
-    const results = await Promise.all(uploadPromises);
-    const uploadedUrls = results.filter((url): url is string => url !== null);
+    // The presigned URL expires in 15 minutes
+    const presignedUrl = await getSignedUrl(S3, command, { expiresIn: 900 });
 
-    return NextResponse.json({ urls: uploadedUrls, success: true });
-  } catch (error) {
-    console.error("Upload error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    const publicUrl = `${process.env.NEXT_PUBLIC_CLOUDFLARE_R2_URL}/${filename}`;
+
+    return NextResponse.json({
+      presignedUrl,
+      publicUrl,
+    });
+  } catch (error: any) {
+    console.error("Error generating presigned URL:", error);
+    return NextResponse.json(
+      { error: "Failed to generate upload URL" },
+      { status: 500 }
+    );
   }
 }

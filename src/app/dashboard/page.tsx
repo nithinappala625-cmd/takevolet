@@ -212,17 +212,27 @@ function DashboardContent() {
     setQrUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const fileName = `${user!.id}-${Date.now()}.${ext}`;
+      const fileName = `Takevolet/qrcodes/${user!.id}-${Date.now()}.${ext}`;
       
-      const { data, error } = await supabase.storage
-        .from("room-media")
-        .upload(`qrcodes/${fileName}`, file, { upsert: true });
-        
-      if (error) throw error;
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from("room-media")
-        .getPublicUrl(`qrcodes/${fileName}`);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: fileName, contentType: file.type }),
+      });
+
+      if (!res.ok) throw new Error("Failed to get presigned URL");
+
+      const { presignedUrl, publicUrl } = await res.json();
+
+      const uploadRes = await fetch(presignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      if (!uploadRes.ok) throw new Error("Failed to upload QR code");
         
       setPayoutQrCode(publicUrl);
     } catch (error: any) {

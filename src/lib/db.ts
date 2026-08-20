@@ -396,78 +396,90 @@ export async function uploadRoomMedia(
   type: "image" | "video",
   onProgress?: (progress: number) => void
 ): Promise<{ url: string | null; error: any }> {
-  const ext = file.name.split(".").pop();
-  const path = `${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  try {
+    const ext = file.name.split(".").pop();
+    const fileName = `Takevolet/rooms/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
-  if (type === "video") {
-    return new Promise(async (resolve) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const upload = new tus.Upload(file, {
-        endpoint: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/upload/resumable`,
-        retryDelays: [0, 3000, 5000, 10000, 20000],
-        headers: {
-          authorization: `Bearer ${session?.access_token || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-          'x-upsert': 'true',
-        },
-        uploadDataDuringCreation: true,
-        removeFingerprintOnSuccess: true,
-        metadata: {
-          bucketName: 'room-media',
-          objectName: path,
-          contentType: file.type,
-          cacheControl: '3600',
-        },
-        chunkSize: 6 * 1024 * 1024, // 6MB chunk size
-        onError: function (error) {
-          console.error('TUS upload error:', error);
-          resolve({ url: null, error: error.message || error.toString() });
-        },
-        onProgress: function (bytesUploaded, bytesTotal) {
-          const percentage = ((bytesUploaded / bytesTotal) * 100);
-          if (onProgress) onProgress(percentage);
-        },
-        onSuccess: function () {
-          const { data } = supabase.storage.from("room-media").getPublicUrl(path);
-          resolve({ url: data.publicUrl, error: null });
-        },
-      });
-
-      upload.findPreviousUploads().then(function (previousUploads) {
-        if (previousUploads.length) {
-          upload.resumeFromPreviousUpload(previousUploads[0]);
-        } else {
-          upload.start();
-        }
-      });
+    // 1. Get presigned URL from our API
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: fileName, contentType: file.type }),
     });
+
+    if (!res.ok) {
+      throw new Error("Failed to get presigned URL");
+    }
+
+    const { presignedUrl, publicUrl } = await res.json();
+
+    // 2. Upload file directly to Cloudflare R2 using the presigned URL
+    // XMLHttpRequest is used here instead of fetch to support upload progress tracking (vital for videos)
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable && onProgress) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          onProgress(percentComplete);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve({ url: publicUrl, error: null });
+        } else {
+          resolve({ url: null, error: `Upload failed with status: ${xhr.status}` });
+        }
+      };
+
+      xhr.onerror = () => {
+        resolve({ url: null, error: "Network error during upload" });
+      };
+
+      xhr.open("PUT", presignedUrl, true);
+      xhr.setRequestHeader("Content-Type", file.type);
+      xhr.send(file);
+    });
+  } catch (error: any) {
+    console.error("Upload error:", error);
+    return { url: null, error: error.message || "Upload failed" };
   }
-
-  // Standard upload for images (usually small)
-  const { error: uploadError } = await supabase.storage
-    .from("room-media")
-    .upload(path, file, { cacheControl: "3600", upsert: false });
-
-  if (uploadError) return { url: null, error: uploadError };
-
-  const { data } = supabase.storage.from("room-media").getPublicUrl(path);
-  return { url: data.publicUrl, error: null };
 }
 
 export async function uploadAadhaar(
   userId: string,
   file: File
 ): Promise<{ url: string | null; error: any }> {
-  const ext = file.name.split(".").pop();
-  const path = `${userId}/aadhaar.${ext}`;
+  try {
+    const ext = file.name.split(".").pop();
+    const fileName = `Takevolet/kyc/${userId}/aadhaar.${ext}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from("kyc-docs")
-    .upload(path, file, { cacheControl: "3600", upsert: true });
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: fileName, contentType: file.type }),
+    });
 
-  if (uploadError) return { url: null, error: uploadError };
-  return { url: path, error: null };
+    if (!res.ok) throw new Error("Failed to get presigned URL");
+
+    const { presignedUrl, publicUrl } = await res.json();
+
+    const uploadRes = await fetch(presignedUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type,
+      },
+      body: file,
+    });
+
+    if (!uploadRes.ok) throw new Error("Failed to upload file to Cloudflare");
+
+    return { url: publicUrl, error: null };
+  } catch (error: any) {
+    console.error("Aadhaar upload error:", error);
+    return { url: null, error: error.message || "Upload failed" };
+  }
 }
 
 // ─── EARNINGS ────────────────────────────────────────────────────────────────
