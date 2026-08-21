@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   }
 
   // Fetch all data in parallel
-  const [payoutsRes, interestsRes, handoversRes, profilesRes, roomsRes, flatmatesRes, contactUnlocksRes, flatmateUnlocksRes] = await Promise.all([
+  const [payoutsRes, interestsRes, handoversRes, profilesRes, roomsRes, flatmatesRes, contactUnlocksRes, flatmateUnlocksRes, propertySalesRes, buildListingsRes] = await Promise.all([
     supabaseAdmin.from("payouts").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("interests").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("handovers").select("*").order("confirmed_at", { ascending: false }),
@@ -35,6 +35,8 @@ export async function GET(request: Request) {
     supabaseAdmin.from("flatmates").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("contact_unlocks").select("*, rooms(title, user_id, profiles!rooms_user_id_fkey(full_name, phone, whatsapp)), profiles!contact_unlocks_user_id_fkey(full_name)").order("created_at", { ascending: false }),
     supabaseAdmin.from("flatmate_contact_unlocks").select("*, flatmates(title, user_id, profiles!flatmates_user_id_fkey(full_name, phone, whatsapp)), profiles!flatmate_contact_unlocks_user_id_fkey(full_name)").order("created_at", { ascending: false }),
+    supabaseAdmin.from("property_sales").select("*").order("created_at", { ascending: false }),
+    supabaseAdmin.from("build_listings").select("*").order("created_at", { ascending: false }),
   ]);
 
   const payouts   = payoutsRes.data   || [];
@@ -43,6 +45,8 @@ export async function GET(request: Request) {
   const profiles  = profilesRes.data  || [];
   const rooms     = roomsRes.data     || [];
   const flatmates = flatmatesRes.data || [];
+  const propertySales = propertySalesRes.data || [];
+  const buildListings = buildListingsRes.data || [];
   const contactUnlocks = contactUnlocksRes.data || [];
   const flatmateUnlocks = flatmateUnlocksRes.data || [];
 
@@ -123,6 +127,8 @@ export async function GET(request: Request) {
       totalPayoutRequests:  payouts.length,
       totalUsers:           profiles.length,
       totalRooms:           rooms.length,
+      totalPropertySales:   propertySales.length,
+      totalBuildListings:   buildListings.length,
     },
     payouts: payouts.map((p: any) => ({
       ...p,
@@ -219,6 +225,32 @@ export async function GET(request: Request) {
       description:  f.description || "",
       genderPref:   f.gender_pref || "Any",
       professionPref: f.profession_pref || "Any",
+      metadata:     f.metadata || {},
+    })),
+    propertySales: propertySales.map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      location: p.location,
+      property_type: p.property_type,
+      user_id: p.user_id,
+      is_available: p.is_available,
+      images: p.images || [],
+      videos: p.videos || [],
+      metadata: p.metadata || {},
+      created_at: p.created_at,
+    })),
+    buildListings: buildListings.map((b: any) => ({
+      id: b.id,
+      title: b.title,
+      category: b.category,
+      location: b.location,
+      user_id: b.user_id,
+      is_available: b.is_available,
+      images: b.images || [],
+      videos: b.videos || [],
+      metadata: b.metadata || {},
+      created_at: b.created_at,
     })),
   });
 }
@@ -302,9 +334,12 @@ export async function DELETE(request: Request) {
   } else if (type === "flatmate") {
     const res = await supabaseAdmin.from("flatmates").delete().eq("id", id);
     error = res.error;
-  } else if (type === "marketplace" || type === "item") {
-    // Marketplace is mock-only, so we just return success
-    return NextResponse.json({ success: true });
+  } else if (type === "property_sales") {
+    const res = await supabaseAdmin.from("property_sales").delete().eq("id", id);
+    error = res.error;
+  } else if (type === "build_listings") {
+    const res = await supabaseAdmin.from("build_listings").delete().eq("id", id);
+    error = res.error;
   }
 
   if (error) {
@@ -336,9 +371,13 @@ export async function PUT(request: Request) {
     genderPreference,
     genderPref,
     professionPref,
+    price,
+    property_type,
+    category,
     images,
     videos,
     userData, // added for user type
+    metadata, // added for dynamic json fields
   } = body;
 
   if (!type || !id) {
@@ -362,6 +401,7 @@ export async function PUT(request: Request) {
         gender_preference: genderPreference,
         images,
         videos,
+        ...(metadata && { metadata }),
       })
       .eq("id", id)
       .select()
@@ -391,15 +431,46 @@ export async function PUT(request: Request) {
         profession_pref: professionPref,
         images,
         videos,
+        ...(metadata && { metadata }),
       })
       .eq("id", id)
       .select()
       .single();
     data = res.data;
     error = res.error;
-  } else if (type === "marketplace" || type === "item") {
-    // Marketplace is mock-only, so we just return success
-    return NextResponse.json({ success: true, data: body });
+  } else if (type === "property_sales") {
+    const res = await supabaseAdmin
+      .from("property_sales")
+      .update({
+        title,
+        price: Number(price || 0),
+        location,
+        property_type,
+        images,
+        videos,
+        ...(metadata && { metadata }),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+    data = res.data;
+    error = res.error;
+  } else if (type === "build_listings") {
+    const res = await supabaseAdmin
+      .from("build_listings")
+      .update({
+        title,
+        category,
+        location,
+        images,
+        videos,
+        ...(metadata && { metadata }),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+    data = res.data;
+    error = res.error;
   }
 
   if (error) {

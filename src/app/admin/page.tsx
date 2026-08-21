@@ -17,7 +17,7 @@ import { uploadRoomMedia } from "@/lib/db";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
-type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "marketplace" | "partners" | "ads" | "pages";
+type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "property_sales" | "build_listings";
 
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false);
@@ -34,17 +34,15 @@ export default function AdminPage() {
 
   const [localRooms, setLocalRooms] = useState<any[]>([]);
   const [localFlatmates, setLocalFlatmates] = useState<any[]>([]);
-  const [localMarketplace, setLocalMarketplace] = useState<any[]>([]);
-  const [localPartners, setLocalPartners] = useState<any[]>([]);
-  const [localAds, setLocalAds] = useState<any[]>([]);
-  const [localPages, setLocalPages] = useState<any[]>([]);
+  const [localPropertySales, setLocalPropertySales] = useState<any[]>([]);
+  const [localBuildListings, setLocalBuildListings] = useState<any[]>([]);
 
   const [editItem, setEditItem] = useState<any | null>(null);
-  const [editType, setEditType] = useState<"user" | "room" | "flatmate" | "marketplace" | "ad" | "page" | null>(null);
+  const [editType, setEditType] = useState<"user" | "room" | "flatmate" | "property_sales" | "build_listings" | null>(null);
   const [editLoading, setEditLoading] = useState(false);
 
   const [deleteItem, setDeleteItem] = useState<any | null>(null);
-  const [deleteType, setDeleteType] = useState<"room" | "flatmate" | "marketplace" | "ad" | "page" | null>(null);
+  const [deleteType, setDeleteType] = useState<"room" | "flatmate" | "property_sales" | "build_listings" | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [newImgUrl, setNewImgUrl] = useState("");
@@ -72,9 +70,8 @@ export default function AdminPage() {
     if (data) {
       setLocalRooms(data.rooms || []);
       setLocalFlatmates(data.flatmates || []);
-      if (localMarketplace.length === 0) {
-        setLocalMarketplace(MOCK_ITEMS);
-      }
+      setLocalPropertySales(data.propertySales || []);
+      setLocalBuildListings(data.buildListings || []);
     }
   }, [data]);
 
@@ -83,52 +80,6 @@ export default function AdminPage() {
     if (!editItem || !editType) return;
     setEditLoading(true);
     try {
-      if (editType === "ad") {
-        const adData = {
-          advertiser_name: editItem.advertiser_name,
-          title: editItem.title,
-          description: editItem.description,
-          url: editItem.url,
-          image_url: editItem.image_url,
-          placement: editItem.placement,
-          is_active: editItem.is_active,
-        };
-        let res;
-        if (editItem.id) {
-          res = await updateAdAction(editItem.id, adData);
-        } else {
-          res = await insertAdAction(adData);
-        }
-        if (res.error) throw new Error(res.error.message || "Failed to save ad");
-        
-        await fetchAds();
-        setEditItem(null);
-        setEditType(null);
-        setEditLoading(false);
-        return;
-      }
-
-      if (editType === "page") {
-        const pageData = {
-          slug: editItem.slug,
-          title: editItem.title,
-          content: editItem.content,
-        };
-        let res;
-        if (editItem.id) {
-          res = await updatePageAction(editItem.id, pageData);
-        } else {
-          res = await insertPageAction(pageData);
-        }
-        if (res.error) throw new Error(res.error.message || "Failed to save page");
-        
-        await fetchPages();
-        setEditItem(null);
-        setEditType(null);
-        setEditLoading(false);
-        return;
-      }
-
       const payload = {
         type: editType,
         id: editItem.id,
@@ -152,6 +103,9 @@ export default function AdminPage() {
       } else {
         Object.assign(payload, {
           title: editItem.title,
+          price: editItem.price,
+          property_type: editItem.property_type,
+          category: editItem.category,
           rent: editItem.rent,
           advance: editItem.advance,
           rentShare: editItem.rentShare,
@@ -165,6 +119,7 @@ export default function AdminPage() {
           professionPref: editItem.professionPref,
           images: editItem.images,
           videos: editItem.videos,
+          metadata: editItem.metadata,
         });
       }
 
@@ -182,8 +137,10 @@ export default function AdminPage() {
           setLocalRooms(prev => prev.map(item => item.id === editItem.id ? { ...item, ...editItem } : item));
         } else if (editType === "flatmate") {
           setLocalFlatmates(prev => prev.map(item => item.id === editItem.id ? { ...item, ...editItem } : item));
-        } else if (editType === "marketplace") {
-          setLocalMarketplace(prev => prev.map(item => item.id === editItem.id ? { ...item, ...editItem } : item));
+        } else if (editType === "property_sales") {
+          setLocalPropertySales(prev => prev.map(item => item.id === editItem.id ? { ...item, ...editItem } : item));
+        } else if (editType === "build_listings") {
+          setLocalBuildListings(prev => prev.map(item => item.id === editItem.id ? { ...item, ...editItem } : item));
         }
         setEditItem(null);
         setEditType(null);
@@ -199,58 +156,10 @@ export default function AdminPage() {
     }
   };
 
-  const fetchPartners = async () => {
-    try {
-      const { supabase } = await import("@/lib/supabase");
-      const { data } = await supabase.from("takevolet_partners").select("*").order("created_at", { ascending: false });
-      if (data) setLocalPartners(data);
-    } catch (e) {
-      console.error("Error fetching partners", e);
-    }
-  };
-
-  const fetchAds = async () => {
-    try {
-      const { supabase } = await import("@/lib/supabase");
-      const { data } = await supabase.from("ads").select("*").order("created_at", { ascending: false });
-      if (data) setLocalAds(data);
-    } catch (e) {
-      console.error("Error fetching ads", e);
-    }
-  };
-
-  const fetchPages = async () => {
-    try {
-      const pages = await fetchAllPagesAction();
-      setLocalPages(pages);
-    } catch (e) {
-      console.error("Error fetching pages", e);
-    }
-  };
-
   const handleDeleteConfirm = async () => {
     if (!deleteItem || !deleteType) return;
     setDeleteLoading(true);
     try {
-      if (deleteType === "ad") {
-        const res = await deleteAdAction(deleteItem.id);
-        if (res.error) throw new Error(res.error.message || "Failed to delete ad");
-        await fetchAds();
-        setDeleteItem(null);
-        setDeleteType(null);
-        setDeleteLoading(false);
-        return;
-      }
-      if (deleteType === "page") {
-        const res = await deletePageAction(deleteItem.id);
-        if (res.error) throw new Error(res.error.message || "Failed to delete page");
-        await fetchPages();
-        setDeleteItem(null);
-        setDeleteType(null);
-        setDeleteLoading(false);
-        return;
-      }
-
       const res = await fetch(`/api/admin/data?type=${deleteType}&id=${deleteItem.id}`, {
         method: "DELETE",
         headers: {
@@ -263,10 +172,10 @@ export default function AdminPage() {
           setLocalRooms(prev => prev.filter(item => item.id !== deleteItem.id));
         } else if (deleteType === "flatmate") {
           setLocalFlatmates(prev => prev.filter(item => item.id !== deleteItem.id));
-        } else if (deleteType === "marketplace") {
-          setLocalMarketplace(prev => prev.filter(item => item.id !== deleteItem.id));
-        } else if (deleteType === "ad") {
-          fetchAds();
+        } else if (deleteType === "property_sales") {
+          setLocalPropertySales(prev => prev.filter(item => item.id !== deleteItem.id));
+        } else if (deleteType === "build_listings") {
+          setLocalBuildListings(prev => prev.filter(item => item.id !== deleteItem.id));
         }
         setDeleteItem(null);
         setDeleteType(null);
@@ -288,9 +197,7 @@ export default function AdminPage() {
       setAuthed(true);
       setPwdError("");
       fetchData();
-      fetchPartners();
-      fetchAds();
-      fetchPages();
+
     } else {
       setPwdError("Incorrect password. Access denied.");
     }
@@ -504,7 +411,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex border-b border-border mb-6 overflow-x-auto bg-background">
-          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "marketplace", "partners", "ads", "pages"] as Tab[]).map(tab => (
+          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "property_sales", "build_listings"] as Tab[]).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-6 py-3.5 text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-all border-b-2 ${
                 activeTab === tab ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground"
@@ -515,10 +422,8 @@ export default function AdminPage() {
                 : tab === "users" ? `users (${users.length})`
                 : tab === "rooms" ? `rooms (${localRooms.length})`
                 : tab === "flatmates" ? `flatmates (${localFlatmates.length})`
-                : tab === "marketplace" ? `marketplace (${localMarketplace.length})`
-                : tab === "partners" ? `partners (${localPartners.length})`
-                : tab === "ads" ? `ads (${localAds.length})`
-                : tab === "pages" ? `pages (${localPages.length})`
+                : tab === "property_sales" ? `properties (${localPropertySales.length})`
+                : tab === "build_listings" ? `build (${localBuildListings.length})`
                 : tab}
             </button>
           ))}
@@ -1156,23 +1061,65 @@ export default function AdminPage() {
           </motion.div>
         )}
 
-        {/* ── MARKETPLACE ── */}
-        {activeTab === "marketplace" && (
+        {/* ── PROPERTY SALES TAB ── */}
+        {activeTab === "property_sales" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <p className="text-sm font-bold uppercase tracking-widest mb-4">Marketplace Items ({localMarketplace.length})</p>
-            {localMarketplace.length === 0 ? (
+            <p className="text-sm font-bold uppercase tracking-widest mb-4">Properties ({localPropertySales.length})</p>
+            {localPropertySales.length === 0 ? (
               <div className="bg-background border border-dashed border-border p-16 text-center">
                 <ShoppingBag size={32} className="mx-auto mb-3 text-muted-foreground" />
-                <p className="font-semibold text-muted-foreground">No marketplace items yet</p>
+                <p className="font-semibold text-muted-foreground">No properties yet</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-4">
-                {localMarketplace.map((m: any) => (
+                {localPropertySales.map((m: any) => (
                   <div key={m.id} className="bg-background border border-border p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
                     <div className="flex gap-4">
-                      {m.image ? (
+                      {(m.images && m.images.length > 0) ? (
                         <div className="w-20 h-20 shrink-0 border border-border overflow-hidden bg-black/95 flex items-center justify-center relative">
-                          <img src={m.image} alt="" className="max-w-full max-h-full object-contain" />
+                          <img src={m.images[0]} alt="" className="max-w-full max-h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 bg-secondary flex items-center justify-center shrink-0 border border-border">
+                          <Home size={24} className="text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate hover:text-primary transition-colors">{m.title}</p>
+                        <p className="text-xs text-muted-foreground">{m.location} · <span className="bg-secondary px-1.5 py-0.5 text-[9px] font-bold uppercase">{m.property_type || 'Unknown'}</span></p>
+                        <p className="text-xs text-primary font-bold mt-1">Price: ₹{m.price?.toLocaleString("en-IN")}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-border mt-4 pt-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => { setEditItem(m); setEditType("property_sales"); }} className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 text-[10px] font-bold uppercase transition-colors">Edit</button>
+                        <button onClick={() => { setDeleteItem(m); setDeleteType("property_sales"); }} className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 text-[10px] font-bold uppercase transition-colors">Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── BUILD LISTINGS TAB ── */}
+        {activeTab === "build_listings" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <p className="text-sm font-bold uppercase tracking-widest mb-4">Build Professionals ({localBuildListings.length})</p>
+            {localBuildListings.length === 0 ? (
+              <div className="bg-background border border-dashed border-border p-16 text-center">
+                <ShoppingBag size={32} className="mx-auto mb-3 text-muted-foreground" />
+                <p className="font-semibold text-muted-foreground">No build listings yet</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {localBuildListings.map((m: any) => (
+                  <div key={m.id} className="bg-background border border-border p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
+                    <div className="flex gap-4">
+                      {(m.images && m.images.length > 0) ? (
+                        <div className="w-20 h-20 shrink-0 border border-border overflow-hidden bg-black/95 flex items-center justify-center relative">
+                          <img src={m.images[0]} alt="" className="max-w-full max-h-full object-contain" />
                         </div>
                       ) : (
                         <div className="w-20 h-20 bg-secondary flex items-center justify-center shrink-0 border border-border">
@@ -1181,193 +1128,19 @@ export default function AdminPage() {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate hover:text-primary transition-colors">{m.title}</p>
-                        <p className="text-xs text-muted-foreground">{m.location} · <span className="bg-secondary px-1.5 py-0.5 text-[9px] font-bold uppercase">{m.category}</span></p>
-                        <p className="text-xs text-primary font-bold mt-1">
-                          {m.listingType === "rent" ? (
-                            `Rent: ₹${m.rentPrice}/mo`
-                          ) : m.listingType === "both" ? (
-                            `Buy: ₹${m.price?.toLocaleString("en-IN")} · Rent: ₹${m.rentPrice}/mo`
-                          ) : (
-                            `Price: ₹${m.price?.toLocaleString("en-IN")}`
-                          )}
-                          <span className="text-[10px] text-muted-foreground font-normal ml-2">({m.condition})</span>
-                        </p>
-                        {m.description && <p className="text-[11px] text-muted-foreground mt-2 line-clamp-2 italic font-light">"{m.description}"</p>}
+                        <p className="text-xs text-muted-foreground">{m.location} · <span className="bg-secondary px-1.5 py-0.5 text-[9px] font-bold uppercase">{m.category || 'Unknown'}</span></p>
                       </div>
                     </div>
-
                     <div className="flex items-center justify-between border-t border-border mt-4 pt-3">
-                      <div className="text-[10px] text-muted-foreground">
-                        Posted by: <span className="font-semibold">{m.postedBy?.name}</span>
-                      </div>
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => { setEditItem(m); setEditType("marketplace"); }}
-                          className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 text-[10px] font-bold uppercase transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => { setDeleteItem(m); setDeleteType("marketplace"); }}
-                          className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 text-[10px] font-bold uppercase transition-colors"
-                        >
-                          Delete
-                        </button>
+                        <button onClick={() => { setEditItem(m); setEditType("build_listings"); }} className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 text-[10px] font-bold uppercase transition-colors">Edit</button>
+                        <button onClick={() => { setDeleteItem(m); setDeleteType("build_listings"); }} className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 text-[10px] font-bold uppercase transition-colors">Delete</button>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </motion.div>
-        )}
-
-        {/* ── PARTNERS TAB ── */}
-        {activeTab === "partners" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-sm font-bold uppercase tracking-widest">Verified Partners ({localPartners.length})</p>
-              <button onClick={fetchPartners} className="flex items-center gap-2 text-xs font-bold text-primary hover:underline">
-                <RefreshCw size={12} /> Refresh
-              </button>
-            </div>
-            
-            {localPartners.length === 0 ? (
-              <div className="bg-background border border-dashed border-border p-16 text-center">
-                <Building2 size={32} className="mx-auto mb-3 text-muted-foreground" />
-                <p className="font-semibold text-muted-foreground">No partners found</p>
-                <p className="text-xs text-muted-foreground mt-2">Ensure the 'takevolet_partners' table exists in Supabase.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {localPartners.map((partner: any) => (
-                  <div key={partner.id} className="border border-border bg-card overflow-hidden">
-                    <div className="h-[200px] w-full bg-secondary/20 relative">
-                      {partner.image_url ? (
-                        <img src={partner.image_url} alt={partner.owner_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Building2 size={32} className="text-muted-foreground opacity-30" />
-                        </div>
-                      )}
-                      <div className="absolute top-2 left-2 bg-primary text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest shadow-lg">
-                        Partner
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <p className="font-bold text-lg mb-1">{partner.owner_name}</p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Home size={12} /> {partner.area || "Hyderabad"}
-                      </p>
-                      <div className="mt-4 pt-4 border-t border-border flex justify-between items-center text-xs">
-                        <span className="text-muted-foreground">Joined: {new Date(partner.created_at).toLocaleDateString()}</span>
-                        <span className="bg-green-500/10 text-green-500 px-2 py-1 rounded-full font-bold">Verified</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {/* ── ADS TAB ── */}
-        {activeTab === "ads" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-sm font-bold uppercase tracking-widest">Sponsorships & Ads ({localAds.length})</p>
-              <div className="flex gap-4">
-                <button onClick={fetchAds} className="flex items-center gap-2 text-xs font-bold text-primary hover:underline">
-                  <RefreshCw size={12} /> Refresh
-                </button>
-                <button onClick={() => { setEditItem({ is_active: true, placement: "home_page" }); setEditType("ad"); }} className="bg-primary text-primary-foreground px-4 py-2 text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2">
-                  <Star size={14} /> Create Ad
-                </button>
-              </div>
-            </div>
-            
-            {localAds.length === 0 ? (
-              <div className="bg-background border border-dashed border-border p-16 text-center">
-                <Star size={32} className="mx-auto mb-3 text-muted-foreground" />
-                <p className="font-semibold text-muted-foreground">No ads created yet</p>
-              </div>
-            ) : (
-              <div className="bg-background border border-border overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 p-4 border-b border-border bg-secondary/30 text-[9px] uppercase tracking-widest font-bold text-muted-foreground">
-                  <div className="col-span-3">Advertiser</div>
-                  <div className="col-span-4">Offer / Details</div>
-                  <div className="col-span-2">Placement</div>
-                  <div className="col-span-1">Status</div>
-                  <div className="col-span-2 text-right">Actions</div>
-                </div>
-                {localAds.map((ad: any) => (
-                  <div key={ad.id} className="grid grid-cols-12 gap-2 p-4 border-b border-border last:border-0 items-center hover:bg-secondary/10">
-                    <div className="col-span-3 flex items-center gap-3">
-                      {ad.image_url ? (
-                        <img src={ad.image_url} alt="" className="w-8 h-8 object-contain bg-white" />
-                      ) : (
-                        <div className="w-8 h-8 bg-secondary flex items-center justify-center shrink-0">
-                          <Star size={14} className="text-muted-foreground" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-bold text-sm truncate">{ad.advertiser_name}</p>
-                      </div>
-                    </div>
-                    <div className="col-span-4 min-w-0">
-                      <p className="font-semibold text-xs truncate">{ad.title}</p>
-                      {ad.description && <p className="text-[10px] text-muted-foreground truncate">{ad.description}</p>}
-                      <a href={ad.url} target="_blank" className="text-[10px] text-primary hover:underline truncate inline-block max-w-full">{ad.url}</a>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="bg-secondary px-2 py-1 text-[9px] uppercase tracking-wider font-bold">
-                        {ad.placement}
-                      </span>
-                    </div>
-                    <div className="col-span-1">
-                      {ad.is_active ? (
-                        <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider flex items-center gap-1"><CheckCircle2 size={10} /> Active</span>
-                      ) : (
-                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider flex items-center gap-1"><X size={10} /> Paused</span>
-                      )}
-                    </div>
-                    <div className="col-span-2 flex justify-end gap-2">
-                      <button onClick={() => { setEditItem(ad); setEditType("ad"); }} className="text-[10px] uppercase font-bold text-primary hover:underline">Edit</button>
-                      <button onClick={() => { setDeleteItem(ad); setDeleteType("ad"); }} className="text-[10px] uppercase font-bold text-red-500 hover:underline">Delete</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        )}
-
-
-
-        {/* ── PAGES ── */}
-        {activeTab === "pages" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-sm font-bold uppercase tracking-widest">Static Pages ({localPages.length})</p>
-              <button onClick={() => { setEditItem({ slug: '', title: '', content: '' }); setEditType('page'); }}
-                className="bg-primary text-primary-foreground px-4 py-2 text-xs font-bold uppercase hover:opacity-90">
-                + Add Page
-              </button>
-            </div>
-            <div className="space-y-4">
-              {localPages.map((page: any) => (
-                <div key={page.id} className="bg-background border border-border p-4 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold text-sm uppercase tracking-wider">{page.title}</p>
-                    <p className="text-xs text-muted-foreground font-mono">Slug: {page.slug}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setEditItem(page); setEditType("page"); }} className="text-[10px] uppercase font-bold text-primary hover:underline">Edit</button>
-                    <button onClick={() => { setDeleteItem(page); setDeleteType("page"); }} className="text-[10px] uppercase font-bold text-red-500 hover:underline">Delete</button>
-                  </div>
-                </div>
-              ))}
-            </div>
           </motion.div>
         )}
 
@@ -1392,81 +1165,7 @@ export default function AdminPage() {
                 {/* Form */}
                 <form onSubmit={handleSaveEdit} className="p-6 overflow-y-auto space-y-4 flex-1">
                   
-                  {editType === "page" && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Slug (e.g. about, privacy-policy)</label>
-                        <input type="text" required value={editItem.slug || ""} onChange={e => setEditItem({ ...editItem, slug: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Page Title</label>
-                        <input type="text" required value={editItem.title || ""} onChange={e => setEditItem({ ...editItem, title: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Page Content</label>
-                        <textarea rows={10} required value={editItem.content || ""} onChange={e => setEditItem({ ...editItem, content: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none font-mono" />
-                      </div>
-                    </div>
-                  )}
-
-                  {editType === "ad" ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Advertiser Name</label>
-                          <input type="text" required value={editItem.advertiser_name || ""} onChange={e => setEditItem({ ...editItem, advertiser_name: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="e.g. Porter" />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Placement</label>
-                          <select value={editItem.placement || "home_page"} onChange={e => setEditItem({ ...editItem, placement: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none">
-                            <option value="home_page">Home Page Carousel</option>
-                            <option value="rooms_page">Rooms Listing Page (Carousel)</option>
-                            <option value="marketplace_banner">Marketplace Banner</option>
-                            <option value="room_detail">Room Detail Page (Under Contact)</option>
-                            <option value="handover_success">Handover Confirmed Page</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Offer Title</label>
-                        <input type="text" required value={editItem.title || ""} onChange={e => setEditItem({ ...editItem, title: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="e.g. Book a mini truck from ₹499" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Description (Optional)</label>
-                        <input type="text" value={editItem.description || ""} onChange={e => setEditItem({ ...editItem, description: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="e.g. Moving soon? Book now ->" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Destination URL</label>
-                          <input type="url" required value={editItem.url || ""} onChange={e => setEditItem({ ...editItem, url: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="https://..." />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Ad Image (Upload or URL)</label>
-                          <div className="flex flex-col gap-2">
-                            <input type="url" value={editItem.image_url || ""} onChange={e => setEditItem({ ...editItem, image_url: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none" placeholder="https://..." />
-                            <input type="file" accept="image/*" onChange={async (e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                const file = e.target.files[0];
-                                alert("Uploading image...");
-                                const { url, error } = await uploadRoomMedia("admin", file, "image");
-                                if (error) {
-                                  alert("Upload failed: " + error.message);
-                                } else if (url) {
-                                  setEditItem({ ...editItem, image_url: url });
-                                  alert("Upload successful!");
-                                }
-                              }
-                            }} className="text-xs" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 mt-4">
-                        <input type="checkbox" id="ad_active" checked={editItem.is_active ?? true} onChange={e => setEditItem({ ...editItem, is_active: e.target.checked })} className="w-4 h-4 accent-primary" />
-                        <label htmlFor="ad_active" className="text-sm font-bold uppercase tracking-widest cursor-pointer">Ad is Active</label>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
+                  {/* Listing Title (Common) */}
                       <div>
                         <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Listing Title</label>
                         <input
@@ -1510,8 +1209,6 @@ export default function AdminPage() {
                           />
                         </div>
                       </div>
-                    </>
-                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     {editType === "room" && (
@@ -1564,32 +1261,49 @@ export default function AdminPage() {
                       </>
                     )}
 
-                    {editType === "marketplace" && (
+                    {editType === "property_sales" && (
                       <>
-                        {(editItem.listingType === "sell" || editItem.listingType === "both") && (
-                          <div>
-                            <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Selling Price</label>
-                            <input
-                              type="number"
-                              required
-                              value={editItem.price || 0}
-                              onChange={e => setEditItem({ ...editItem, price: Number(e.target.value) })}
-                              className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
-                            />
-                          </div>
-                        )}
-                        {(editItem.listingType === "rent" || editItem.listingType === "both") && (
-                          <div>
-                            <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Rent Price / Mo</label>
-                            <input
-                              type="number"
-                              required
-                              value={editItem.rentPrice || 0}
-                              onChange={e => setEditItem({ ...editItem, rentPrice: Number(e.target.value) })}
-                              className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
-                            />
-                          </div>
-                        )}
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Property Type</label>
+                          <select
+                            value={editItem.property_type || "apartment"}
+                            onChange={e => setEditItem({ ...editItem, property_type: e.target.value })}
+                            className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
+                          >
+                            <option value="apartment">Apartment</option>
+                            <option value="villa">Villa</option>
+                            <option value="independent_house">Independent House</option>
+                            <option value="plot">Plot/Land</option>
+                            <option value="commercial">Commercial</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Selling Price</label>
+                          <input
+                            type="number"
+                            required
+                            value={editItem.price || 0}
+                            onChange={e => setEditItem({ ...editItem, price: Number(e.target.value) })}
+                            className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {editType === "build_listings" && (
+                      <>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">Category</label>
+                          <select
+                            value={editItem.category || "contractor"}
+                            onChange={e => setEditItem({ ...editItem, category: e.target.value })}
+                            className="w-full border border-border px-3 py-2 text-sm bg-background focus:border-primary focus:outline-none"
+                          >
+                            <option value="contractor">Contractor</option>
+                            <option value="architect">Architect</option>
+                            <option value="interior_designer">Interior Designer</option>
+                            <option value="material_supplier">Material Supplier</option>
+                          </select>
+                        </div>
                       </>
                     )}
                   </div>
@@ -1606,7 +1320,7 @@ export default function AdminPage() {
                   </div>
 
                   {/* VISUAL MEDIA CRUD SECTION */}
-                  {(editType === "room" || editType === "flatmate") && (
+                  {(editType === "room" || editType === "flatmate" || editType === "property_sales" || editType === "build_listings") && (
                     <div className="border border-border p-4 bg-secondary/10 space-y-4">
                       <p className="text-xs uppercase tracking-widest font-bold text-primary">🖼️ & 🎥 Media Management</p>
                       
@@ -1702,29 +1416,6 @@ export default function AdminPage() {
                     </div>
                   )}
 
-                  {/* Marketplace Image URL */}
-                  {editType === "marketplace" && (
-                    <div className="border border-border p-4 bg-secondary/10 space-y-4">
-                      <p className="text-xs uppercase tracking-widest font-bold text-primary">🖼️ Media Management</p>
-                      <div>
-                        <label className="block text-[9px] uppercase tracking-widest font-bold mb-1.5 text-muted-foreground">Item Image URL</label>
-                        <div className="flex gap-3 items-center">
-                          <input
-                            type="text"
-                            value={editItem.image || ""}
-                            onChange={e => setEditItem({ ...editItem, image: e.target.value })}
-                            className="flex-1 border border-border px-3 py-2 text-xs bg-background focus:border-primary focus:outline-none"
-                            placeholder="https://..."
-                          />
-                          {editItem.image && (
-                            <div className="w-10 h-10 shrink-0 border border-border overflow-hidden bg-black/95 flex items-center justify-center">
-                              <img src={editItem.image} alt="" className="max-w-full max-h-full object-contain" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {editType === "room" && (
                     <div className="grid grid-cols-2 gap-4">
@@ -1779,6 +1470,73 @@ export default function AdminPage() {
                           placeholder="e.g. Software Professional"
                         />
                       </div>
+                    </div>
+                  )}
+
+                  {/* Dynamic Metadata Section */}
+                  {(editType === "room" || editType === "flatmate" || editType === "property_sales" || editType === "build_listings") && (
+                    <div className="border border-border p-4 bg-primary/5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs uppercase tracking-widest font-bold text-primary">⚡ Dynamic Fields (Metadata)</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newMeta = { ...(editItem.metadata || {}) };
+                            const keyName = prompt("Enter new field name (e.g., max_guests, deposit_terms):");
+                            if (keyName && keyName.trim()) {
+                              newMeta[keyName.trim()] = "";
+                              setEditItem({ ...editItem, metadata: newMeta });
+                            }
+                          }}
+                          className="bg-primary/20 hover:bg-primary/30 text-primary px-3 py-1 text-xs font-bold uppercase transition-colors"
+                        >
+                          + Add Field
+                        </button>
+                      </div>
+                      
+                      {(!editItem.metadata || Object.keys(editItem.metadata).length === 0) ? (
+                        <p className="text-xs text-muted-foreground italic">No dynamic fields present. Add fields here to show them in the app instantly without updates.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {Object.entries(editItem.metadata).map(([key, val]) => (
+                            <div key={key} className="flex gap-2 items-start">
+                              <div className="w-1/3">
+                                <input
+                                  type="text"
+                                  disabled
+                                  value={key}
+                                  className="w-full border border-border px-3 py-2 text-xs bg-black/40 text-muted-foreground cursor-not-allowed"
+                                />
+                              </div>
+                              <div className="flex-1 flex gap-2">
+                                <input
+                                  type="text"
+                                  value={String(val)}
+                                  onChange={(e) => {
+                                    const newMeta = { ...editItem.metadata, [key]: e.target.value };
+                                    setEditItem({ ...editItem, metadata: newMeta });
+                                  }}
+                                  className="flex-1 border border-border px-3 py-2 text-xs bg-background focus:border-primary focus:outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if(confirm(`Delete field '${key}'?`)) {
+                                      const newMeta = { ...editItem.metadata };
+                                      delete newMeta[key];
+                                      setEditItem({ ...editItem, metadata: newMeta });
+                                    }
+                                  }}
+                                  className="bg-red-500/20 hover:bg-red-500/30 text-red-500 px-3 py-2 flex items-center justify-center transition-colors"
+                                  title="Remove field"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
