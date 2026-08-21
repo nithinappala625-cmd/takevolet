@@ -76,17 +76,16 @@ const Navbar = () => {
   const navLinks = [
     { name: "Rooms", href: "/rooms" },
     { name: "Flatmates", href: "/flatmates" },
-    { name: "Marketplace", href: "/marketplace" },
-    { name: "Articles", href: "/articles" },
-    { name: "Our Partners", href: "/partners" },
+    { name: "Properties", href: "/properties" },
+    { name: "Build", href: "/build" },
     { name: "Join & Earn", href: "/refer" },
   ];
 
   const postOptions = [
     { icon: Home, name: "Post a Room", desc: "Leaving your flat? List it", href: "/post/room" },
     { icon: Users, name: "Find a Flatmate", desc: "Have a vacancy? Get roommate", href: "/post/flatmate" },
-    { icon: ShoppingBag, name: "Sell / Rent Items", desc: "Furniture, electronics & more", href: "/post/item" },
-    { icon: Handshake, name: "Become a Partner", desc: "PG / multiple properties", href: "/post/partner" },
+    { icon: ShoppingBag, name: "Post a Property", desc: "Sell or list an apartment", href: "/post/property" },
+    { icon: Handshake, name: "List a Build", desc: "Contractors, architects, etc.", href: "/post/build" },
   ];
 
   const handleLogout = async () => {
