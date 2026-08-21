@@ -46,13 +46,13 @@ export default function BuildDetailPage() {
             {allImages.length > 0 ? (
               <div className="space-y-4">
                 <div className="aspect-[16/9] relative overflow-hidden bg-secondary/30 rounded-xl border border-border">
-                  <Image src={allImages[activeImage]} alt={build.title || "Service"} fill className="object-cover" />
+                  <Image src={allImages[activeImage]} unoptimized={true} alt={build.title || "Service"} fill className="object-cover" />
                 </div>
                 {allImages.length > 1 && (
                   <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     {allImages.map((img, i) => (
                       <button key={i} onClick={() => setActiveImage(i)} className={`relative w-24 h-16 shrink-0 rounded-md overflow-hidden border-2 transition-all ${activeImage === i ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"}`}>
-                        <Image src={img} alt="" fill className="object-cover" />
+                        <Image src={img} unoptimized={true} alt="" fill className="object-cover" />
                       </button>
                     ))}
                   </div>
@@ -105,7 +105,7 @@ export default function BuildDetailPage() {
               {build.profiles ? (
                 <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
                   {build.profiles.avatar_url ? (
-                    <Image src={build.profiles.avatar_url} alt="" width={56} height={56} className="rounded-full object-cover border-2 border-primary/20" />
+                    <Image src={build.profiles.avatar_url} unoptimized={true} alt="" width={56} height={56} className="rounded-full object-cover border-2 border-primary/20" />
                   ) : (
                     <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-bold">
                       {build.profiles.full_name?.charAt(0) || "U"}

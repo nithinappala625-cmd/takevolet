@@ -19,10 +19,10 @@ export default function BuildCard({ build }: { build: BuildListing }) {
         {hasImage ? (
           <>
             <div className="absolute inset-0 w-full h-full blur-xl opacity-40 scale-110 pointer-events-none transition-transform duration-500 group-hover:scale-125 z-0">
-              <Image src={mainImage} alt="" fill sizes="400px" className="object-cover" onError={() => setImageError(true)} />
+              <Image src={mainImage} unoptimized={true} alt="" fill sizes="400px" className="object-cover" onError={() => setImageError(true)} />
             </div>
             {/* Clear Foreground */}
-            <Image src={mainImage} alt={build.title || "Build"} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            <Image src={mainImage} unoptimized={true} alt={build.title || "Build"} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               onError={() => setImageError(true)}
               className="object-cover group-hover:scale-105 transition-transform duration-500 mx-auto relative z-10" />
           </>
@@ -85,7 +85,7 @@ export default function BuildCard({ build }: { build: BuildListing }) {
                 <p className="text-[10px] uppercase font-bold text-muted-foreground">{build.profiles.full_name}</p>
                 <p className="text-[9px] text-muted-foreground/60">{build.profiles.profession || "Builder"}</p>
               </div>
-              <Image src={build.profiles.avatar_url} alt="" width={32} height={32} className="rounded-full object-cover border border-border" />
+              <Image src={build.profiles.avatar_url} unoptimized={true} alt="" width={32} height={32} className="rounded-full object-cover border border-border" />
             </div>
           ) : (
             <div className="w-8 h-8 rounded-full bg-secondary/50 border border-border flex items-center justify-center">
