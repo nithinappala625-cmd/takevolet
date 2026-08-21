@@ -38,7 +38,28 @@ export default function PostItemPage() {
   const [uploadedFiles, setUploadedFiles] = useState<{ file: File; preview: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [listingType, setListingType] = useState<"sell" | "rent" | "both">("sell");
-  const [bundleItems, setBundleItems] = useState<{name: string, price?: string}[]>([]);
+    const [bundleItems, setBundleItems] = useState<{name: string, price?: string}[]>([]);
+  const [dynamicSchema, setDynamicSchema] = useState<any[]>([]);
+  const [dynamicData, setDynamicData] = useState<Record<string, any>>({});
+
+  // Fetch dynamic fields when category changes
+  useEffect(() => {
+    const fetchSchema = async () => {
+      try {
+        const res = await fetch(`/api/admin/forms?category=${encodeURIComponent(form.category.toLowerCase())}`);
+        const data = await res.json();
+        if (data.success && data.data.length > 0) {
+          setDynamicSchema(data.data[0].fields_schema || []);
+        } else {
+          setDynamicSchema([]);
+        }
+      } catch (err) {
+        setDynamicSchema([]);
+      }
+    };
+    fetchSchema();
+  }, [form.category]);
+
 
   const [form, setForm] = useState({
     title: "",
@@ -97,7 +118,9 @@ export default function PostItemPage() {
       location: form.location,
       image: uploadedFiles.length > 0 ? uploadedFiles[0].preview : "https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80",
       images: uploadedFiles.length > 0 ? uploadedFiles.map(f => f.preview) : ["https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80"],
-      listing_type: listingType,
+            listing_type: listingType,
+      metadata: dynamicData,
+
     };
 
     const { error } = await saveItem(newItem);
@@ -245,7 +268,49 @@ export default function PostItemPage() {
               className="w-full bg-transparent border border-border px-5 py-4 outline-none focus:border-primary transition-colors text-sm font-light resize-none" />
           </div>
 
+          
+          {/* Dynamic Fields */}
+          {dynamicSchema.length > 0 && (
+            <div className="border border-border p-6 space-y-6 mt-6 bg-secondary/5">
+              <h3 className="text-xs uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
+                <span className="bg-primary/20 text-primary px-2 py-1 rounded">Category Specific Details</span>
+              </h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                {dynamicSchema.map((field: any, idx) => (
+                  <div key={idx}>
+                    <label className="block text-xs uppercase tracking-widest font-bold mb-3">
+                      {field.label} {field.required && <span className="text-red-500">*</span>}
+                    </label>
+                    {field.type === "dropdown" ? (
+                      <select
+                        required={field.required}
+                        value={dynamicData[field.key] || ""}
+                        onChange={(e) => setDynamicData({ ...dynamicData, [field.key]: e.target.value })}
+                        className="w-full bg-transparent border border-border px-5 py-4 outline-none focus:border-primary transition-colors text-sm font-light appearance-none cursor-pointer"
+                      >
+                        <option value="">Select...</option>
+                        {field.options?.map((opt: string) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={field.type === "number" ? "number" : "text"}
+                        required={field.required}
+                        value={dynamicData[field.key] || ""}
+                        onChange={(e) => setDynamicData({ ...dynamicData, [field.key]: e.target.value })}
+                        placeholder={field.placeholder || ""}
+                        className="w-full bg-transparent border border-border px-5 py-4 outline-none focus:border-primary transition-colors text-sm font-light"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Bundle Items (Optional) */}
+
           <div>
             <div className="flex justify-between items-end mb-3">
               <label className="block text-xs uppercase tracking-widest font-bold">Bundle Items (Optional)</label>

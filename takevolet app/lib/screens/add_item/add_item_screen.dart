@@ -1,8 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:takevolet_app/services/dynamic_forms_service.dart';
+import 'package:takevolet_app/widgets/dynamic_form_widget.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../main.dart';
+import '../../services/r2_storage_service.dart';
 import '../../data/locations.dart';
 
 class AddItemScreen extends StatefulWidget {
@@ -27,6 +31,18 @@ class _AddItemScreenState extends State<AddItemScreen> {
   String _location = HYDERABAD_AREAS.first;
   List<File> _images = [];
   bool _isLoading = false;
+  
+  // Dynamic Forms
+  final DynamicFormsService _dynamicFormsService = DynamicFormsService();
+  List<Map<String, dynamic>> _dynamicSchema = [];
+  Map<String, dynamic> _dynamicData = {};
+
+  Future<void> _fetchDynamicSchema() async {
+    final schema = await _dynamicFormsService.getFormSchema('marketplace');
+    setState(() {
+      _dynamicSchema = schema;
+    });
+  }
 
   final _conditions = ['New', 'Like New', 'Good', 'Fair', 'Needs Repair'];
   final _categories = ['Furniture', 'Electronics', 'Appliances', 'Kitchenware', 'Bedding & Mattress', 'Others'];
@@ -34,6 +50,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchDynamicSchema();
     if (widget.initialData != null) {
       final data = widget.initialData!;
       _titleController.text = data['title']?.toString() ?? '';
@@ -86,8 +103,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       final userId = supabase.auth.currentUser!.id;
       final ext = file.path.split('.').last;
       final path = 'items/$userId/${DateTime.now().millisecondsSinceEpoch}.$ext';
-      await supabase.storage.from('listings').upload(path, file);
-      return supabase.storage.from('listings').getPublicUrl(path);
+      return await R2StorageService.uploadFile(file, path);
     } catch (_) {
       return null;
     }
@@ -118,6 +134,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'location': _location,
         'image': imageUrl,
         'is_available': true,
+
+        'metadata': _dynamicData,
+
         'city': _selectedCity,
       };
 

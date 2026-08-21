@@ -17,7 +17,7 @@ import { uploadRoomMedia } from "@/lib/db";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
-type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "property_sales" | "build_listings";
+type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "property_sales" | "build_listings" | "form_builder";
 
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false);
@@ -411,7 +411,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex border-b border-border mb-6 overflow-x-auto bg-background">
-          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "property_sales", "build_listings"] as Tab[]).map(tab => (
+          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "property_sales", "build_listings", "form_builder"] as Tab[]).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-6 py-3.5 text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-all border-b-2 ${
                 activeTab === tab ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground"
@@ -1144,7 +1144,49 @@ export default function AdminPage() {
           </motion.div>
         )}
 
-        {/* ── EDIT MODAL ── */}
+        
+        {/* ── FORM BUILDER TAB ── */}
+        {activeTab === "form_builder" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-black uppercase tracking-wider flex items-center gap-2">
+                <Edit2 className="text-primary" size={24} />
+                Dynamic Form Builder
+              </h2>
+            </div>
+            
+            <div className="bg-background border border-border p-6 shadow-sm">
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure dynamic fields for different categories. These fields will automatically appear on the website and app posting forms.
+              </p>
+              
+              <div className="grid gap-6 md:grid-cols-2">
+                 <div className="border border-border p-4">
+                   <h3 className="font-bold mb-3 uppercase text-xs tracking-wider border-b border-border pb-2">Select Category</h3>
+                   <select className="w-full p-2 border border-border text-sm mb-4 bg-background">
+                     <option value="transportation">Transportation</option>
+                     <option value="property_sales">Property Sales</option>
+                     <option value="rooms">Rooms</option>
+                     <option value="build_listings">Build Listings</option>
+                   </select>
+                   <button className="w-full bg-primary text-primary-foreground py-2 text-xs font-bold uppercase transition-all hover:bg-primary/90">
+                     Load Schema
+                   </button>
+                 </div>
+                 
+                 <div className="border border-border p-4 bg-secondary/20">
+                   <h3 className="font-bold mb-3 uppercase text-xs tracking-wider border-b border-border pb-2">Edit Fields</h3>
+                   <p className="text-xs text-muted-foreground mb-4">Select a category to view and edit its dynamic fields.</p>
+                   {/* We will build out this UI fully in a separate component or route later */}
+                   <div className="text-center py-8">
+                     <p className="text-sm font-bold text-muted-foreground">Form editor coming soon...</p>
+                   </div>
+                 </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+{/* ── EDIT MODAL ── */}
         <AnimatePresence>
           {editItem && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">

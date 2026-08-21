@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../main.dart';
+import '../../services/onesignal_service.dart';
+import '../../services/r2_storage_service.dart';
 import '../../data/locations.dart';
 
 class AddFlatmateScreen extends StatefulWidget {
@@ -71,8 +73,11 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
         }
       }
       _colony = data['colony']?.toString() != '' ? data['colony']?.toString() : null;
-      _professionPref = data['profession_pref']?.toString() != '' ? data['profession_pref']?.toString() : null;
-      if (data['lifestyle_habits'] != null) {
+      final metadata = data['metadata'] ?? {};
+      _professionPref = metadata['profession_pref']?.toString() ?? (data['profession_pref']?.toString() != '' ? data['profession_pref']?.toString() : null);
+      if (metadata['lifestyle_habits'] != null) {
+        _lifestyleHabits = (metadata['lifestyle_habits'] as List).cast<String>();
+      } else if (data['lifestyle_habits'] != null) {
         _lifestyleHabits = (data['lifestyle_habits'] as List).cast<String>();
       }
     }
@@ -108,8 +113,7 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
       final ext = file.path.split('.').last;
       final path = 'flatmates/$userId/${DateTime.now().millisecondsSinceEpoch}_$i.$ext';
 
-      await supabase.storage.from('listings').upload(path, file);
-      final url = supabase.storage.from('listings').getPublicUrl(path);
+      final url = await R2StorageService.uploadFile(file, path);
       urls.add(url);
     }
     return urls;
@@ -130,6 +134,11 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
         imageUrls = (widget.initialData!['images'] as List).cast<String>();
       }
 
+      final metadata = {
+        'profession_pref': _professionPref ?? '',
+        'lifestyle_habits': _lifestyleHabits,
+      };
+
       final flatmateData = {
         'user_id': user.id,
         'title': _titleController.text.trim(),
@@ -140,17 +149,34 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
         'gender_pref': _genderPref,
         'location': _location,
         'colony': _colony ?? '',
-        'profession_pref': _professionPref ?? '',
-        'lifestyle_habits': _lifestyleHabits,
         'images': imageUrls,
         'is_available': true,
         'city': _selectedCity,
+        'metadata': metadata,
       };
 
       if (widget.initialData != null) {
         await supabase.from('flatmates').update(flatmateData).eq('id', widget.initialData!['id']);
       } else {
         await supabase.from('flatmates').insert(flatmateData);
+        try {
+          await OneSignalService.sendPushNotification(
+            title: 'Flatmate Required',
+            message: 'Looking for a flatmate in $_location, $_selectedCity. Rent share: ₹${flatmateData['rent_share']}/mo.',
+          );
+        } catch (e) {
+          debugPrint('Push Notification error: $e');
+        }
+
+        try {
+          await supabase.from('notifications').insert({
+            'title': 'Flatmate Required',
+            'message': 'Looking for a flatmate in $_location, $_selectedCity. Rent share: ₹${flatmateData['rent_share']}/mo.',
+            'type': 'flatmate',
+          });
+        } catch (e) {
+          debugPrint('In-App Notification DB error: $e');
+        }
       }
 
       if (mounted) {

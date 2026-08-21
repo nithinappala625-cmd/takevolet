@@ -16,10 +16,10 @@ export type MarketplaceItemType = {
   listing_type: "sell" | "rent" | "both";
   created_at?: string;
   is_available?: boolean;
-  // Poster info fetched separately from auth.users or a profiles table
   poster_name?: string;
   poster_avatar?: string;
   poster_phone?: string;
+  metadata?: Record<string, any>;
 };
 
 /**
@@ -45,6 +45,7 @@ export async function saveItem(
         image: item.image,
         images: item.images,
         listing_type: item.listing_type,
+        metadata: item.metadata || {},
         is_available: true,
       },
     ])
