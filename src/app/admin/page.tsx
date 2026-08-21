@@ -44,6 +44,12 @@ export default function AdminPage() {
   const [deleteItem, setDeleteItem] = useState<any | null>(null);
   const [deleteType, setDeleteType] = useState<"room" | "flatmate" | "property_sales" | "build_listings" | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  // Dynamic Forms State
+  const [selectedFormCategory, setSelectedFormCategory] = useState("transportation");
+  const [formSchema, setFormSchema] = useState<any[]>([]);
+  const [formSchemaLoading, setFormSchemaLoading] = useState(false);
+  const [formSchemaSaving, setFormSchemaSaving] = useState(false);
 
   const [newImgUrl, setNewImgUrl] = useState("");
   const [newVidUrl, setNewVidUrl] = useState("");
@@ -1161,26 +1167,194 @@ export default function AdminPage() {
               </p>
               
               <div className="grid gap-6 md:grid-cols-2">
-                 <div className="border border-border p-4">
+                 <div className="border border-border p-4 h-fit">
                    <h3 className="font-bold mb-3 uppercase text-xs tracking-wider border-b border-border pb-2">Select Category</h3>
-                   <select className="w-full p-2 border border-border text-sm mb-4 bg-background">
+                   <select 
+                     value={selectedFormCategory}
+                     onChange={e => setSelectedFormCategory(e.target.value)}
+                     className="w-full p-2 border border-border text-sm mb-4 bg-background focus:border-primary focus:outline-none"
+                   >
                      <option value="transportation">Transportation</option>
-                     <option value="property_sales">Property Sales</option>
-                     <option value="rooms">Rooms</option>
-                     <option value="build_listings">Build Listings</option>
+                     <option value="furniture">Furniture</option>
+                     <option value="electronics">Electronics</option>
+                     <option value="appliances">Appliances</option>
+                     <option value="contractor">Contractor (Build)</option>
+                     <option value="architect">Architect (Build)</option>
+                     <option value="interior_designer">Interior Designer (Build)</option>
+                     <option value="material_supplier">Material Supplier (Build)</option>
+                     <option value="apartment">Apartment (Property)</option>
+                     <option value="villa">Villa (Property)</option>
                    </select>
-                   <button className="w-full bg-primary text-primary-foreground py-2 text-xs font-bold uppercase transition-all hover:bg-primary/90">
+                   <button 
+                     onClick={async () => {
+                       setFormSchemaLoading(true);
+                       try {
+                         const res = await fetch(`/api/admin/forms?category=${selectedFormCategory}`);
+                         const data = await res.json();
+                         if (data.success && data.data.length > 0) {
+                           setFormSchema(data.data[0].fields_schema || []);
+                         } else {
+                           setFormSchema([]);
+                         }
+                       } catch (e) {
+                         alert("Failed to load schema");
+                       }
+                       setFormSchemaLoading(false);
+                     }}
+                     disabled={formSchemaLoading}
+                     className="w-full bg-primary text-primary-foreground py-2 text-xs font-bold uppercase transition-all hover:bg-primary/90 flex items-center justify-center gap-2"
+                   >
+                     {formSchemaLoading ? <RefreshCw size={14} className="animate-spin" /> : null}
                      Load Schema
                    </button>
                  </div>
                  
-                 <div className="border border-border p-4 bg-secondary/20">
-                   <h3 className="font-bold mb-3 uppercase text-xs tracking-wider border-b border-border pb-2">Edit Fields</h3>
-                   <p className="text-xs text-muted-foreground mb-4">Select a category to view and edit its dynamic fields.</p>
-                   {/* We will build out this UI fully in a separate component or route later */}
-                   <div className="text-center py-8">
-                     <p className="text-sm font-bold text-muted-foreground">Form editor coming soon...</p>
+                 <div className="border border-border p-4 bg-secondary/10">
+                   <div className="flex items-center justify-between border-b border-border pb-2 mb-4">
+                     <h3 className="font-bold uppercase text-xs tracking-wider">Edit Fields</h3>
+                     <button
+                        onClick={() => {
+                          setFormSchema([...formSchema, { name: "", label: "", type: "text", required: false }]);
+                        }}
+                        className="text-xs bg-primary/20 hover:bg-primary/30 text-primary px-2 py-1 font-bold uppercase"
+                     >
+                       + Add Field
+                     </button>
                    </div>
+                   
+                   {formSchema.length === 0 ? (
+                     <p className="text-xs text-muted-foreground italic text-center py-8">No fields defined for this category. Click "Add Field" to start building.</p>
+                   ) : (
+                     <div className="space-y-4 mb-4">
+                       {formSchema.map((field, idx) => (
+                         <div key={idx} className="border border-border bg-background p-3 relative group">
+                           <button 
+                             onClick={() => {
+                               const updated = [...formSchema];
+                               updated.splice(idx, 1);
+                               setFormSchema(updated);
+                             }}
+                             className="absolute top-2 right-2 text-red-500 hover:text-red-700 opacity-50 hover:opacity-100"
+                           >
+                             <X size={14} />
+                           </button>
+                           
+                           <div className="grid grid-cols-2 gap-3 mb-2 pr-6">
+                             <div>
+                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">Internal Key (Name)</label>
+                               <input 
+                                 type="text" 
+                                 value={field.name}
+                                 onChange={e => {
+                                   const updated = [...formSchema];
+                                   updated[idx].name = e.target.value.toLowerCase().replace(/\s+/g, '_');
+                                   setFormSchema(updated);
+                                 }}
+                                 placeholder="e.g. vehicle_type"
+                                 className="w-full border border-border px-2 py-1 text-xs bg-secondary/10 focus:outline-none focus:border-primary font-mono"
+                               />
+                             </div>
+                             <div>
+                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">Display Label</label>
+                               <input 
+                                 type="text" 
+                                 value={field.label}
+                                 onChange={e => {
+                                   const updated = [...formSchema];
+                                   updated[idx].label = e.target.value;
+                                   setFormSchema(updated);
+                                 }}
+                                 placeholder="e.g. Vehicle Type"
+                                 className="w-full border border-border px-2 py-1 text-xs bg-background focus:outline-none focus:border-primary"
+                               />
+                             </div>
+                           </div>
+                           
+                           <div className="grid grid-cols-2 gap-3">
+                             <div>
+                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">Input Type</label>
+                               <select 
+                                 value={field.type}
+                                 onChange={e => {
+                                   const updated = [...formSchema];
+                                   updated[idx].type = e.target.value;
+                                   if (e.target.value !== 'select' && e.target.value !== 'radio') {
+                                     delete updated[idx].options;
+                                   } else if (!updated[idx].options) {
+                                     updated[idx].options = [];
+                                   }
+                                   setFormSchema(updated);
+                                 }}
+                                 className="w-full border border-border px-2 py-1 text-xs bg-background focus:outline-none focus:border-primary"
+                               >
+                                 <option value="text">Text (Short)</option>
+                                 <option value="textarea">Textarea (Long)</option>
+                                 <option value="number">Number</option>
+                                 <option value="select">Dropdown (Select)</option>
+                                 <option value="checkbox">Checkbox (True/False)</option>
+                               </select>
+                             </div>
+                             <div className="flex items-center gap-2 pt-4">
+                               <input 
+                                 type="checkbox" 
+                                 checked={field.required || false}
+                                 onChange={e => {
+                                   const updated = [...formSchema];
+                                   updated[idx].required = e.target.checked;
+                                   setFormSchema(updated);
+                                 }}
+                                 id={`req-${idx}`}
+                                 className="accent-primary"
+                               />
+                               <label htmlFor={`req-${idx}`} className="text-xs cursor-pointer">Required Field</label>
+                             </div>
+                           </div>
+                           
+                           {(field.type === 'select' || field.type === 'radio') && (
+                             <div className="mt-3 pt-3 border-t border-border/50">
+                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">Options (Comma separated)</label>
+                               <input 
+                                 type="text" 
+                                 value={(field.options || []).join(', ')}
+                                 onChange={e => {
+                                   const updated = [...formSchema];
+                                   updated[idx].options = e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean);
+                                   setFormSchema(updated);
+                                 }}
+                                 placeholder="e.g. Car, Bike, Truck"
+                                 className="w-full border border-border px-2 py-1 text-xs bg-background focus:outline-none focus:border-primary"
+                               />
+                             </div>
+                           )}
+                         </div>
+                       ))}
+                     </div>
+                   )}
+                   
+                   {formSchema.length > 0 && (
+                     <button
+                       onClick={async () => {
+                         setFormSchemaSaving(true);
+                         try {
+                           const res = await fetch('/api/admin/forms', {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/json' },
+                             body: JSON.stringify({ category: selectedFormCategory, fields_schema: formSchema })
+                           });
+                           if (res.ok) alert("Schema saved successfully!");
+                           else alert("Error saving schema");
+                         } catch (e) {
+                           alert("Error saving schema");
+                         }
+                         setFormSchemaSaving(false);
+                       }}
+                       disabled={formSchemaSaving}
+                       className="w-full bg-green-600 text-white py-2 text-xs font-bold uppercase transition-all hover:bg-green-700 flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(22,163,74,0.3)]"
+                     >
+                       {formSchemaSaving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                       Save Schema
+                     </button>
+                   )}
                  </div>
               </div>
             </div>
