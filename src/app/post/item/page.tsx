@@ -38,7 +38,18 @@ export default function PostItemPage() {
   const [uploadedFiles, setUploadedFiles] = useState<{ file: File; preview: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [listingType, setListingType] = useState<"sell" | "rent" | "both">("sell");
-    const [bundleItems, setBundleItems] = useState<{name: string, price?: string}[]>([]);
+  const [form, setForm] = useState({
+    title: "",
+    category: "Furniture",
+    condition: "Good",
+    price: "",
+    rentPrice: "",
+    city: "Hyderabad",
+    location: "",
+    description: "",
+  });
+
+  const [bundleItems, setBundleItems] = useState<{name: string, price?: string}[]>([]);
   const [dynamicSchema, setDynamicSchema] = useState<any[]>([]);
   const [dynamicData, setDynamicData] = useState<Record<string, any>>({});
 
@@ -59,18 +70,6 @@ export default function PostItemPage() {
     };
     fetchSchema();
   }, [form.category]);
-
-
-  const [form, setForm] = useState({
-    title: "",
-    category: "Furniture",
-    condition: "Good",
-    price: "",
-    rentPrice: "",
-    city: "Hyderabad",
-    location: "",
-    description: "",
-  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     if (e.target.name === "city") {
