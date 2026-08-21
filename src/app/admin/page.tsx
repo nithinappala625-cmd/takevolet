@@ -1338,7 +1338,10 @@ export default function AdminPage() {
                          try {
                            const res = await fetch('/api/admin/forms', {
                              method: 'POST',
-                             headers: { 'Content-Type': 'application/json' },
+                             headers: { 
+                               'Content-Type': 'application/json',
+                               'x-admin-password': pwd
+                             },
                              body: JSON.stringify({ category: selectedFormCategory, fields_schema: formSchema })
                            });
                            if (res.ok) alert("Schema saved successfully!");
