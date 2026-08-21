@@ -139,12 +139,12 @@ export default function PostPropertyPage() {
       description: description.trim(),
       expected_price: +sellingPrice,
       carpet_area: carpetArea ? +carpetArea : 0,
-      location: location,
-      boundaries: boundaries.trim(),
+      area: location,
       property_type: propertyType,
-      images: imageUrls,
+      cover_image: imageUrls[0] || "",
+      flat_images: imageUrls,
       videos: videoUrls,
-      metadata: {}
+      metadata: { boundaries: boundaries.trim() }
     });
 
     setSubmitting(false);
