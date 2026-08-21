@@ -9,6 +9,14 @@ import { useState } from "react";
 export default function BuildCard({ build }: { build: BuildListing }) {
   const [imageError, setImageError] = useState(false);
 
+  const metadata = (build as any).metadata || {};
+  const name = metadata.name || metadata.company_name || metadata.title || build.title || 'Professional';
+  const location = metadata.address || metadata.location || build.location_name || 'Location not specified';
+  const contact = metadata.contact_number || metadata.phone || null;
+  const pricing = metadata.pricing || metadata.price || build.price || null;
+  const description = metadata.description || build.description || '';
+  const subCategory = metadata.sub_category || build.sub_category || 'Service';
+
   const mainImage = build.image || (build.media_urls || [])[0];
   const hasImage = mainImage && !imageError;
 
@@ -35,7 +43,7 @@ export default function BuildCard({ build }: { build: BuildListing }) {
 
         <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-2">
           <span className="bg-background/90 backdrop-blur-sm px-3 py-1 text-[11px] uppercase tracking-wider font-semibold flex items-center gap-1">
-            <MapPin size={12} className="text-primary" /> {build.location_name || "Unknown"}
+            <MapPin size={12} className="text-primary" /> {location}
           </span>
         </div>
         
@@ -57,25 +65,36 @@ export default function BuildCard({ build }: { build: BuildListing }) {
 
       <div className="p-6 flex flex-col flex-grow relative">
         <Link href={`/build/${build.id}`}>
-          <h3 className="text-lg font-bold tracking-tight mb-1 line-clamp-1 hover:text-primary transition-colors">{build.title}</h3>
+          <h3 className="text-lg font-bold tracking-tight mb-1 line-clamp-1 hover:text-primary transition-colors">{name}</h3>
         </Link>
         <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
-          <MapPin size={10} className="text-primary" /> {build.location_name}
+          <MapPin size={10} className="text-primary" /> {location}
         </p>
-        <p className="text-sm text-muted-foreground font-light mb-4 line-clamp-2 leading-relaxed flex-grow">{build.description}</p>
+        <p className="text-sm text-muted-foreground font-light mb-4 line-clamp-2 leading-relaxed flex-grow">{description}</p>
 
         <div className="flex flex-wrap gap-2 mb-5">
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-secondary text-[11px] font-medium uppercase tracking-wider">
-            <HardHat size={12} /> {build.sub_category || "Service"}
+            <HardHat size={12} /> {subCategory}
           </span>
+          {contact && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-medium uppercase tracking-wider">
+              📞 {contact}
+            </span>
+          )}
         </div>
 
         <div className="flex items-end justify-between mt-auto pt-4 border-t border-border">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Pricing</p>
-            <p className="text-2xl font-light flex items-center tracking-tight">
-              <IndianRupee size={20} className="mr-0.5 text-primary" /> 
-              {build.price ? build.price.toLocaleString("en-IN") : "Price on Request"}
+            <p className="text-xl font-light flex items-center tracking-tight">
+              {pricing ? (
+                <>
+                  <IndianRupee size={16} className="mr-0.5 text-primary" /> 
+                  {pricing.toString().toLocaleString()}
+                </>
+              ) : (
+                "Price on Request"
+              )}
               {build.price_unit && <span className="text-sm text-muted-foreground ml-1">/ {build.price_unit}</span>}
             </p>
           </div>

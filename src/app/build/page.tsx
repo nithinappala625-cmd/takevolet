@@ -38,17 +38,19 @@ export default function BuildPage() {
   }, []);
 
   const filteredBuilds = allBuilds.filter(build => {
-    const loc        = build.location_name || "";
+    const metadata = (build as any).metadata || {};
+    const loc        = metadata.address || metadata.location || build.location_name || "";
     const mCat       = build.main_category || "";
-    const desc       = build.description || "";
-    const subCat     = build.sub_category || "";
+    const desc       = metadata.description || build.description || "";
+    const subCat     = metadata.sub_category || build.sub_category || "";
+    const title      = metadata.name || metadata.company_name || metadata.title || build.title || "";
     
     const matchesCity       = true;
     const matchesLocation   = !selectedLocation   || loc.includes(selectedLocation);
     const matchesCategory   = !selectedMainCategory || mCat === selectedMainCategory;
     
     const matchesSearch = !searchQuery ||
-      (build.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
       loc.toLowerCase().includes(searchQuery.toLowerCase()) ||
       subCat.toLowerCase().includes(searchQuery.toLowerCase());
