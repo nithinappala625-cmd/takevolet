@@ -9,7 +9,8 @@ import { useState } from "react";
 export default function BuildCard({ build }: { build: BuildListing }) {
   const [imageError, setImageError] = useState(false);
 
-  const hasImage = (build.media_urls || [])[0] && !imageError;
+  const mainImage = build.image || (build.media_urls || [])[0];
+  const hasImage = mainImage && !imageError;
 
   return (
     <div className={`group border border-border overflow-hidden hover:border-primary/30 transition-all duration-500 bg-background flex flex-col h-full`}>
@@ -18,10 +19,10 @@ export default function BuildCard({ build }: { build: BuildListing }) {
         {hasImage ? (
           <>
             <div className="absolute inset-0 w-full h-full blur-xl opacity-40 scale-110 pointer-events-none transition-transform duration-500 group-hover:scale-125 z-0">
-              <Image src={build.media_urls![0]} alt="" fill sizes="400px" className="object-cover" onError={() => setImageError(true)} />
+              <Image src={mainImage} alt="" fill sizes="400px" className="object-cover" onError={() => setImageError(true)} />
             </div>
             {/* Clear Foreground */}
-            <Image src={build.media_urls![0]} alt={build.title || "Build"} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            <Image src={mainImage} alt={build.title || "Build"} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               onError={() => setImageError(true)}
               className="object-cover group-hover:scale-105 transition-transform duration-500 mx-auto relative z-10" />
           </>

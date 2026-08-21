@@ -8,6 +8,7 @@ import { fetchAllBuildListingsAction } from "@/lib/server-actions";
 import type { BuildListing } from "@/lib/db";
 import BuildCard from "@/components/BuildCard";
 import { PremiumAdCarousel } from "@/components/PremiumAdCarousel";
+import Image from "next/image";
 
 export default function BuildPage() {
   const [selectedCity, setSelectedCity] = useState("Hyderabad");
@@ -18,7 +19,13 @@ export default function BuildPage() {
   const [allBuilds, setAllBuilds] = useState<BuildListing[]>([]);
   const [buildsLoading, setBuildsLoading] = useState(true);
 
-  const MAIN_CATEGORIES = ["service", "material", "transport"];
+  const MAIN_CATEGORIES = [
+    { name: "service", emoji: "🛠️" },
+    { name: "material", emoji: "🧱" },
+    { name: "transport", emoji: "🚛" },
+    { name: "architects", emoji: "📐" },
+    { name: "interior", emoji: "🛋️" }
+  ];
 
   // Load Supabase builds
   useEffect(() => {
@@ -76,6 +83,34 @@ export default function BuildPage() {
         {/* Premium Native Ad Placement */}
         <PremiumAdCarousel />
 
+        {/* Circular Categories */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex overflow-x-auto gap-4 py-8 mb-6 scrollbar-hide snap-x justify-start md:justify-center">
+          <div 
+            onClick={() => setSelectedMainCategory("")}
+            className={`flex flex-col items-center gap-2 cursor-pointer snap-center shrink-0 w-20 transition-all ${selectedMainCategory === "" ? "opacity-100 scale-105" : "opacity-60 hover:opacity-100"}`}
+          >
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 transition-colors ${selectedMainCategory === "" ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}>
+              <span className="font-bold text-xs uppercase tracking-wider">ALL</span>
+            </div>
+            <span className={`text-[10px] text-center font-bold tracking-wider uppercase ${selectedMainCategory === "" ? "text-primary" : "text-muted-foreground"}`}>All</span>
+          </div>
+
+          {MAIN_CATEGORIES.map((type) => (
+            <div 
+              key={type.name}
+              onClick={() => setSelectedMainCategory(type.name)}
+              className={`flex flex-col items-center gap-2 cursor-pointer snap-center shrink-0 w-20 transition-all ${selectedMainCategory === type.name ? "opacity-100 scale-105" : "opacity-60 hover:opacity-100"}`}
+            >
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 overflow-hidden bg-secondary transition-colors ${selectedMainCategory === type.name ? "border-primary" : "border-border"}`}>
+                <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center">
+                   <span className="text-xl">{type.emoji}</span>
+                </div>
+              </div>
+              <span className={`text-[10px] text-center font-bold tracking-wider uppercase ${selectedMainCategory === type.name ? "text-primary" : "text-muted-foreground"}`}>{type.name}</span>
+            </div>
+          ))}
+        </motion.div>
+
         {/* Search */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="mb-6 flex items-center gap-3 border border-border p-3">
@@ -104,7 +139,7 @@ export default function BuildPage() {
                 {[
                   { label: "City", value: selectedCity, onChange: (val: string) => { setSelectedCity(val); setSelectedLocation(""); }, options: CITIES, placeholder: "All Cities" },
                   { label: "Location", value: selectedLocation, onChange: setSelectedLocation, options: getAreas(selectedCity), placeholder: "All Areas" },
-                  { label: "Main Category", value: selectedMainCategory, onChange: setSelectedMainCategory, options: MAIN_CATEGORIES, placeholder: "Any Category" },
+                  { label: "Main Category", value: selectedMainCategory, onChange: setSelectedMainCategory, options: MAIN_CATEGORIES.map(c => c.name), placeholder: "Any Category" },
                 ].map((filter, i) => (
                   <div key={i}>
                     <label className="block text-[10px] uppercase tracking-widest font-bold mb-2 text-muted-foreground">{filter.label}</label>

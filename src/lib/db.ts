@@ -577,15 +577,21 @@ export async function getFlatmateById(id: string): Promise<any | null> {
 export type PropertySale = {
   id: string;
   user_id?: string;
-  type?: string; 
-  selling_price?: number;
-  carpet_area_sqft?: string | number;
+  title?: string;
+  property_type?: string; 
+  property_category?: string;
+  city?: string;
+  area?: string;
+  expected_price?: number;
+  carpet_area?: string | number;
   location?: string;
-  boundaries?: string;
-  images?: string[];
+  full_address?: string;
+  bhk?: string;
+  owner_name?: string;
+  cover_image?: string;
+  flat_images?: string[];
   videos?: string[];
   created_at?: string;
-  title?: string;
   description?: string;
   metadata?: any;
   profiles?: Profile;
@@ -604,6 +610,7 @@ export type BuildListing = {
   lat?: number;
   lng?: number;
   contact_number?: string;
+  image?: string;
   media_urls?: string[];
   created_at?: string;
   metadata?: any;

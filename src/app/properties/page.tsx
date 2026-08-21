@@ -8,6 +8,7 @@ import { fetchAllPropertySalesAction } from "@/lib/server-actions";
 import type { PropertySale } from "@/lib/db";
 import PropertyCard from "@/components/PropertyCard";
 import { PremiumAdCarousel } from "@/components/PremiumAdCarousel";
+import Image from "next/image";
 
 export default function PropertiesPage() {
   const [selectedCity, setSelectedCity] = useState("Hyderabad");
@@ -19,7 +20,13 @@ export default function PropertiesPage() {
   const [allProperties, setAllProperties] = useState<PropertySale[]>([]);
   const [propertiesLoading, setPropertiesLoading] = useState(true);
 
-  const PROPERTY_TYPES = ["Apartment", "Independent House", "Villa", "Plot", "Commercial"];
+  const PROPERTY_TYPES = [
+    { name: "Apartment", icon: "/icons/apartment.png" }, 
+    { name: "Independent House", icon: "/icons/house.png" }, 
+    { name: "Villa", icon: "/icons/villa.png" }, 
+    { name: "Plot", icon: "/icons/plot.png" }, 
+    { name: "Commercial", icon: "/icons/commercial.png" }
+  ];
 
   // Load Supabase properties
   useEffect(() => {
@@ -33,7 +40,7 @@ export default function PropertiesPage() {
 
   const filteredProperties = allProperties.filter(property => {
     const loc        = property.location || "";
-    const pType      = property.type || "";
+    const pType      = property.property_type || property.property_category || "";
     const desc       = property.description || "";
     
     const matchesCity       = true; // Add city matching logic if property table has it
@@ -48,8 +55,8 @@ export default function PropertiesPage() {
     let matchesBudget = true;
     if (selectedBudget) {
       const range = BUDGET_RANGES.find(r => r.label === selectedBudget);
-      if (range && property.selling_price) {
-         matchesBudget = property.selling_price >= range.min && property.selling_price <= range.max;
+      if (range && property.expected_price) {
+         matchesBudget = property.expected_price >= range.min && property.expected_price <= range.max;
       }
     }
     return matchesLocation && matchesType && matchesBudget && matchesSearch;
@@ -82,6 +89,34 @@ export default function PropertiesPage() {
         {/* Premium Native Ad Placement */}
         <PremiumAdCarousel />
 
+        {/* Circular Categories */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex overflow-x-auto gap-4 py-8 mb-6 scrollbar-hide snap-x justify-start md:justify-center">
+          <div 
+            onClick={() => setSelectedType("")}
+            className={`flex flex-col items-center gap-2 cursor-pointer snap-center shrink-0 w-20 transition-all ${selectedType === "" ? "opacity-100 scale-105" : "opacity-60 hover:opacity-100"}`}
+          >
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 transition-colors ${selectedType === "" ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}>
+              <span className="font-bold text-xs uppercase tracking-wider">ALL</span>
+            </div>
+            <span className={`text-[10px] text-center font-bold tracking-wider uppercase ${selectedType === "" ? "text-primary" : "text-muted-foreground"}`}>All</span>
+          </div>
+
+          {PROPERTY_TYPES.map((type) => (
+            <div 
+              key={type.name}
+              onClick={() => setSelectedType(type.name)}
+              className={`flex flex-col items-center gap-2 cursor-pointer snap-center shrink-0 w-20 transition-all ${selectedType === type.name ? "opacity-100 scale-105" : "opacity-60 hover:opacity-100"}`}
+            >
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 overflow-hidden bg-secondary transition-colors ${selectedType === type.name ? "border-primary" : "border-border"}`}>
+                <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center">
+                   <span className="text-xl">🏢</span>
+                </div>
+              </div>
+              <span className={`text-[10px] text-center font-bold tracking-wider uppercase ${selectedType === type.name ? "text-primary" : "text-muted-foreground"}`}>{type.name}</span>
+            </div>
+          ))}
+        </motion.div>
+
         {/* Search */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="mb-6 flex items-center gap-3 border border-border p-3">
@@ -110,7 +145,7 @@ export default function PropertiesPage() {
                 {[
                   { label: "City", value: selectedCity, onChange: (val: string) => { setSelectedCity(val); setSelectedLocation(""); }, options: CITIES, placeholder: "All Cities" },
                   { label: "Location", value: selectedLocation, onChange: setSelectedLocation, options: getAreas(selectedCity), placeholder: "All Areas" },
-                  { label: "Property Type", value: selectedType, onChange: setSelectedType, options: PROPERTY_TYPES, placeholder: "Any Type" },
+                  { label: "Property Type", value: selectedType, onChange: setSelectedType, options: PROPERTY_TYPES.map(pt => pt.name), placeholder: "Any Type" },
                   { label: "Budget Range", value: selectedBudget, onChange: setSelectedBudget, options: BUDGET_RANGES.map(r => r.label), placeholder: "Any Budget" },
                 ].map((filter, i) => (
                   <div key={i}>
