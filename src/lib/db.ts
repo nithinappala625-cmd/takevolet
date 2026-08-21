@@ -571,3 +571,59 @@ export async function getFlatmateById(id: string): Promise<any | null> {
   const { data } = await supabase.from('flatmates').select('*, profiles(full_name, phone, whatsapp, avatar_url, profession)').eq('id', id).single();
   return data;
 }
+
+// ─── PROPERTY SALES & BUILD LISTINGS ─────────────────────────────────────────
+
+export type PropertySale = {
+  id: string;
+  user_id?: string;
+  type?: string; 
+  selling_price?: number;
+  carpet_area_sqft?: string | number;
+  location?: string;
+  boundaries?: string;
+  images?: string[];
+  videos?: string[];
+  created_at?: string;
+  title?: string;
+  description?: string;
+  metadata?: any;
+  profiles?: Profile;
+};
+
+export type BuildListing = {
+  id: string;
+  user_id?: string;
+  main_category?: string;
+  sub_category?: string;
+  title?: string;
+  description?: string;
+  price?: number;
+  price_unit?: string;
+  location_name?: string;
+  lat?: number;
+  lng?: number;
+  contact_number?: string;
+  media_urls?: string[];
+  created_at?: string;
+  metadata?: any;
+  profiles?: Profile;
+};
+
+export async function insertPropertySale(property: Omit<PropertySale, "id" | "created_at" | "profiles">): Promise<{ data: PropertySale | null; error: any }> {
+  const { data, error } = await supabase
+    .from("property_sales")
+    .insert([property])
+    .select()
+    .single();
+  return { data: data as PropertySale | null, error };
+}
+
+export async function insertBuildListing(build: Omit<BuildListing, "id" | "created_at" | "profiles">): Promise<{ data: BuildListing | null; error: any }> {
+  const { data, error } = await supabase
+    .from("build_listings")
+    .insert([build])
+    .select()
+    .single();
+  return { data: data as BuildListing | null, error };
+}

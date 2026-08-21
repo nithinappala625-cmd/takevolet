@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
-import type { Room } from "./db";
+import type { Room, PropertySale, BuildListing } from "./db";
 
 // Use service role key to bypass RLS for public listing reads
 const supabaseAdmin = createClient(
@@ -324,3 +324,28 @@ export async function checkFlatmateUnlockStatusAction(flatmateId: string, userId
   };
 }
 
+export async function fetchAllPropertySalesAction(): Promise<PropertySale[]> {
+  const { data, error } = await supabaseAdmin
+    .from("property_sales")
+    .select("*, profiles(full_name, phone, whatsapp, avatar_url, profession)")
+    .order("created_at", { ascending: false });
+    
+  if (error) {
+    console.error("fetchAllPropertySalesAction:", error);
+    return [];
+  }
+  return (data as PropertySale[]) || [];
+}
+
+export async function fetchAllBuildListingsAction(): Promise<BuildListing[]> {
+  const { data, error } = await supabaseAdmin
+    .from("build_listings")
+    .select("*, profiles(full_name, phone, whatsapp, avatar_url, profession)")
+    .order("created_at", { ascending: false });
+    
+  if (error) {
+    console.error("fetchAllBuildListingsAction:", error);
+    return [];
+  }
+  return (data as BuildListing[]) || [];
+}
