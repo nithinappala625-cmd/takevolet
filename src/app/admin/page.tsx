@@ -1172,7 +1172,7 @@ export default function AdminPage() {
                    <select 
                      value={selectedFormCategory}
                      onChange={e => setSelectedFormCategory(e.target.value)}
-                     className="w-full p-2 border border-border text-sm mb-4 bg-background focus:border-primary focus:outline-none"
+                     className="w-full p-2 border border-border text-sm mb-4 bg-background focus:border-primary focus:outline-none">
                      <optgroup label="Build - People & Services">
                        <option value="architect">Architect</option>
                        <option value="civil_engineer">Civil Engineer</option>
