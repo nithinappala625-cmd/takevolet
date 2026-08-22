@@ -1173,17 +1173,40 @@ export default function AdminPage() {
                      value={selectedFormCategory}
                      onChange={e => setSelectedFormCategory(e.target.value)}
                      className="w-full p-2 border border-border text-sm mb-4 bg-background focus:border-primary focus:outline-none"
-                   >
-                     <option value="transportation">Transportation</option>
-                     <option value="furniture">Furniture</option>
-                     <option value="electronics">Electronics</option>
-                     <option value="appliances">Appliances</option>
-                     <option value="contractor">Contractor (Build)</option>
-                     <option value="architect">Architect (Build)</option>
-                     <option value="interior_designer">Interior Designer (Build)</option>
-                     <option value="material_supplier">Material Supplier (Build)</option>
-                     <option value="apartment">Apartment (Property)</option>
-                     <option value="villa">Villa (Property)</option>
+                     <optgroup label="Build - People & Services">
+                       <option value="architect">Architect</option>
+                       <option value="civil_engineer">Civil Engineer</option>
+                       <option value="contractor">Contractor</option>
+                       <option value="builder">Builder</option>
+                       <option value="site_engineer">Site Engineer</option>
+                       <option value="mason">Mason</option>
+                       <option value="electrician">Electrician</option>
+                       <option value="plumber">Plumber</option>
+                       <option value="carpenter">Carpenter</option>
+                       <option value="painter">Painter</option>
+                       <option value="interior_designer">Interior Designer</option>
+                       <option value="vasthu_checker">Vasthu Checker</option>
+                       <option value="surveyor">Surveyor</option>
+                       <option value="borewell_operator">Borewell Operator</option>
+                       <option value="site_supervisor">Site Supervisor</option>
+                     </optgroup>
+                     <optgroup label="Build - Materials & Transport">
+                       <option value="material_supplier">Material Supplier (All Materials)</option>
+                       <option value="transportation">Transportation (All Vehicles)</option>
+                     </optgroup>
+                     <optgroup label="Build - Projects">
+                       <option value="residential">Residential Project</option>
+                       <option value="commercial">Commercial Project</option>
+                       <option value="apartment">Apartment</option>
+                       <option value="villa">Villa</option>
+                     </optgroup>
+                     <optgroup label="Marketplace & Rooms">
+                       <option value="furniture">Furniture (Marketplace)</option>
+                       <option value="electronics">Electronics (Marketplace)</option>
+                       <option value="appliances">Appliances (Marketplace)</option>
+                       <option value="room">Room</option>
+                       <option value="flatmate">Flatmate</option>
+                     </optgroup>
                    </select>
                    <button 
                      onClick={async () => {
