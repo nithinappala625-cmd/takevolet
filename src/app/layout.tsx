@@ -3,6 +3,7 @@ import { Outfit, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import NavbarWrapper from "@/components/NavbarWrapper";
+import AppBanner from "@/components/AppBanner";
 import { Suspense } from "react";
 import { MetaPixel } from "@/components/MetaPixel";
 
@@ -361,6 +362,7 @@ export default function RootLayout({
           ></iframe>
         </noscript>
         {/* End Google Tag Manager (noscript) */}
+        <AppBanner />
         <NavbarWrapper />
         <main className="min-h-screen">{children}</main>
       </body>
