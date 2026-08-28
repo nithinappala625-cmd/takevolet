@@ -95,8 +95,8 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b ${
-      isScrolled ? "bg-background/80 backdrop-blur-xl border-border" : "bg-transparent border-transparent"
+    <header className={`sticky top-0 w-full z-50 transition-all duration-300 border-b border-border ${
+      isScrolled ? "bg-background/95 backdrop-blur-md shadow-sm" : "bg-background"
     }`}>
       {/* ── TICKER ── */}
       <div className="bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-widest py-1.5 overflow-hidden whitespace-nowrap flex items-center" aria-hidden="true">
@@ -296,7 +296,7 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </header>
   );
 };
 
