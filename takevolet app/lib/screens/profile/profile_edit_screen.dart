@@ -28,6 +28,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _membersController = TextEditingController();
   final _colonyController = TextEditingController();
   final _houseNoController = TextEditingController();
+  final _upiController = TextEditingController();
 
   String _gender = 'Male';
   String _location = HYDERABAD_AREAS.first;
@@ -53,6 +54,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _membersController.dispose();
     _colonyController.dispose();
     _houseNoController.dispose();
+    _upiController.dispose();
     super.dispose();
   }
 
@@ -80,6 +82,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       _membersController.text = (profile['members_count'] ?? '').toString();
       _colonyController.text = profile['colony'] ?? '';
       _houseNoController.text = profile['house_no'] ?? '';
+      _upiController.text = profile['upi_id'] ?? '';
 
       final gender = profile['gender'] ?? '';
       if (_genderOptions.contains(gender)) {
@@ -147,6 +150,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         'location': _location,
         'colony': _colonyController.text.trim(),
         'house_no': _houseNoController.text.trim(),
+        'upi_id': _upiController.text.trim(),
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', userId);
 
@@ -164,7 +168,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        context.pop();
+        if(context.canPop()) context.pop();
       }
     } catch (e) {
       if (mounted) {
@@ -249,7 +253,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => context.pop(),
+          onPressed: () => context.canPop() ? context.pop() : null,
         ),
       ),
       body: _isLoading
@@ -397,6 +401,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         controller: _whatsappController,
                         decoration: _inputDeco('WhatsApp Number', Icons.chat),
                         keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _upiController,
+                        decoration: _inputDeco('UPI ID (for payouts)', Icons.account_balance_wallet),
+                        keyboardType: TextInputType.emailAddress,
                       ),
                     ],
                   ),

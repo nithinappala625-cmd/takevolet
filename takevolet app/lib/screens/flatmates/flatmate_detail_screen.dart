@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
+import '../../utils/share_utils.dart';
 import '../../widgets/full_screen_image_viewer.dart';
 
 class FlatmateDetailScreen extends StatefulWidget {
@@ -281,7 +281,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: isVisitor ? (isSelected ? Colors.amber.shade50 : Colors.white) : (isSelected ? plan['color'].withOpacity(0.05) : Colors.white),
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isSelected ? plan['color'] : (plan['isBestValue'] == true ? plan['color'].withOpacity(0.5) : Colors.grey[200]!),
@@ -599,6 +599,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
     if (flatmate == null) return Scaffold(appBar: AppBar(), body: const Center(child: Text('Flatmate not found')));
 
     final images = ImageUtils.parseImages(flatmate!['images']);
+    final metadata = flatmate!['metadata'] ?? {};
     if (images.isEmpty) {
       final imgStr = flatmate!['image'] as String?;
       if (imgStr != null && imgStr.isNotEmpty) images.add(imgStr);
@@ -651,9 +652,18 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                 Positioned(
                   top: 40, right: 10,
                   child: IconButton(
-                    icon: const Icon(Icons.share, color: Colors.white),
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                      child: const Icon(Icons.share, color: Colors.white, size: 20),
+                    ),
                     onPressed: () {
-                      Share.share('Check out this flatmate listing on Takevolet! ${flatmate!['title']} for ₹${flatmate!['rent_share']}/share at ${flatmate!['location']}.');
+                      ShareUtils.shareListing(
+                        context: context,
+                        title: flatmate!['title'] ?? 'Flatmate Needed',
+                        description: 'Rent Share: ₹${flatmate!['rent_share']}/month\nLocation: ${flatmate!['location']}',
+                        imageUrl: images.isNotEmpty ? images.first : null,
+                      );
                     },
                   ),
                 ),
@@ -692,20 +702,32 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                   Wrap(
                     spacing: 12, runSpacing: 12,
                     children: [
-                      _buildOverviewChip(Icons.wc, flatmate!['gender_pref'] ?? 'Any'),
-                      _buildOverviewChip(Icons.group, '${flatmate!['vacancy_count'] ?? 1} Vacancy'),
+                      _buildOverviewChip(Icons.wc, metadata['gender_pref']?.toString() ?? flatmate!['gender_pref']?.toString() ?? 'Any'),
+                      _buildOverviewChip(Icons.group, '${metadata['vacancy_count']?.toString() ?? flatmate!['vacancy_count']?.toString() ?? 1} Vacancy'),
                       _buildOverviewChip(Icons.home_work, 'Shared Flat'),
                     ],
                   ),
+                  if (metadata.keys.any((k) => !['gender_pref', 'vacancy_count', 'lifestyle_habits'].contains(k))) ...[
+                    const SizedBox(height: 24),
+                    const Text('Additional Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 12, runSpacing: 12,
+                      children: metadata.entries
+                        .where((e) => !['gender_pref', 'vacancy_count', 'lifestyle_habits'].contains(e.key))
+                        .map((e) => _buildOverviewChip(Icons.info_outline, '${e.key.replaceAll('_', ' ').split(' ').map((s) => s.isNotEmpty ? '${s[0].toUpperCase()}${s.substring(1)}' : '').join(' ')}: ${e.value}'))
+                        .toList(),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   const Text('Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Text(flatmate!['description'] ?? 'Looking for a compatible flatmate to share the space.', style: const TextStyle(color: Colors.grey, height: 1.5)),
-                  if (flatmate!['lifestyle_habits'] != null && (flatmate!['lifestyle_habits'] as List).isNotEmpty) ...[
+                  if ((metadata['lifestyle_habits'] ?? flatmate!['lifestyle_habits']) != null && ((metadata['lifestyle_habits'] ?? flatmate!['lifestyle_habits']) as List).isNotEmpty) ...[
                     const SizedBox(height: 16),
                     const Text('Lifestyle', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Wrap(spacing: 8, runSpacing: 8, children: (flatmate!['lifestyle_habits'] as List).map((h) => Chip(
+                    Wrap(spacing: 8, runSpacing: 8, children: ((metadata['lifestyle_habits'] ?? flatmate!['lifestyle_habits']) as List).map((h) => Chip(
                       label: Text(h.toString(), style: const TextStyle(fontSize: 12)),
                       backgroundColor: Colors.grey[100],
                     )).toList()),

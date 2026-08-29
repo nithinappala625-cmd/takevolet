@@ -6,7 +6,8 @@ import '../../main.dart';
 import '../../utils/image_utils.dart';
 
 class FlatmatesScreen extends StatefulWidget {
-  const FlatmatesScreen({super.key});
+  final String? city;
+  const FlatmatesScreen({super.key, this.city});
 
   @override
   State<FlatmatesScreen> createState() => _FlatmatesScreenState();
@@ -30,6 +31,9 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.city != null) {
+      _selectedCity = widget.city!;
+    }
     _fetchFlatmates();
   }
 
@@ -205,6 +209,47 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                   ),
                 );
               }).toList(),
+            ),
+          ),
+          // Rooms vs Flats Toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => context.go('/rooms', extra: _selectedCity), // Switch to Rooms tab
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(child: Text('Rooms', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600]))),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {}, // Already on Flats
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                        ),
+                        child: const Center(child: Text('Flats / Flatmates', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)))),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           // Search + Filter Row

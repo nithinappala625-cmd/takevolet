@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 import '../../main.dart';
 
 class PricingScreen extends StatefulWidget {
@@ -13,7 +15,15 @@ class _PricingScreenState extends State<PricingScreen> {
   late Razorpay _razorpay;
   int? selectedPriceValue;
   String? selectedPlanName;
-  bool _isBangalorePricing = false;
+  int _pendingUnlocks = 1;
+
+  final List<Map<String, dynamic>> plans = [
+    {'title': 'Single Contact', 'subtitle': '1 Room', 'price': 200, 'color': const Color(0xFF3B82F6), 'unlocks': 1, 'icon': Icons.person},
+    {'title': 'Quick Connect', 'subtitle': '3 Rooms', 'price': 500, 'color': const Color(0xFFF59E0B), 'unlocks': 3, 'icon': Icons.flash_on},
+    {'title': 'Smart Connect', 'subtitle': '5 Rooms', 'price': 800, 'color': const Color(0xFF8B5CF6), 'isBestValue': true, 'unlocks': 5, 'icon': Icons.lightbulb},
+    {'title': 'Power Connect', 'subtitle': '10 Rooms', 'price': 1200, 'color': const Color(0xFF10B981), 'unlocks': 10, 'icon': Icons.power},
+    {'title': 'Premium Connect', 'subtitle': '15 Rooms', 'price': 2000, 'color': const Color(0xFFEF4444), 'unlocks': 15, 'icon': Icons.workspace_premium},
+  ];
 
   @override
   void initState() {
@@ -30,8 +40,27 @@ class _PricingScreenState extends State<PricingScreen> {
     super.dispose();
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment Successful! Plan Upgraded.'), backgroundColor: Colors.green));
+  Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    int unlocksToAdd = _pendingUnlocks;
+
+    if (unlocksToAdd > 0) {
+      try {
+        final userId = supabase.auth.currentUser!.id;
+        final res = await supabase.from('profiles').select('contact_balance').eq('id', userId).single();
+        final currentBalance = res['contact_balance'] ?? 0;
+        await supabase.from('profiles').update({'contact_balance': currentBalance + unlocksToAdd}).eq('id', userId);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Payment Successful! $unlocksToAdd Contacts Unlocked.', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)), backgroundColor: Colors.green));
+          setState(() {
+            selectedPriceValue = null;
+            selectedPlanName = null;
+          });
+        }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Payment succeeded, but failed to update balance: $e'), backgroundColor: Colors.red));
+      }
+    }
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
@@ -42,8 +71,9 @@ class _PricingScreenState extends State<PricingScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('External Wallet: ${response.walletName}')));
   }
 
-  Future<void> _purchasePlan(int priceInRupees, String planName) async {
-    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+  Future<void> _purchasePlan(int priceInRupees, String planName, int unlocks) async {
+    setState(() => _pendingUnlocks = unlocks);
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)));
     try {
       final response = await supabase.functions.invoke(
         'create-razorpay-order',
@@ -53,183 +83,166 @@ class _PricingScreenState extends State<PricingScreen> {
 
       final data = response.data;
       if (data == null || data['id'] == null) {
-        final errorDetail = data?['error'] ?? 'No data returned';
-        throw Exception('Supabase failed to create order.\n\nError: $errorDetail\n\nDid you add RAZORPAY_KEY_ID to Supabase secrets and deploy the function?');
+        throw Exception('Supabase failed to create order. Did you deploy functions?');
       }
 
       var options = {
         'key': data['keyId'],
         'amount': priceInRupees * 100,
-        'name': 'Takevolet',
+        'name': 'Takevolet Premium',
         'description': planName,
         'order_id': data['id'],
+        'theme': {
+          'color': '#0F172A'
+        },
         'prefill': {
           'email': supabase.auth.currentUser?.email ?? 'test@test.com'
         }
       };
       _razorpay.open(options);
     } catch (e) {
-      if (context.mounted) {
-        Navigator.pop(context);
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Payment Error 🚨', style: TextStyle(color: Colors.red)),
-            content: Text('There was an error:\n\n$e\n\nPlease ensure Edge Functions are deployed.'),
-            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
-          ),
-        );
-      }
+      if (context.mounted) Navigator.pop(context);
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Premium Plans')),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
+      backgroundColor: const Color(0xFF0F172A),
+      appBar: AppBar(
+        title: Text('Premium Plans', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      extendBodyBehindAppBar: true,
+      body: Stack(
         children: [
-          const Text('Choose Your Plan', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          const Text('Unlock contacts seamlessly and save big compared to individual unlocks.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 16),
-          Center(
+          // Background accents
+          Positioned(
+            top: -100, left: -100,
             child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: () => setState(() { _isBangalorePricing = false; selectedPriceValue = null; }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: !_isBangalorePricing ? Colors.white : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: !_isBangalorePricing ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : [],
-                      ),
-                      child: Text('Hyderabad', style: TextStyle(fontWeight: !_isBangalorePricing ? FontWeight.bold : FontWeight.normal, color: !_isBangalorePricing ? Colors.black : Colors.grey)),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => setState(() { _isBangalorePricing = true; selectedPriceValue = null; }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _isBangalorePricing ? Colors.white : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: _isBangalorePricing ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : [],
-                      ),
-                      child: Text('Bangalore', style: TextStyle(fontWeight: _isBangalorePricing ? FontWeight.bold : FontWeight.normal, color: _isBangalorePricing ? Colors.black : Colors.grey)),
-                    ),
-                  ),
-                ],
-              ),
+              width: 300, height: 300,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFD4AF37).withOpacity(0.15)),
             ),
           ),
-          const SizedBox(height: 24),
-          _buildPricingCard(
-            context,
-            title: 'Single Contact',
-            price: _isBangalorePricing ? '₹30' : '₹15',
-            description: 'Get 1 Contact Unlock',
-            isPopular: false,
-            priceValue: _isBangalorePricing ? 30 : 15,
+          Positioned(
+            bottom: -50, right: -50,
+            child: Container(
+              width: 250, height: 250,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF3B82F6).withOpacity(0.15)),
+            ),
           ),
-          const SizedBox(height: 16),
-          _buildPricingCard(
-            context,
-            title: 'Starter Pack',
-            price: _isBangalorePricing ? '₹110' : '₹55',
-            description: _isBangalorePricing ? 'Get 10 Contact Unlocks (₹11.00 each)' : 'Get 10 Contact Unlocks (₹5.50 each)',
-            isPopular: false,
-            priceValue: _isBangalorePricing ? 110 : 55,
-          ),
-          const SizedBox(height: 16),
-          _buildPricingCard(
-            context,
-            title: 'Growth Pack',
-            price: _isBangalorePricing ? '₹210' : '₹105',
-            description: _isBangalorePricing ? 'Get 50 Contact Unlocks (₹4.20 each)' : 'Get 50 Contact Unlocks (₹2.10 each)',
-            isPopular: true,
-            priceValue: _isBangalorePricing ? 210 : 105,
-          ),
-          const SizedBox(height: 16),
-          _buildPricingCard(
-            context,
-            title: 'Unlimited',
-            price: _isBangalorePricing ? '₹400' : '₹200',
-            description: 'Unlimited Unlocks',
-            isPopular: false,
-            priceValue: _isBangalorePricing ? 400 : 200,
-          ),
-          const SizedBox(height: 100),
-        ],
-      ),
-      bottomSheet: selectedPriceValue != null
-          ? Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
-              ),
-              child: SafeArea(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _purchasePlan(selectedPriceValue!, selectedPlanName!),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text('Pay ₹$selectedPriceValue Now'),
+          SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Text('Unlock Direct Contacts', style: GoogleFonts.inter(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 8),
+                Text('Note: No brokers involved', style: GoogleFonts.inter(color: const Color(0xFFFF5252), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    itemCount: plans.length,
+                    itemBuilder: (context, index) {
+                      final plan = plans[index];
+                      final isBestValue = plan['isBestValue'] ?? false;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E293B).withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: isBestValue ? const Color(0xFFD4AF37) : const Color(0xFF334155), width: isBestValue ? 2 : 1),
+                                boxShadow: [
+                                  if (isBestValue) BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 15, spreadRadius: 2)
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(14),
+                                          decoration: BoxDecoration(color: plan['color'].withOpacity(0.2), shape: BoxShape.circle),
+                                          child: Icon(plan['icon'], color: plan['color'], size: 28),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(plan['title'], style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                              const SizedBox(height: 4),
+                                              Text(plan['subtitle'], style: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14)),
+                                            ],
+                                          ),
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Text('₹${plan['price']}', style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
+                                            const SizedBox(height: 8),
+                                            ElevatedButton(
+                                              onPressed: () => _purchasePlan(plan['price'], plan['title'], plan['unlocks']),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: isBestValue ? const Color(0xFFD4AF37) : const Color(0xFF334155),
+                                                foregroundColor: isBestValue ? Colors.black : Colors.white,
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                elevation: isBestValue ? 4 : 0,
+                                              ),
+                                              child: const Text('Get Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (isBestValue)
+                              Positioned(
+                                top: -12,
+                                right: 24,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(colors: [Color(0xFFD4AF37), Color(0xFFFBBF24)]),
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.4), blurRadius: 8)],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.star, color: Colors.black87, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text('MOST POPULAR', style: GoogleFonts.inter(color: Colors.black87, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ),
-            )
-          : null,
-    );
-  }
-
-  Widget _buildPricingCard(BuildContext context, {required String title, required String price, required String description, required bool isPopular, required int priceValue}) {
-    final isSelected = selectedPriceValue == priceValue;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedPriceValue = priceValue;
-          selectedPlanName = title;
-        });
-      },
-      child: Card(
-        elevation: isSelected ? 8 : 2,
-        color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.05) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: isSelected ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2) : BorderSide.none,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              if (isPopular)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(20)),
-                  child: const Text('MOST POPULAR', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                ),
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(price, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
-              const SizedBox(height: 16),
-              Text(description, style: const TextStyle(color: Colors.grey)),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

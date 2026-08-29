@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../add_requirement/add_requirement_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -160,17 +163,21 @@ class _FeedScreenState extends State<FeedScreen> {
     final createdAtStr = req['created_at'];
     
     String timeAgo = '';
+    String exactDate = '';
     if (createdAtStr != null) {
       try {
         final date = DateTime.parse(createdAtStr);
         timeAgo = timeago.format(date);
+        exactDate = DateFormat('dd MMM yyyy, hh:mm a').format(date.toLocal());
       } catch (_) {}
     }
 
     final avatarUrl = req['avatar_url'];
-
     final contactNumber = req['contact_number'] ?? '';
     final roomType = req['room_type'] ?? 'Any';
+    
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    final isMe = currentUser != null && currentUser.id == req['user_id'];
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -229,28 +236,56 @@ class _FeedScreenState extends State<FeedScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Colors.black87)),
+                        Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Colors.black87), maxLines: 2, overflow: TextOverflow.ellipsis),
                         const SizedBox(height: 2),
-                        if (timeAgo.isNotEmpty)
-                          Row(
-                            children: [
-                              Icon(Icons.access_time, size: 12, color: Colors.grey.shade500),
-                              const SizedBox(width: 4),
-                              Text(timeAgo, style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontWeight: FontWeight.w500)),
-                            ],
+                        if (exactDate.isNotEmpty)
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                WidgetSpan(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 4.0),
+                                    child: Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade500),
+                                  ),
+                                  alignment: PlaceholderAlignment.middle,
+                                ),
+                                TextSpan(text: '$exactDate ', style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontWeight: FontWeight.w500)),
+                                TextSpan(text: '($timeAgo)', style: TextStyle(color: Colors.grey.shade400, fontSize: 11)),
+                              ],
+                            ),
                           ),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [Colors.blue.shade400, Colors.blue.shade600]),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))],
+                  if (isMe)
+                    PopupMenuButton<String>(
+                      icon: Icon(Icons.more_vert, color: Colors.grey.shade600),
+                      onSelected: (val) async {
+                        if (val == 'delete') {
+                          await Supabase.instance.client.from('requirements').delete().eq('id', req['id']);
+                          _fetchRequirements();
+                        } else if (val == 'edit') {
+                          await Navigator.push(context, MaterialPageRoute(builder: (_) => AddRequirementScreen(initialData: req)));
+                          _fetchRequirements();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                        const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                      ],
+                    )
+                  else
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [Colors.blue.shade400, Colors.blue.shade600]),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))],
+                        ),
+                        child: const Text('Looking for Room', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
                     ),
-                    child: const Text('Looking for Room', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                  ),
                 ],
               ),
               const SizedBox(height: 20),
@@ -294,7 +329,7 @@ class _FeedScreenState extends State<FeedScreen> {
         children: [
           Icon(icon, size: 16, color: color.shade700),
           const SizedBox(width: 6),
-          Text(text, style: TextStyle(color: color.shade800, fontSize: 13, fontWeight: FontWeight.w600)),
+          Flexible(child: Text(text, style: TextStyle(color: color.shade800, fontSize: 13, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
         ],
       ),
     );

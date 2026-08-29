@@ -27,9 +27,10 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
     
     // Initialize controllers for text/number fields
     for (var field in widget.schema) {
-      if (field['type'] == 'text' || field['type'] == 'number') {
-        _controllers[field['key']] = TextEditingController(
-          text: _formData[field['key']]?.toString() ?? '',
+      if (field['type'] == 'text' || field['type'] == 'long_text' || field['type'] == 'number') {
+        final String key = (field['name'] ?? field['key'] ?? '').toString();
+        _controllers[key] = TextEditingController(
+          text: _formData[key]?.toString() ?? '',
         );
       }
     }
@@ -50,9 +51,40 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
     widget.onDataChanged(_formData);
   }
 
+  bool _isFieldVisible(Map<String, dynamic> field) {
+    final bool defaultVisible = field['visible'] ?? true;
+    final List<dynamic>? rules = field['visibility_rules'];
+
+    if (rules == null || rules.isEmpty) return defaultVisible;
+
+    // Evaluate rules (simplified: ALL must match)
+    for (var rule in rules) {
+      if (rule is Map<String, dynamic>) {
+        final targetField = rule['field'];
+        final targetValue = rule['value'];
+        final operator = rule['operator'] ?? '==';
+
+        final currentValue = _formData[targetField];
+
+        if (operator == '==') {
+          if (currentValue != targetValue) return false;
+        } else if (operator == '!=') {
+          if (currentValue == targetValue) return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.schema.isEmpty) return const SizedBox.shrink();
+
+    // Filter visible fields
+    final visibleFields = widget.schema.where(_isFieldVisible).toList();
+
+    if (visibleFields.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,16 +95,16 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
-        ...widget.schema.map((field) {
+        ...visibleFields.map((field) {
           final String type = field['type'] ?? 'text';
-          final String key = field['key'] ?? '';
+          final String key = (field['name'] ?? field['key'] ?? '').toString();
           final String label = field['label'] ?? '';
           final bool required = field['required'] ?? false;
           final List<dynamic>? options = field['options'];
 
           Widget fieldWidget;
 
-          if (type == 'dropdown' && options != null) {
+          if ((type == 'dropdown' || type == 'radio') && options != null) {
             fieldWidget = DropdownButtonFormField<String>(
               value: _formData[key]?.toString().isNotEmpty == true 
                   ? _formData[key].toString() 
@@ -82,9 +114,13 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
                 border: const OutlineInputBorder(),
               ),
               items: options.map((opt) {
+                // Support both old simple string list and new map list
+                final String optLabel = opt is Map ? (opt['label'] ?? opt['value']).toString() : opt.toString();
+                final String optValue = opt is Map ? (opt['value'] ?? opt['label']).toString() : opt.toString();
+
                 return DropdownMenuItem<String>(
-                  value: opt.toString(),
-                  child: Text(opt.toString()),
+                  value: optValue,
+                  child: Text(optLabel),
                 );
               }).toList(),
               onChanged: (val) {
@@ -92,8 +128,18 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
               },
               validator: required ? (v) => v == null || v.isEmpty ? 'Required' : null : null,
             );
+          } else if (type == 'checkbox') {
+            fieldWidget = CheckboxListTile(
+              title: Text('$label${required ? ' *' : ''}'),
+              value: _formData[key] == true || _formData[key] == 'true',
+              onChanged: (val) {
+                if (val != null) _updateField(key, val);
+              },
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            );
           } else {
-            // Text or Number
+            // Text, Long Text, or Number
             fieldWidget = TextFormField(
               controller: _controllers[key],
               decoration: InputDecoration(
@@ -101,6 +147,7 @@ class _DynamicFormWidgetState extends State<DynamicFormWidget> {
                 hintText: field['placeholder'],
                 border: const OutlineInputBorder(),
               ),
+              maxLines: type == 'long_text' ? 3 : 1,
               keyboardType: type == 'number' ? TextInputType.number : TextInputType.text,
               onChanged: (val) {
                 _updateField(key, val);

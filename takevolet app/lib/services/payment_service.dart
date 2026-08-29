@@ -1,119 +1,102 @@
-import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/material.dart';
 
 class PaymentService {
-  static final _supabase = Supabase.instance.client;
+  late Razorpay _razorpay;
+  final Function(PaymentSuccessResponse) onSuccess;
+  final Function(PaymentFailureResponse) onFailure;
+  final Function(ExternalWalletResponse) onExternalWallet;
 
-  static Future<bool> initiateUnlockPayment({
-    required BuildContext context,
-    required String roomId,
-    required String posterId,
-    required String roomTitle,
+  // IMPORTANT: For production, do NOT hardcode the key secret.
+  // The Key ID can be hardcoded or fetched from an environment variable.
+  static const String keyId = 'rzp_live_SqU0ZW4NCgp5jo'; // LIVE Razorpay Key ID
+
+  PaymentService({
+    required this.onSuccess,
+    required this.onFailure,
+    required this.onExternalWallet,
+  }) {
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, onSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, onFailure);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, onExternalWallet);
+  }
+
+  static Future<void> startRazorpayCheckout({
+    required double amount,
+    required String phoneNumber,
+    required String email,
+    required Function(PaymentSuccessResponse) onSuccess,
+    required Function(String) onError,
   }) async {
-    bool isSuccess = false;
     final razorpay = Razorpay();
+    
+    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse response) {
+      razorpay.clear();
+      onSuccess(response);
+    });
+    
+    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, (PaymentFailureResponse response) {
+      razorpay.clear();
+      onError(response.message ?? 'Payment failed or cancelled.');
+    });
+    
+    razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, (ExternalWalletResponse response) {
+      razorpay.clear();
+      onError('External Wallet Selected: ${response.walletName}');
+    });
 
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
+    var options = {
+      'key': keyId,
+      'amount': (amount * 100).toInt(),
+      'name': 'Takevolet App',
+      'description': 'Payment',
+      'prefill': {
+        'contact': phoneNumber,
+        'email': email,
+      },
+      'theme': {
+        'color': '#D4AF37'
+      }
+    };
 
     try {
-      // 1. Call Edge Function to create order
-      final user = _supabase.auth.currentUser;
-      final response = await _supabase.functions.invoke(
-        'create-razorpay-order',
-        body: {
-          'amount': 50000, 
-          'roomId': roomId,
-          'planId': 'unlimited'
-        },
-      );
-
-      final data = response.data;
-      if (data == null || data['id'] == null) {
-        final errorDetail = data?['error'] ?? 'No data returned';
-        throw Exception('Supabase failed to create order.\n\nError: $errorDetail\n\nDid you add RAZORPAY_KEY_ID to Supabase secrets and deploy the function?');
-      }
-
-      final orderId = data['id'];
-
-      // Hide loading dialog
-      if (context.mounted) Navigator.of(context).pop();
-
-      // 2. Setup Razorpay handlers
-      razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse paymentResponse) async {
-        // 3. Verify Payment with Edge Function
-        try {
-          await _supabase.functions.invoke(
-            'verify-razorpay-payment',
-            body: {
-              'order_id': paymentResponse.orderId,
-              'payment_id': paymentResponse.paymentId,
-              'signature': paymentResponse.signature,
-              'room_id': roomId,
-              'user_id': user?.id,
-            },
-          );
-          isSuccess = true;
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment Successful! Address unlocked.')));
-          }
-        } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Verification Failed: $e')));
-          }
-        }
-      });
-
-      razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, (PaymentFailureResponse response) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Payment Failed: ${response.message}')));
-        }
-      });
-
-      // 4. Launch Razorpay UI
-      var options = {
-        'key': data['keyId'],
-        'amount': 50000,
-        'name': 'Takevolet',
-        'description': 'Unlock Room Contact',
-        'order_id': orderId,
-        'prefill': {
-          'contact': user?.phone ?? '',
-          'email': user?.email ?? '',
-        }
-      };
       razorpay.open(options);
-
-      // Wait a reasonable amount of time for the user to complete payment
-      // In a real app, you would handle state changes rather than awaiting a Future here.
-      await Future.delayed(const Duration(minutes: 5)); 
-
     } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context).pop(); // remove dialog
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Payment Error 🚨', style: TextStyle(color: Colors.red)),
-            content: Text(
-              'There was an error communicating with the payment server:\n\n$e\n\nPlease ensure your Supabase Edge Functions are properly deployed.',
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))
-            ],
-          ),
-        );
-      }
-    } finally {
-      razorpay.clear(); // Removes all listeners
+      razorpay.clear();
+      onError('Error opening Razorpay: $e');
     }
+  }
 
-    return isSuccess;
+  void openCheckout({
+    required double amountInRupees, 
+    required String name, 
+    required String description, 
+    required String contact, 
+    required String email,
+  }) {
+    var options = {
+      'key': keyId,
+      'amount': (amountInRupees * 100).toInt(), // Razorpay expects amount in paise
+      'name': 'Takevolet Top Projects',
+      'description': description,
+      'prefill': {
+        'contact': contact,
+        'email': email,
+      },
+      'theme': {
+        'color': '#D4AF37' // Gold color to match the app
+      }
+    };
+
+    try {
+      _razorpay.open(options);
+    } catch (e) {
+      debugPrint('Error opening razorpay: $e');
+    }
+  }
+
+  void dispose() {
+    _razorpay.clear();
   }
 }

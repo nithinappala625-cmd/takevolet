@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../../main.dart';
+import '../../services/r2_storage_service.dart';
 import '../../data/locations.dart';
 
 class ProfileCompleteScreen extends StatefulWidget {
@@ -228,10 +229,8 @@ class _ProfileCompleteScreenState extends State<ProfileCompleteScreen> {
       final ext = image.path.split('.').last;
       final filePath = '$userId/aadhaar_${DateTime.now().millisecondsSinceEpoch}.$ext';
 
-      await supabase.storage.from('kyc-docs').upload(
-            filePath,
-            File(image.path),
-          );
+      // Upload directly to R2
+      final publicUrl = await R2StorageService.uploadFile(File(image.path), filePath);
 
       setState(() => _aadhaarPath = filePath);
       if (mounted) {
@@ -424,7 +423,7 @@ class _ProfileCompleteScreenState extends State<ProfileCompleteScreen> {
       child: Row(
         children: [
           InkWell(
-            onTap: () => context.pop(),
+            onTap: () => context.canPop() ? context.pop() : null,
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.all(8),

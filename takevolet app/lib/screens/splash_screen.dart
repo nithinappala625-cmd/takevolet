@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:permission_handler/permission_handler.dart';
-import '../main.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,60 +11,19 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnim;
-  late Animation<double> _scaleAnim;
-  late Animation<double> _slideAnim;
-
+class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
-    _fadeAnim = CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.easeIn));
-    _scaleAnim = Tween<double>(begin: 0.6, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.7, curve: Curves.elasticOut)));
-    _slideAnim = Tween<double>(begin: 30, end: 0).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.3, 0.8, curve: Curves.easeOut)));
-    _controller.forward();
-    _redirect();
+    _checkAuth();
   }
 
-  @override
-  void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _redirect() async {
-    // Request all permissions before proceeding
-    try {
-      await [
-        Permission.location,
-        Permission.camera,
-        Permission.microphone,
-        Permission.contacts,
-      ].request();
-    } catch (_) {
-      // Ignore if permissions are not available on this platform
-    }
-
-    await Future.delayed(const Duration(milliseconds: 3000));
+  Future<void> _checkAuth() async {
+    await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
-    final session = supabase.auth.currentSession;
-    if (session != null) {
-      // Sync Google Avatar if present
-      try {
-        final user = session.user;
-        final avatarUrl = user.userMetadata?['avatar_url'] ?? user.userMetadata?['picture'];
-        if (avatarUrl != null && avatarUrl.toString().isNotEmpty) {
-          final profile = await supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle();
-          if (profile != null && (profile['avatar_url'] == null || profile['avatar_url'].toString().isEmpty)) {
-            await supabase.from('profiles').update({'avatar_url': avatarUrl}).eq('id', user.id);
-          }
-        }
-      } catch (_) {}
 
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
       context.go('/home');
     } else {
       context.go('/login');
@@ -74,96 +33,170 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFFFFDF5), Color(0xFFFFF8DC), Color(0xFFFFFFFF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      backgroundColor: const Color(0xFF030712), // Deep dark blue/black
+      body: Stack(
+        children: [
+          // Background subtle stars/particles effect
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.3,
+              child: Image.network(
+                'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800',
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
-        ),
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return FadeTransition(
-              opacity: _fadeAnim,
-              child: Transform.translate(
-                offset: Offset(0, _slideAnim.value),
-                child: ScaleTransition(
-                  scale: _scaleAnim,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo container with glow effect
-                      Container(
-                        width: 140,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.4), blurRadius: 50, spreadRadius: 10),
-                            BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 80, spreadRadius: 20),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/images/tvl_real_logo.jpg',
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFFD4AF37).withOpacity(0.1),
-                              child: const Icon(Icons.home_work_rounded, size: 70, color: Color(0xFFD4AF37)),
-                            ),
-                          ),
-                        ),
+          
+          // Bottom City Skyline with Wave
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: Stack(
+              children: [
+                ClipPath(
+                  clipper: WaveClipper(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: const NetworkImage('https://images.unsplash.com/photo-1449844908441-8829872d2607?w=800&q=80'),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(const Color(0xFF030712).withOpacity(0.6), BlendMode.darken),
                       ),
-                      const SizedBox(height: 32),
-                      // App name
-                      const Text(
-                        'Takevolet',
-                        style: TextStyle(
-                          fontSize: 38,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFFD4AF37),
-                          letterSpacing: 2.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Find Your Perfect Home',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 80),
-                      // Loading indicator
-                      SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: const Color(0xFFD4AF37).withOpacity(0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Loading...',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
+                // Gold glowing edge on the wave
+                ClipPath(
+                  clipper: WaveEdgeClipper(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFD4AF37).withOpacity(0.8),
+                          const Color(0xFFFBBF24).withOpacity(0.2),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Main Content
+          SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                  // App Logo (Transparent)
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFD4AF37).withOpacity(0.3),
+                          blurRadius: 30,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.asset(
+                        'assets/images/newlogo.jpg',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),const SizedBox(height: 24),
+                  
+                  // App Name
+                  Text(
+                    'Takevolet',
+                    style: GoogleFonts.inter(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFFD4AF37), // Gold
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // Subtitle
+                  Text(
+                    'Find Your Perfect Home',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.grey.shade400,
+                      letterSpacing: 0.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 60),
+
+                  // Loading Indicator
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+                    strokeWidth: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading...',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.moveTo(0, size.height * 0.3);
+    path.quadraticBezierTo(size.width * 0.25, size.height * 0.4, size.width * 0.5, size.height * 0.25);
+    path.quadraticBezierTo(size.width * 0.75, size.height * 0.1, size.width, size.height * 0.2);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class WaveEdgeClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.moveTo(0, size.height * 0.3);
+    path.quadraticBezierTo(size.width * 0.25, size.height * 0.4, size.width * 0.5, size.height * 0.25);
+    path.quadraticBezierTo(size.width * 0.75, size.height * 0.1, size.width, size.height * 0.2);
+    
+    // Create a thin band for the stroke
+    path.lineTo(size.width, size.height * 0.2 + 8);
+    path.quadraticBezierTo(size.width * 0.75, size.height * 0.1 + 8, size.width * 0.5, size.height * 0.25 + 8);
+    path.quadraticBezierTo(size.width * 0.25, size.height * 0.4 + 8, 0, size.height * 0.3 + 8);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

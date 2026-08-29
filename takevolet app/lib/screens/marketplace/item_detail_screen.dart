@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
+import '../../utils/share_utils.dart';
 import '../../widgets/full_screen_image_viewer.dart';
 
 class ItemDetailScreen extends StatefulWidget {
@@ -74,9 +74,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share, color: Colors.white),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+              child: const Icon(Icons.share, color: Colors.white, size: 20),
+            ),
             onPressed: () {
-              Share.share('Check out this item on Takevolet! ${item!['title']} for ₹${item!['price']} at ${item!['location']}.');
+              ShareUtils.shareListing(
+                context: context,
+                title: item!['title'] ?? 'Marketplace Item',
+                description: 'Price: ₹${item!['price']}\nLocation: ${item!['location']}',
+                imageUrl: imageUrl,
+              );
             },
           ),
         ],

@@ -1,4 +1,4 @@
-package com.example.takevolet_app
+package com.takevolet.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -199,7 +199,8 @@ class _ProfileDashboardScreenState extends State<ProfileDashboardScreen> {
             const SizedBox(height: 8),
 
             _buildMenuItem(Icons.account_balance_wallet, 'Earnings & Wallet', Colors.green, () => context.push('/earnings')),
-            _buildMenuItem(Icons.list_alt, 'My Listings', Colors.blue, () => context.push('/user-dashboard')),
+            _buildMenuItem(Icons.dashboard_customize, 'Client Panel (My Listings)', Colors.blue, () => context.push('/client-dashboard')),
+            _buildMenuItem(Icons.person, 'User Panel (Wishlist & Bookings)', Colors.indigo, () => context.push('/user-dashboard')),
             _buildMenuItem(Icons.lock_open, 'Unlock History', Colors.purple, () => context.push('/unlock-history')),
             _buildMenuItem(Icons.card_giftcard, 'Refer & Earn', Colors.orange, () => context.push('/refer')),
             _buildMenuItem(Icons.star, 'Premium Plans', Colors.amber, () => context.push('/pricing')),

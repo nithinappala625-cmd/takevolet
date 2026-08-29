@@ -1,3 +1,13 @@
+const List<String> TELANGANA_DISTRICTS = [
+  'Adilabad', 'Bhadradri Kothagudem', 'Hanumakonda', 'Hyderabad', 'Jagtial',
+  'Jangaon', 'Jayashankar Bhupalpally', 'Jogulamba Gadwal', 'Kamareddy',
+  'Karimnagar', 'Khammam', 'Komaram Bheem Asifabad', 'Mahabubabad',
+  'Mahabubnagar', 'Mancherial', 'Medak', 'Medchal-Malkajgiri', 'Mulugu',
+  'Nagarkurnool', 'Nalgonda', 'Narayanpet', 'Nirmal', 'Nizamabad',
+  'Peddapalli', 'Rajanna Sircilla', 'Rangareddy', 'Sangareddy', 'Siddipet',
+  'Suryapet', 'Vikarabad', 'Wanaparthy', 'Warangal', 'Yadadri Bhuvanagiri'
+];
+
 const List<String> HYDERABAD_AREAS = [
   'Madhapur', 'Hitech City', 'Gachibowli', 'Kondapur', 'Kothaguda',
   'Nanakramguda', 'Financial District', 'Raidurg', 'Manikonda', 'Narsingi',

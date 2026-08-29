@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   }
 
   // Fetch all data in parallel
-  const [payoutsRes, interestsRes, handoversRes, profilesRes, roomsRes, flatmatesRes, contactUnlocksRes, flatmateUnlocksRes, propertySalesRes, buildListingsRes] = await Promise.all([
+  const [payoutsRes, interestsRes, handoversRes, profilesRes, roomsRes, flatmatesRes, contactUnlocksRes, flatmateUnlocksRes, propertySalesRes, buildListingsRes, bookingsRes] = await Promise.all([
     supabaseAdmin.from("payouts").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("interests").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("handovers").select("*").order("confirmed_at", { ascending: false }),
@@ -37,6 +37,7 @@ export async function GET(request: Request) {
     supabaseAdmin.from("flatmate_contact_unlocks").select("*, flatmates(title, user_id, profiles!flatmates_user_id_fkey(full_name, phone, whatsapp)), profiles!flatmate_contact_unlocks_user_id_fkey(full_name)").order("created_at", { ascending: false }),
     supabaseAdmin.from("property_sales").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("build_listings").select("*").order("created_at", { ascending: false }),
+    supabaseAdmin.from("bookings").select("*, build_listings(title, display_id), profiles!bookings_user_id_fkey(full_name, phone, whatsapp)").order("created_at", { ascending: false }),
   ]);
 
   const payouts   = payoutsRes.data   || [];
@@ -47,6 +48,8 @@ export async function GET(request: Request) {
   const flatmates = flatmatesRes.data || [];
   const propertySales = propertySalesRes.data || [];
   const buildListings = buildListingsRes.data || [];
+  const bookings      = bookingsRes?.data || [];
+
   const contactUnlocks = contactUnlocksRes.data || [];
   const flatmateUnlocks = flatmateUnlocksRes.data || [];
 
@@ -129,6 +132,7 @@ export async function GET(request: Request) {
       totalRooms:           rooms.length,
       totalPropertySales:   propertySales.length,
       totalBuildListings:   buildListings.length,
+      totalBookings:        bookings.length,
     },
     payouts: payouts.map((p: any) => ({
       ...p,

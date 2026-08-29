@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import '../../services/onesignal_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
+import '../../utils/share_utils.dart';
 import '../../widgets/full_screen_image_viewer.dart';
 
 class RoomDetailScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   String? _selectedPlanId;
   int _contactBalance = 0;
   int _pendingAmount = 0;
+  int _pendingUnlocks = 1;
 
   late Razorpay _razorpay;
   final PageController _pageController = PageController();
@@ -47,18 +49,27 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    // Check pending amount and apply balance directly
     final userId = supabase.auth.currentUser?.id;
     if (userId != null) {
       try {
-        if (_pendingAmount == 35 || _pendingAmount == 55) {
-          // Starter Pack: add 5 contacts (or 10 based on old pricing, we will adjust pricing in _showUnlockDialog)
-          // 35rs = 5 contacts
-          await supabase.from('profiles').update({'contact_balance': _contactBalance + 5}).eq('id', userId);
-          if (mounted) setState(() => _contactBalance += 5);
-        } else if (_pendingAmount == 15 || _pendingAmount == 30) {
-          // Single contact unlock
-          await supabase.from('contact_unlocks').insert({'room_id': widget.id, 'user_id': userId});
+        // ALWAYS unlock the current room immediately
+        await supabase.from('contact_unlocks').insert({'room_id': widget.id, 'user_id': userId});
+        
+        // If they bought more than 1 contact, add the remainder to their balance
+        if (_pendingUnlocks > 1) {
+          final remainder = _pendingUnlocks - 1;
+          await supabase.from('profiles').update({'contact_balance': _contactBalance + remainder}).eq('id', userId);
+          if (mounted) setState(() => _contactBalance += remainder);
+        }
+
+        // Notify the owner that their room contact was unlocked
+        if (room != null && room!['user_id'] != null) {
+          try {
+             await OneSignalService.sendPushNotification(
+               title: 'Contact Unlocked!',
+               message: 'Someone just unlocked your contact details for: ${room!['title']}',
+             );
+          } catch (_) {}
         }
       } catch (e) {}
     }
@@ -148,8 +159,9 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     } catch (_) {}
   }
 
-  Future<void> _purchasePlan(int amount, String desc) async {
+  Future<void> _purchasePlan(int amount, String desc, {int unlocks = 1}) async {
     _pendingAmount = amount;
+    _pendingUnlocks = unlocks;
     showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
     try {
       String? planId;
@@ -205,7 +217,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   }
 
   void _showUnlockDialog() {
-    if (_contactBalance > 0) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -237,25 +248,21 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           ],
         ),
       );
-      return;
-    }
+  }
 
+  void _showUnlockSheet() {
     final String location = (room!['location'] ?? '').toLowerCase();
     final String city = (room!['city'] ?? '').toLowerCase();
     final bool isBangalore = location.contains('bangalore') || location.contains('bengaluru') || city.contains('bangalore') || city.contains('bengaluru');
     
     // Contact plans only
-    final List<Map<String, dynamic>> plans = isBangalore ? [
-      {'title': 'Single Contact', 'subtitle': '1 Contact', 'price': 30, 'color': Colors.blue},
-      {'title': 'Starter Pack', 'subtitle': '5 Contacts', 'price': 65, 'color': Colors.orange},
-      {'title': 'Growth Pack', 'subtitle': '50 Contacts', 'price': 210, 'color': Colors.purple, 'isBestValue': true},
-      {'title': 'Unlimited', 'subtitle': 'Unlimited Contacts', 'price': 400, 'color': Colors.red},
-    ] : [
-      {'title': 'Single Contact', 'subtitle': '1 Contact', 'price': 15, 'color': Colors.blue},
-      {'title': 'Starter Pack', 'subtitle': '5 Contacts', 'price': 35, 'color': Colors.orange},
-      {'title': 'Growth Pack', 'subtitle': '50 Contacts', 'price': 105, 'color': Colors.purple, 'isBestValue': true},
-      {'title': 'Unlimited', 'subtitle': 'Unlimited Contacts', 'price': 200, 'color': Colors.red},
-    ];
+          final List<Map<String, dynamic>> plans = [
+        {'title': 'Single Contact', 'subtitle': '1 Room', 'price': 200, 'color': Colors.blue, 'unlocks': 1},
+        {'title': 'Quick Connect', 'subtitle': '3 Rooms', 'price': 500, 'color': Colors.orange, 'unlocks': 3},
+        {'title': 'Smart Connect', 'subtitle': '5 Rooms', 'price': 800, 'color': Colors.purple, 'isBestValue': true, 'unlocks': 5},
+        {'title': 'Power Connect', 'subtitle': '10 Rooms', 'price': 1200, 'color': Colors.green, 'unlocks': 10},
+        {'title': 'Premium Connect', 'subtitle': '15 Rooms', 'price': 2000, 'color': Colors.red, 'unlocks': 15},
+      ];
 
     Map<String, dynamic>? selectedPlan = plans[2]; // Default to Growth Pack
 
@@ -278,6 +285,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
                   const SizedBox(height: 20),
                   const Text('Unlock Contact', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const Text('Note: no brokers involved', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
                   const Text('Choose a plan to contact the owner directly', style: TextStyle(color: Colors.grey)),
                   const SizedBox(height: 20),
                   Expanded(
@@ -297,7 +306,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: isVisitor ? (isSelected ? Colors.amber.shade50 : Colors.white) : (isSelected ? plan['color'].withOpacity(0.05) : Colors.white),
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isSelected ? plan['color'] : (plan['isBestValue'] == true ? plan['color'].withOpacity(0.5) : Colors.grey[200]!),
@@ -344,7 +353,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                     child: ElevatedButton(
                       onPressed: selectedPlan != null ? () {
                         Navigator.pop(context); // close modal first
-                        _purchasePlan(selectedPlan!['price'], selectedPlan!['title']);
+                        _purchasePlan(selectedPlan!['price'], selectedPlan!['title'], unlocks: selectedPlan!['unlocks'] ?? 1); // selectedPlan!['title']);
                       } : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: selectedPlan != null ? Theme.of(context).colorScheme.primary : Colors.grey,
@@ -839,41 +848,18 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         ),
       ]);
     } else {
-      final String location = (room?['location'] ?? '').toLowerCase();
-      final String city = (room?['city'] ?? '').toLowerCase();
-      final bool isBangalore = location.contains('bangalore') || location.contains('bengaluru') || city.contains('bangalore') || city.contains('bengaluru');
-      final int rent = room?['rent'] ?? 0;
-      // Show only visiting charges on button
-      int visitingCharges = 0;
-      if (isBangalore) {
-        visitingCharges = rent <= 20000 ? 600 : 1000;
-      } else {
-        visitingCharges = rent <= 20000 ? 300 : 500;
-      }
       return Row(
         children: [
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: () => _purchasePlan(visitingCharges, 'Visitor Pass'),
-              icon: const Icon(Icons.star, size: 18),
-              label: Text('Visitor Pass\n(₹$visitingCharges)', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              onPressed: _contactBalance > 0 ? _showUnlockDialog : _showUnlockSheet,
+              icon: const Icon(Icons.lock_open, size: 20),
+              label: const Text('Unlock Owner Details', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber.shade700,
+                backgroundColor: const Color(0xFFD4AF37),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _showUnlockDialog,
-              icon: const Icon(Icons.lock_open, size: 18),
-              label: const Text('Contact\nUnlock', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
@@ -888,6 +874,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     if (room == null) return Scaffold(appBar: AppBar(), body: const Center(child: Text('Room not found')));
 
     final images = ImageUtils.parseImages(room!['images']);
+    final metadata = room!['metadata'] ?? {};
     if (images.isEmpty) {
       final imgStr = room!['image'] as String?;
       if (imgStr != null && imgStr.isNotEmpty) images.add(imgStr);
@@ -946,9 +933,18 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   Positioned(
                     top: 40, right: 10,
                     child: IconButton(
-                      icon: const Icon(Icons.share, color: Colors.white),
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                        child: const Icon(Icons.share, color: Colors.white, size: 20),
+                      ),
                       onPressed: () {
-                        Share.share('Check out this amazing room on Takevolet! ${room!['title']} for ₹${room!['rent']}/month at ${room!['location']}.');
+                        ShareUtils.shareListing(
+                          context: context,
+                          title: room!['title'] ?? 'Room for Rent',
+                          description: 'Rent: ₹${room!['rent']}/month\nLocation: ${room!['location']}',
+                          imageUrl: images.isNotEmpty ? images.first : null,
+                        );
                       },
                     ),
                   ),
@@ -995,13 +991,26 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                       Wrap(
                         spacing: 12, runSpacing: 12,
                         children: [
-                          _buildOverviewChip(Icons.wc, room!['gender_preference'] ?? 'Any'),
-                          _buildOverviewChip(Icons.chair, room!['furnishing'] ?? 'Furnished'),
-                          _buildOverviewChip(Icons.people, '${room!['members_allowed'] ?? 1} Max'),
-                          if (room!['parking'] != null && room!['parking'] != 'None')
-                            _buildOverviewChip(Icons.local_parking, room!['parking']),
+                          _buildOverviewChip(Icons.wc, metadata['gender_preference']?.toString() ?? room!['gender_preference']?.toString() ?? 'Any'),
+                          _buildOverviewChip(Icons.chair, metadata['furnishing']?.toString() ?? room!['furnishing']?.toString() ?? 'Furnished'),
+                          _buildOverviewChip(Icons.people, '${metadata['members_allowed']?.toString() ?? room!['members_allowed']?.toString() ?? 1} Max'),
+                          if ((metadata['parking'] ?? room!['parking']) != null && (metadata['parking'] ?? room!['parking']) != 'None')
+                            _buildOverviewChip(Icons.local_parking, (metadata['parking'] ?? room!['parking']).toString()),
                         ],
                       ),
+                      
+                      if (metadata.keys.any((k) => !['gender_preference', 'furnishing', 'members_allowed', 'parking', 'commission', 'tenant_type'].contains(k))) ...[
+                        const SizedBox(height: 24),
+                        const Text('Additional Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 12, runSpacing: 12,
+                          children: metadata.entries
+                            .where((e) => !['gender_preference', 'furnishing', 'members_allowed', 'parking', 'commission', 'tenant_type'].contains(e.key))
+                            .map((e) => _buildOverviewChip(Icons.info_outline, '${e.key.replaceAll('_', ' ').split(' ').map((s) => s.isNotEmpty ? '${s[0].toUpperCase()}${s.substring(1)}' : '').join(' ')}: ${e.value}'))
+                            .toList(),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       const Text('Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
@@ -1015,7 +1024,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 else ...[
                   _buildPosterInfoCard(),
                   const SizedBox(height: 16),
-                  _buildPremiumPlans(),
                 ],
 
                 const SizedBox(height: 24),

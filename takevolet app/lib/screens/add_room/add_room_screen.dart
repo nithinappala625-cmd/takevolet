@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../main.dart';
+import '../../services/onesignal_service.dart';
+import '../../services/r2_storage_service.dart';
+import '../../services/watermark_service.dart';
 import '../../data/locations.dart';
 
 class AddRoomScreen extends StatefulWidget {
@@ -49,13 +52,15 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
       _advanceController.text = data['advance']?.toString() ?? '';
       _addressController.text = data['full_address']?.toString() ?? '';
       _leavingDateController.text = data['leaving_date']?.toString() ?? '';
-      _commissionController.text = data['commission']?.toString() ?? '';
-      _membersController.text = data['members_allowed']?.toString() ?? '1';
+      final metadata = data['metadata'] ?? {};
       
-      _tenantType = data['tenant_type']?.toString() ?? 'bachelor';
-      _genderPref = data['gender_preference']?.toString() ?? 'Any';
-      _furnishing = data['furnishing']?.toString() ?? 'Semi-Furnished';
-      _parking = data['parking']?.toString() ?? 'Bike Parking';
+      _commissionController.text = metadata['commission']?.toString() ?? data['commission']?.toString() ?? '';
+      _membersController.text = metadata['members_allowed']?.toString() ?? data['members_allowed']?.toString() ?? '1';
+      
+      _tenantType = metadata['tenant_type']?.toString() ?? data['tenant_type']?.toString() ?? 'bachelor';
+      _genderPref = metadata['gender_preference']?.toString() ?? data['gender_preference']?.toString() ?? 'Any';
+      _furnishing = metadata['furnishing']?.toString() ?? data['furnishing']?.toString() ?? 'Semi-Furnished';
+      _parking = metadata['parking']?.toString() ?? data['parking']?.toString() ?? 'Bike Parking';
       
       if (data['city'] == 'Bangalore') {
         _selectedCity = 'Bangalore';
@@ -74,16 +79,46 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
     }
   }
 
-  Future<void> _pickImages() async {
-    final List<XFile> images = await _picker.pickMultiImage(
-      imageQuality: 70,
-      maxWidth: 1280,
-      maxHeight: 1280,
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return showDialog<ImageSource>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Select Image Source'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(leading: const Icon(Icons.camera_alt), title: const Text('Camera'), onTap: () => Navigator.pop(ctx, ImageSource.camera)),
+            ListTile(leading: const Icon(Icons.photo_library), title: const Text('Gallery'), onTap: () => Navigator.pop(ctx, ImageSource.gallery)),
+          ],
+        ),
+      ),
     );
-    if (images.isNotEmpty) {
-      final availableSlots = 6 - _selectedImages.length;
-      if (availableSlots > 0) {
-        setState(() => _selectedImages.addAll(images.take(availableSlots).map((e) => File(e.path))));
+  }
+
+  Future<void> _pickImages() async {
+    final source = await _showImageSourceDialog();
+    if (source == null) return;
+    
+    if (source == ImageSource.camera) {
+      final picked = await _picker.pickImage(source: ImageSource.camera, imageQuality: 70, maxWidth: 1280, maxHeight: 1280);
+      if (picked != null && _selectedImages.length < 6) {
+        final watermarked = await WatermarkService.addWatermark(File(picked.path));
+        setState(() => _selectedImages.add(watermarked));
+      }
+    } else {
+      final List<XFile> images = await _picker.pickMultiImage(
+        imageQuality: 70,
+        maxWidth: 1280,
+        maxHeight: 1280,
+      );
+      if (images.isNotEmpty) {
+        final availableSlots = 6 - _selectedImages.length;
+        if (availableSlots > 0) {
+          for (var x in images.take(availableSlots)) {
+            final watermarked = await WatermarkService.addWatermark(File(x.path));
+            setState(() => _selectedImages.add(watermarked));
+          }
+        }
       }
     }
   }
@@ -100,8 +135,8 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
         if (_selectedImages.isNotEmpty) {
           for (var file in _selectedImages) {
             final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-            await supabase.storage.from('room-media').upload('Takevolet/rooms/$fileName', file);
-            uploadedUrls.add(supabase.storage.from('room-media').getPublicUrl('Takevolet/rooms/$fileName'));
+            final url = await R2StorageService.uploadFile(file, 'Takevolet/rooms/$fileName');
+            uploadedUrls.add(url);
           }
         } else if (widget.initialData != null && widget.initialData!['images'] != null) {
           uploadedUrls = (widget.initialData!['images'] as List).cast<String>();
@@ -116,6 +151,15 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
         }
       }
 
+      final metadata = {
+        'tenant_type': _tenantType,
+        'gender_preference': _genderPref,
+        'furnishing': _furnishing,
+        'parking': _parking,
+        'commission': int.tryParse(_commissionController.text) ?? 500,
+        'members_allowed': int.tryParse(_membersController.text) ?? 1,
+      };
+
       final roomData = {
         'user_id': user.id,
         'title': _titleController.text.isNotEmpty ? _titleController.text : 'Premium Room',
@@ -126,21 +170,35 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
         'colony': _colony ?? '', 
         'full_address': _addressController.text,
         'leaving_date': _leavingDateController.text.isNotEmpty ? _leavingDateController.text : DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-        'tenant_type': _tenantType,
-        'gender_preference': _genderPref,
-        'furnishing': _furnishing,
-        'parking': _parking,
-        'commission': int.tryParse(_commissionController.text) ?? 500,
-        'members_allowed': int.tryParse(_membersController.text) ?? 1,
         'images': uploadedUrls,
         'is_available': true,
         'city': _selectedCity,
+        'metadata': metadata,
       };
 
       if (widget.initialData != null) {
         await supabase.from('rooms').update(roomData).eq('id', widget.initialData!['id']);
       } else {
         await supabase.from('rooms').insert(roomData);
+        try {
+          await OneSignalService.sendPushNotification(
+            title: 'New Room Available',
+            message: 'A new room is available in $_location, $_selectedCity for ₹${roomData['rent']}/mo.',
+          );
+        } catch (e) {
+          debugPrint('Push Notification error: $e');
+        }
+
+        try {
+          await supabase.from('notifications').insert({
+            'user_id': user.id,
+            'title': 'New Room Available',
+            'body': 'A new room is available in $_location, $_selectedCity for ₹${roomData['rent']}/mo.',
+            'type': 'room',
+          });
+        } catch (e) {
+          debugPrint('In-App Notification DB error: $e');
+        }
       }
 
       if (mounted) {

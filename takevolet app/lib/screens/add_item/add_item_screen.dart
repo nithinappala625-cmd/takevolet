@@ -38,7 +38,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Map<String, dynamic> _dynamicData = {};
 
   Future<void> _fetchDynamicSchema() async {
-    final schema = await _dynamicFormsService.getFormSchema('marketplace');
+    final schemaId = _category.toLowerCase().replaceAll(' & ', '_').replaceAll(' ', '_');
+    final schema = await _dynamicFormsService.getFormSchema(schemaId);
     setState(() {
       _dynamicSchema = schema;
     });
@@ -288,7 +289,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         value: _category,
                         decoration: _inputDeco('Category', Icons.list),
                         items: _categories.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                        onChanged: (v) => setState(() => _category = v!),
+                        onChanged: (v) {
+                          setState(() => _category = v!);
+                          _fetchDynamicSchema();
+                        },
                       ),
                       const SizedBox(height: 14),
                       DropdownButtonFormField<String>(

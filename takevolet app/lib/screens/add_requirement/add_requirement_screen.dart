@@ -3,9 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../../services/onesignal_service.dart';
+import '../../services/r2_storage_service.dart';
 
 class AddRequirementScreen extends StatefulWidget {
-  const AddRequirementScreen({super.key});
+  final Map<String, dynamic>? initialData;
+  const AddRequirementScreen({super.key, this.initialData});
 
   @override
   State<AddRequirementScreen> createState() => _AddRequirementScreenState();
@@ -15,6 +18,7 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _locationsController = TextEditingController();
   final TextEditingController _budgetController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
@@ -23,8 +27,8 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
   String _furnishedType = 'Any';
   final List<String> _furnishedOptions = ['Furnished', 'Semi-Furnished', 'Unfurnished', 'Any'];
 
-  String _roomType = 'Any';
-  final List<String> _roomOptions = ['1RK', '1BHK', '2BHK', '3BHK', 'Any'];
+  String _roomType = 'Room';
+  final List<String> _roomOptions = ['Room', 'Flat/Apartment', 'Independent House', 'Open Plot', 'Commercial', 'Cook', 'Legal Cell', 'Any'];
 
   File? _profileImage;
   final _picker = ImagePicker();
@@ -39,7 +43,27 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null) {
+      final data = widget.initialData!;
+      _nameController.text = data['name']?.toString() ?? '';
+      _locationsController.text = data['preferred_locations']?.toString() ?? '';
+      _budgetController.text = data['budget']?.toString() ?? '';
+      _contactController.text = data['contact_number']?.toString() ?? '';
+      _descriptionController.text = data['description']?.toString() ?? '';
+      
+      _furnishedType = data['furnished_type']?.toString() ?? 'Any';
+      if (!_furnishedOptions.contains(_furnishedType)) _furnishedType = 'Any';
+      
+      _roomType = data['room_type']?.toString() ?? 'Any';
+      if (!_roomOptions.contains(_roomType)) _roomType = 'Any';
+    }
+  }
+
+  @override
   void dispose() {
+    _nameController.dispose();
     _locationsController.dispose();
     _budgetController.dispose();
     _contactController.dispose();
@@ -60,24 +84,45 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
 
       final profileResponse = await Supabase.instance.client
           .from('profiles')
-          .select('full_name, email')
+          .select('full_name, email, avatar_url')
           .eq('id', user.id)
           .maybeSingle();
 
-      final String name = profileResponse?['full_name'] ?? 'Unknown';
-      final String email = profileResponse?['email'] ?? user.email ?? 'Unknown';
-
-      String? uploadedAvatarUrl;
-      if (_profileImage != null) {
-        final fileName = 'avatars/${user.id}-${DateTime.now().millisecondsSinceEpoch}.jpg';
-        await Supabase.instance.client.storage.from('room-media').upload(fileName, _profileImage!);
-        uploadedAvatarUrl = Supabase.instance.client.storage.from('room-media').getPublicUrl(fileName);
-        
-        // Update the global profile so it reflects everywhere
-        await Supabase.instance.client.from('profiles').update({'avatar_url': uploadedAvatarUrl}).eq('id', user.id);
+      final userMetadataAvatar = user.userMetadata?['avatar_url'];
+      if (_profileImage == null && 
+          (profileResponse?['avatar_url'] == null || profileResponse!['avatar_url'].toString().isEmpty) && 
+          (userMetadataAvatar == null || userMetadataAvatar.toString().isEmpty)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile picture is mandatory to post!'), backgroundColor: Colors.red),
+        );
+        setState(() => _isLoading = false);
+        return;
       }
 
-      await Supabase.instance.client.from('requirements').insert({
+      final String name = _nameController.text.trim();
+      final String email = profileResponse?['email'] ?? user.email ?? 'Unknown';
+
+      String? uploadedAvatarUrl = profileResponse?['avatar_url'] ?? user.userMetadata?['avatar_url'];
+      if (_profileImage != null) {
+        final fileName = 'avatars/${user.id}-${DateTime.now().millisecondsSinceEpoch}.jpg';
+        uploadedAvatarUrl = await R2StorageService.uploadFile(_profileImage!, fileName);
+      }
+
+      // Update the global profile so it reflects everywhere
+      if (uploadedAvatarUrl != null) {
+        if (profileResponse == null) {
+          await Supabase.instance.client.from('profiles').insert({
+            'id': user.id, 
+            'avatar_url': uploadedAvatarUrl,
+            'email': user.email,
+            'full_name': user.userMetadata?['full_name'] ?? name,
+          });
+        } else {
+          await Supabase.instance.client.from('profiles').update({'avatar_url': uploadedAvatarUrl}).eq('id', user.id);
+        }
+      }
+
+      final requirementData = {
         'user_id': user.id,
         'name': name,
         'email': email,
@@ -87,14 +132,32 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
         'room_type': _roomType,
         'furnished_type': _furnishedType,
         'description': _descriptionController.text.trim(),
-      });
+      };
+
+      if (widget.initialData != null) {
+        await Supabase.instance.client.from('requirements').update(requirementData).eq('id', widget.initialData!['id']);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Requirement updated successfully!'), backgroundColor: Colors.green));
+      } else {
+        await Supabase.instance.client.from('requirements').insert(requirementData);
+        try {
+          await OneSignalService.sendPushNotification(
+            title: 'New Tenant Requirement',
+            message: '$name is looking for a $_roomType in ${_locationsController.text.trim()}. Budget: ₹${_budgetController.text.trim()}/mo.',
+          );
+        } catch (e) {
+          debugPrint('Push Notification error: $e');
+        }
+
+        await OneSignalService.broadcastInAppNotification(
+          title: 'New Tenant Requirement',
+          body: '$name is looking for a $_roomType in ${_locationsController.text.trim()}. Budget: ₹${_budgetController.text.trim()}/mo.',
+          type: 'feed',
+        );
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Requirement posted successfully!'), backgroundColor: Colors.green));
+      }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Requirement posted successfully!'), backgroundColor: Colors.green),
-        );
-        context.pop();
-        context.go('/feed');
+        if(context.canPop()) context.pop();
       }
     } catch (e) {
       debugPrint('Error posting requirement: $e');
@@ -153,6 +216,14 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
                   const SizedBox(height: 24),
 
                   _buildTextField(
+                    controller: _nameController,
+                    label: 'Your Name (Mandatory)',
+                    icon: Icons.person_outline,
+                    validator: (v) => v == null || v.isEmpty ? 'Name is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  _buildTextField(
                     controller: _locationsController,
                     label: 'Preferred Locations (e.g., Madhapur, Gachibowli)',
                     icon: Icons.location_on_outlined,
@@ -177,7 +248,7 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  const Text('Room Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Requirement Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,

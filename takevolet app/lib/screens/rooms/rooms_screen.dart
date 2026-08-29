@@ -8,7 +8,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 import '../../widgets/smart_image.dart';
 
 class RoomsScreen extends StatefulWidget {
-  const RoomsScreen({super.key});
+  final String? city;
+  const RoomsScreen({super.key, this.city});
 
   @override
   State<RoomsScreen> createState() => _RoomsScreenState();
@@ -29,6 +30,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
   final List<String> _cities = ['Hyderabad', 'Bangalore'];
   final List<String> _genderOptions = ['Any', 'Male', 'Female', 'Family'];
   final List<String> _furnishingOptions = ['Any', 'Furnished', 'Semi-Furnished', 'Unfurnished'];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.city != null) {
+      _selectedCity = widget.city!;
+    }
+  }
 
   Future<List<Map<String, dynamic>>> _fetchRooms() async {
     var query = supabase.from('rooms').select().eq('is_available', true).eq('city', _selectedCity);
@@ -326,7 +335,48 @@ class _RoomsScreenState extends State<RoomsScreen> {
             ),
           ),
 
-          // Removed Coming soon placeholder
+          // Rooms vs Flats Toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {}, // Already on Rooms
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                        ),
+                        child: const Center(child: Text('Rooms', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)))),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => context.go('/flatmates', extra: _selectedCity), // Switch to Flats tab
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(child: Text('Flats / Flatmates', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600]))),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           // Search + Filter Row
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),

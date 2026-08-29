@@ -15,6 +15,11 @@ class MainShell extends StatelessWidget {
       return;
     }
 
+    if (route != '/add-room' && route != '/add-flatmate') {
+      if (context.mounted) context.push(route);
+      return;
+    }
+
     try {
       final profile = await Supabase.instance.client
           .from('profiles')
@@ -47,63 +52,101 @@ class MainShell extends StatelessWidget {
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 48,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(10),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'What would you like to post?',
-                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
+                const SizedBox(height: 24),
+                Text(
+                  'What would you like to post?',
+                  style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              _buildPostOption(
-                context: sheetContext,
-                icon: Icons.home_work_rounded,
-                title: 'Post a Room',
-                subtitle: 'Find tenants for your property',
-                color: const Color(0xFF4A90E2),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _handlePostNavigation(parentContext, '/add-room');
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildPostOption(
-                context: sheetContext,
-                icon: Icons.people_alt_rounded,
-                title: 'Find a Flatmate',
-                subtitle: 'Share your current apartment',
-                color: const Color(0xFFF39C12),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _handlePostNavigation(parentContext, '/add-flatmate');
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildPostOption(
-                context: sheetContext,
-                icon: Icons.assignment_rounded,
-                title: 'Post a Requirement',
-                subtitle: 'Looking for a room or flatmate?',
-                color: const Color(0xFF27AE60),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _handlePostNavigation(parentContext, '/add-requirement');
-                },
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+                _buildPostOption(
+                  context: sheetContext,
+                  icon: Icons.home_work_rounded,
+                  title: 'Post a Room',
+                  subtitle: 'Find tenants for your property',
+                  color: const Color(0xFF4A90E2),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePostNavigation(parentContext, '/add-room');
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildPostOption(
+                  context: sheetContext,
+                  icon: Icons.people_alt_rounded,
+                  title: 'Find a Flatmate',
+                  subtitle: 'Share your current apartment',
+                  color: const Color(0xFFF39C12),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePostNavigation(parentContext, '/add-flatmate');
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildPostOption(
+                  context: sheetContext,
+                  icon: Icons.assignment_rounded,
+                  title: 'Post a Requirement',
+                  subtitle: 'Looking for a room or flatmate?',
+                  color: const Color(0xFF27AE60),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePostNavigation(parentContext, '/add-requirement');
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildPostOption(
+                  context: sheetContext,
+                  icon: Icons.real_estate_agent_rounded,
+                  title: 'Sell Property',
+                  subtitle: 'List a property for sale/rent',
+                  color: const Color(0xFF9B59B6),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePostNavigation(parentContext, '/add-sale'); // Assuming we will create this route
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildPostOption(
+                  context: sheetContext,
+                  icon: Icons.construction_rounded,
+                  title: 'List Construction Service',
+                  subtitle: 'Add Materials, Transport, or Services',
+                  color: const Color(0xFFE74C3C),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePostNavigation(parentContext, '/add-build-listing'); 
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildPostOption(
+                  context: sheetContext,
+                  icon: Icons.gavel_rounded,
+                  title: 'Become Legal Partner',
+                  subtitle: 'Lawyers, Notaries, MeeSeva & More (₹100 Fee)',
+                  color: const Color(0xFFD4AF37),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePostNavigation(parentContext, '/add-legal-partner'); 
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         );
       },
@@ -170,9 +213,10 @@ class MainShell extends StatelessWidget {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
     if (location.startsWith('/feed')) return 1;
-    if (location.startsWith('/rooms')) return 2;
-    if (location.startsWith('/flatmates')) return 3;
-    if (location.startsWith('/profile')) return 4;
+    if (location.startsWith('/rooms') || location.startsWith('/flatmates')) return 2;
+    if (location.startsWith('/flats')) return 3;
+    if (location.startsWith('/build')) return 4;
+    if (location.startsWith('/profile')) return 5;
     return 0;
   }
 
@@ -188,9 +232,12 @@ class MainShell extends StatelessWidget {
         context.go('/rooms');
         break;
       case 3:
-        context.go('/flatmates');
+        context.go('/flats');
         break;
       case 4:
+        context.go('/build');
+        break;
+      case 5:
         context.go('/profile');
         break;
     }
@@ -220,7 +267,8 @@ class MainShell extends StatelessWidget {
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.feed_outlined), selectedIcon: Icon(Icons.feed), label: 'Feed'),
           NavigationDestination(icon: Icon(Icons.bed_outlined), selectedIcon: Icon(Icons.bed), label: 'Rooms'),
-          NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Flatmates'),
+          NavigationDestination(icon: Icon(Icons.apartment_outlined), selectedIcon: Icon(Icons.apartment), label: 'Properties'),
+          NavigationDestination(icon: Icon(Icons.construction_outlined), selectedIcon: Icon(Icons.construction), label: 'Build'),
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

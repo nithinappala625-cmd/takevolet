@@ -110,6 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRoomCard(Map<String, dynamic> room) {
+    final metadata = room['metadata'] ?? {};
     final thumbnailUrl = ImageUtils.getThumbnail(room);
 
     return Container(
@@ -138,13 +139,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(room['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(room['title']?.toString() ?? metadata['title']?.toString() ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text(room['location'] ?? 'Location', style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis)),
-                      Text('₹${room['rent']}/mo', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+                      Expanded(child: Text(room['location']?.toString() ?? metadata['location']?.toString() ?? 'Location', style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis)),
+                      Text('₹${room['rent'] ?? metadata['rent'] ?? 0}/mo', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                     ],
                   )
                 ],
@@ -157,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFlatmateCard(Map<String, dynamic> flatmate) {
+    final metadata = flatmate['metadata'] ?? {};
     final thumbnailUrl = ImageUtils.getThumbnail(flatmate);
 
     return Container(
@@ -192,15 +194,127 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(flatmate['title'] ?? 'Looking for Flatmate', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(flatmate['title']?.toString() ?? metadata['title']?.toString() ?? 'Looking for Flatmate', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text(flatmate['location'] ?? 'N/A', style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis)),
-                      Text('₹${flatmate['rent_share'] ?? flatmate['price']}/mo', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+                      Expanded(child: Text(flatmate['location']?.toString() ?? metadata['location']?.toString() ?? 'N/A', style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis)),
+                      Text('₹${flatmate['rent_share'] ?? flatmate['price'] ?? metadata['rent_share'] ?? metadata['price'] ?? 0}/mo', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                     ],
                   ),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatFlatPrice(dynamic price) {
+    if (price == null) return '₹0';
+    double p = 0;
+    if (price is int) p = price.toDouble();
+    else if (price is double) p = price;
+    else if (price is String) p = double.tryParse(price) ?? 0;
+
+    if (p >= 10000000) return '₹${(p / 10000000).toStringAsFixed(2)} Cr';
+    if (p >= 100000) return '₹${(p / 100000).toStringAsFixed(2)} L';
+    return '₹${p.toStringAsFixed(0)}';
+  }
+
+  Widget _buildFlatSaleCard(Map<String, dynamic> flat) {
+    final metadata = flat['metadata'] ?? {};
+    return Container(
+      width: 260,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push('/flat-sale/${flat['id']}'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 160,
+              width: double.infinity,
+              child: flat['cover_image'] != null
+                  ? SmartImage(imageUrl: flat['cover_image'], fit: BoxFit.cover)
+                  : Container(color: Colors.grey[200], child: const Icon(Icons.home_work, size: 50, color: Colors.grey)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(flat['title']?.toString() ?? metadata['title']?.toString() ?? 'Flat', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          [flat['village'] ?? metadata['village'], flat['locality'] ?? metadata['locality'], flat['area'] ?? metadata['area'], flat['district'] ?? metadata['district'], flat['city'] ?? metadata['city']]
+                              .where((e) => e != null && e.toString().trim().isNotEmpty)
+                              .take(2)
+                              .join(', '),
+                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(_formatFlatPrice(flat['expected_price'] ?? flat['price'] ?? metadata['expected_price'] ?? metadata['price']), style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+                    ],
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBuildCard(Map<String, dynamic> buildListing) {
+    return Container(
+      width: 260,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push('/build/detail', extra: buildListing),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 160,
+              width: double.infinity,
+              child: buildListing['image_url'] != null
+                  ? SmartImage(imageUrl: buildListing['image_url'], fit: BoxFit.cover)
+                  : Container(color: Colors.grey[200], child: const Icon(Icons.handyman, size: 50, color: Colors.grey)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(buildListing['title'] ?? 'Construction Service', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text(buildListing['location_name'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis)),
+                      Text('${buildListing['sub_category'] ?? 'Service'}', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  )
                 ],
               ),
             )
@@ -453,6 +567,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
             _buildSectionHeader('Featured Rooms', () => context.go('/rooms')),
             _buildHorizontalList(table: 'rooms', itemBuilder: _buildRoomCard),
+            const SizedBox(height: 24),
+            _buildSectionHeader('Properties for Sale', () => context.go('/flats')),
+            _buildHorizontalList(table: 'property_sales', itemBuilder: _buildFlatSaleCard),
+            _buildSectionHeader('Construction & Materials', () => context.go('/build')),
+            _buildHorizontalList(table: 'build_listings', itemBuilder: _buildBuildCard),
             const SizedBox(height: 24),
             _buildSectionHeader('Find Flatmates', () => context.go('/flatmates')),
             _buildHorizontalList(table: 'flatmates', itemBuilder: _buildFlatmateCard),
