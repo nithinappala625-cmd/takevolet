@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Takevolet Lead Clipper</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="logo-badge">T</div>
+        <div>
+          <h1 class="brand-title">TAKEVOLET</h1>
+          <span class="brand-subtitle">Real Estate Lead Manager</span>
+        </div>
+      </div>
+      <div class="header-status">
+        <span id="connIndicator" class="status-dot online" title="CRM Connected"></span>
+      </div>
+    </header>
+
+    <!-- Nav Tabs -->
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="tab-clip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Clip & DM
+      </button>
+      <button class="tab-btn" data-tab="tab-templates">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Templates
+      </button>
+      <button class="tab-btn" data-tab="tab-leads">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        CRM Leads
+      </button>
+      <button class="tab-btn" data-tab="tab-settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </nav>
+
+    <!-- TAB 1: CLIP LEAD & OUTREACH -->
+    <main id="tab-clip" class="tab-content active">
+      <!-- ⚡ BULK CLIP ALL VISIBLE COMMENTS BUTTON -->
+      <div class="bulk-clip-banner">
+        <button id="btnBulkClip" class="btn btn-gold btn-block">
+          ⚡ Clip All Visible Comments (1-Click)
+        </button>
+      </div>
+
+      <!-- Bulk Leads Preview Container (hidden by default) -->
+      <div id="bulkLeadsContainer" class="card mt-2 hidden">
+        <div class="card-header">
+          <span class="badge badge-gold">Discovered Comments (<span id="bulkCount">0</span>)</span>
+          <button id="btnCloseBulk" class="btn-sm btn-ghost">✕ Close</button>
+        </div>
+        <p class="text-xs text-muted mb-2">Assign common location & category, then save all into CRM & Excel:</p>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="bulkLocation">Telangana District / Area</label>
+            <select id="bulkLocation">
+              <option value="All Telangana" selected>All Telangana (General)</option>
+              <optgroup label="⚡ Hyderabad & Growth Hubs">
+                <option value="Gachibowli">Gachibowli</option>
+                <option value="Madhapur">Madhapur</option>
+                <option value="Hitec City">Hitec City</option>
+                <option value="Kondapur">Kondapur</option>
+                <option value="Financial District">Financial District</option>
+                <option value="Kokapet">Kokapet</option>
+                <option value="Tellapur">Tellapur</option>
+                <option value="Narsingi">Narsingi</option>
+                <option value="Mokila">Mokila</option>
+                <option value="Manikonda">Manikonda</option>
+                <option value="Miyapur">Miyapur</option>
+                <option value="Kukatpally">Kukatpally</option>
+                <option value="Banjara Hills">Banjara Hills</option>
+                <option value="Jubilee Hills">Jubilee Hills</option>
+                <option value="Kompally">Kompally</option>
+                <option value="Shamshabad / Airport">Shamshabad / Airport</option>
+                <option value="Shadnagar">Shadnagar</option>
+                <option value="Uppal / Ghatkesar">Uppal / Ghatkesar</option>
+                <option value="Bachupally">Bachupally</option>
+              </optgroup>
+              <optgroup label="🏛️ All 33 Telangana Districts">
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="Rangareddy">Rangareddy</option>
+                <option value="Medchal-Malkajgiri">Medchal-Malkajgiri</option>
+                <option value="Sangareddy">Sangareddy</option>
+                <option value="Vikarabad">Vikarabad</option>
+                <option value="Yadadri Bhuvanagiri">Yadadri Bhuvanagiri</option>
+                <option value="Nalgonda">Nalgonda</option>
+                <option value="Suryapet">Suryapet</option>
+                <option value="Siddipet">Siddipet</option>
+                <option value="Medak">Medak</option>
+                <option value="Kamareddy">Kamareddy</option>
+                <option value="Nizamabad">Nizamabad</option>
+                <option value="Karimnagar">Karimnagar</option>
+                <option value="Rajanna Sircilla">Rajanna Sircilla</option>
+                <option value="Jagtial">Jagtial</option>
+                <option value="Peddapalli">Peddapalli</option>
+                <option value="Warangal">Warangal</option>
+                <option value="Hanamkonda">Hanamkonda</option>
+                <option value="Jangaon">Jangaon</option>
+                <option value="Mahabubabad">Mahabubabad</option>
+                <option value="Jayashankar Bhupalpally">Jayashankar Bhupalpally</option>
+                <option value="Mulugu">Mulugu</option>
+                <option value="Khammam">Khammam</option>
+                <option value="Bhadradri Kothagudem">Bhadradri Kothagudem</option>
+                <option value="Mahabubnagar">Mahabubnagar</option>
+                <option value="Nagarkurnool">Nagarkurnool</option>
+                <option value="Wanaparthy">Wanaparthy</option>
+                <option value="Jogulamba Gadwal">Jogulamba Gadwal</option>
+                <option value="Narayanpet">Narayanpet</option>
+                <option value="Adilabad">Adilabad</option>
+                <option value="Nirmal">Nirmal</option>
+                <option value="Mancherial">Mancherial</option>
+                <option value="Kumuram Bheem Asifabad">Kumuram Bheem Asifabad</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bulkCategory">Interest</label>
+            <select id="bulkCategory">
+              <option value="Buy Apartment/Flat">Buy Flat</option>
+              <option value="Buy Villa">Buy Villa</option>
+              <option value="Open Plot / Land">Open Plot</option>
+              <option value="Agriculture / Farm Land">Farm Land</option>
+              <option value="Rental / Flatmate">Rental</option>
+              <option value="Commercial Space">Commercial</option>
+              <option value="Real Estate">Real Estate</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Filter and Selection Toolbar -->
+        <div class="bulk-filter-toolbar">
+          <div class="flex gap-1">
+            <button id="btnFilterSerious" class="btn-xs btn-gold-outline" title="Show only comments with price, location, phone, details inquiries">
+              🔥 Serious Buyers Only
+            </button>
+            <button id="btnSelectAllBulk" class="btn-xs btn-ghost">
+              ☑️ All
+            </button>
+          </div>
+          <span class="text-xs font-bold text-muted"><span id="bulkSelectedCount">0</span> selected</span>
+        </div>
+
+        <div id="bulkListScroll" class="bulk-list-scroll"></div>
+
+        <div class="bulk-actions-stack mt-2">
+          <button id="btnSaveBulkToCRM" class="btn btn-primary btn-block">
+            💾 Save Selected (<span id="btnSaveCount">0</span>) to Takevolet CRM
+          </button>
+          <button id="btnExportBulkExcel" class="btn btn-secondary btn-block mt-1">
+            📊 Download Excel (.csv)
+          </button>
+        </div>
+      </div>
+
+      <!-- Single Lead Clip Card -->
+      <div class="card mt-2">
+        <div class="card-header">
+          <span class="badge badge-gold">Single Lead Clipper</span>
+          <button id="btnAutoDetect" class="btn-sm btn-ghost" title="Auto-detect profile from current tab">
+            ⚡ Detect from Tab
+          </button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="leadName">Profile Name / Handle *</label>
+            <input type="text" id="leadName" placeholder="e.g. @rahul_realestate or Rahul" required>
+          </div>
+
+          <div class="form-group">
+            <label for="leadLocation">Telangana District / Area</label>
+            <select id="leadLocation">
+              <option value="All Telangana" selected>All Telangana (General)</option>
+              <optgroup label="⚡ Hyderabad & Growth Hubs">
+                <option value="Gachibowli">Gachibowli</option>
+                <option value="Madhapur">Madhapur</option>
+                <option value="Hitec City">Hitec City</option>
+                <option value="Kondapur">Kondapur</option>
+                <option value="Financial District">Financial District</option>
+                <option value="Kokapet">Kokapet</option>
+                <option value="Tellapur">Tellapur</option>
+                <option value="Narsingi">Narsingi</option>
+                <option value="Mokila">Mokila</option>
+                <option value="Manikonda">Manikonda</option>
+                <option value="Miyapur">Miyapur</option>
+                <option value="Kukatpally">Kukatpally</option>
+                <option value="Banjara Hills">Banjara Hills</option>
+                <option value="Jubilee Hills">Jubilee Hills</option>
+                <option value="Kompally">Kompally</option>
+                <option value="Shamshabad / Airport">Shamshabad / Airport</option>
+                <option value="Shadnagar">Shadnagar</option>
+                <option value="Uppal / Ghatkesar">Uppal / Ghatkesar</option>
+                <option value="Bachupally">Bachupally</option>
+              </optgroup>
+              <optgroup label="🏛️ All 33 Telangana Districts">
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="Rangareddy">Rangareddy</option>
+                <option value="Medchal-Malkajgiri">Medchal-Malkajgiri</option>
+                <option value="Sangareddy">Sangareddy</option>
+                <option value="Vikarabad">Vikarabad</option>
+                <option value="Yadadri Bhuvanagiri">Yadadri Bhuvanagiri</option>
+                <option value="Nalgonda">Nalgonda</option>
+                <option value="Suryapet">Suryapet</option>
+                <option value="Siddipet">Siddipet</option>
+                <option value="Medak">Medak</option>
+                <option value="Kamareddy">Kamareddy</option>
+                <option value="Nizamabad">Nizamabad</option>
+                <option value="Karimnagar">Karimnagar</option>
+                <option value="Rajanna Sircilla">Rajanna Sircilla</option>
+                <option value="Jagtial">Jagtial</option>
+                <option value="Peddapalli">Peddapalli</option>
+                <option value="Warangal">Warangal</option>
+                <option value="Hanamkonda">Hanamkonda</option>
+                <option value="Jangaon">Jangaon</option>
+                <option value="Mahabubabad">Mahabubabad</option>
+                <option value="Jayashankar Bhupalpally">Jayashankar Bhupalpally</option>
+                <option value="Mulugu">Mulugu</option>
+                <option value="Khammam">Khammam</option>
+                <option value="Bhadradri Kothagudem">Bhadradri Kothagudem</option>
+                <option value="Mahabubnagar">Mahabubnagar</option>
+                <option value="Nagarkurnool">Nagarkurnool</option>
+                <option value="Wanaparthy">Wanaparthy</option>
+                <option value="Jogulamba Gadwal">Jogulamba Gadwal</option>
+                <option value="Narayanpet">Narayanpet</option>
+                <option value="Adilabad">Adilabad</option>
+                <option value="Nirmal">Nirmal</option>
+                <option value="Mancherial">Mancherial</option>
+                <option value="Kumuram Bheem Asifabad">Kumuram Bheem Asifabad</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="leadCategory">Interest Category</label>
+            <select id="leadCategory">
+              <option value="Buy Apartment/Flat">Buy Apartment/Flat</option>
+              <option value="Buy Villa">Buy Villa</option>
+              <option value="Open Plot / Land">Open Plot / Land</option>
+              <option value="Rental / Flatmate">Rental / Flatmate</option>
+              <option value="Commercial Space">Commercial Space</option>
+              <option value="Construction & Build">Construction & Build</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="leadBudget">Budget Estimate</label>
+            <input type="text" id="leadBudget" placeholder="e.g. 80L - 1.2 Cr / 25k rent">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="profileUrl">Profile URL</label>
+          <input type="url" id="profileUrl" placeholder="https://instagram.com/username">
+        </div>
+
+        <div class="form-group">
+          <label for="sourceUrl">Source Post / Reel URL</label>
+          <input type="url" id="sourceUrl" placeholder="https://instagram.com/reel/...">
+        </div>
+
+        <div class="form-group">
+          <label for="commentText">Inquiry / Comment Note</label>
+          <textarea id="commentText" rows="2" placeholder="e.g. 'Interested in 3BHK Gachibowli, please share price details'"></textarea>
+        </div>
+
+        <div class="save-bar mt-2">
+          <button id="btnSaveLead" class="btn btn-primary btn-block">
+            💾 Save Single Lead to Takevolet CRM
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Message Generator Section -->
+      <div class="card mt-2">
+        <div class="card-header">
+          <span class="badge badge-blue">Outreach Message</span>
+          <select id="msgTemplateSelect" class="select-sm">
+            <option value="buyer">Hyderabad Property Buyer</option>
+            <option value="villa">Luxury Villa Inquirer</option>
+            <option value="plot">Plot & Land Investor</option>
+            <option value="rental">Rental & Flatmate</option>
+            <option value="short">Quick Greeting</option>
+          </select>
+        </div>
+
+        <div class="message-preview-container">
+          <textarea id="msgPreview" rows="3" class="message-box"></textarea>
+        </div>
+
+        <div class="action-buttons">
+          <button id="btnCopyMsg" class="btn btn-secondary">
+            📋 Copy Message
+          </button>
+          <button id="btnOpenDM" class="btn btn-gold">
+            💬 Open DM Chat
+          </button>
+        </div>
+      </div>
+
+      <div id="saveNotification" class="notification hidden"></div>
+    </main>
+
+    <!-- TAB 2: MESSAGE TEMPLATES -->
+    <section id="tab-templates" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <span class="badge badge-gold">Custom Message Templates</span>
+          <span class="text-muted text-xs">Tags: {name}, {location}, {category}</span>
+        </div>
+
+        <div class="template-item">
+          <label class="template-label">Property Buyer Template</label>
+          <textarea id="tplBuyer" class="form-control" rows="3">Hi {name}! 👋 I noticed you're looking for property in {location}. At Takevolet, we have verified direct-owner & builder verified options in {location} within your budget. Would you like me to share the listings brochure?</textarea>
+        </div>
+
+        <div class="template-item mt-2">
+          <label class="template-label">Villa / Luxury Template</label>
+          <textarea id="tplVilla" class="form-control" rows="3">Hello {name}! Saw your interest in luxury properties. We have exclusive gated villa projects across {location} with zero brokerage. Let me know if you'd like a quick video walkthrough!</textarea>
+        </div>
+
+        <div class="template-item mt-2">
+          <label class="template-label">Plots & Investment Template</label>
+          <textarea id="tplPlot" class="form-control" rows="3">Hi {name}! If you're exploring high-growth open plots near {location}, we have HMDA/RERA approved plots starting at great prices with Takevolet verified titles. Happy to share details!</textarea>
+        </div>
+
+        <button id="btnSaveTemplates" class="btn btn-secondary btn-block mt-3">
+          Save Custom Templates
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 3: CRM LEADS LIST & EXCEL EXPORT -->
+    <section id="tab-leads" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <span class="badge badge-gold">CRM Leads (<span id="leadsCount">0</span>)</span>
+          <div class="flex gap-1">
+            <button id="btnExportAllExcel" class="btn-sm btn-gold" title="Export all leads to Excel CSV">📊 Excel</button>
+            <button id="btnRefreshLeads" class="btn-sm btn-ghost">🔄</button>
+          </div>
+        </div>
+        <div class="search-bar">
+          <input type="text" id="leadSearchInput" placeholder="Search by name, area...">
+        </div>
+        <div id="leadsList" class="leads-scroll-area">
+          <div class="empty-state">Loading leads from CRM...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SETTINGS -->
+    <section id="tab-settings" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <span class="badge badge-gold">CRM Connection Settings</span>
+        </div>
+
+        <div class="form-group">
+          <label for="crmUrl">Takevolet Backend URL</label>
+          <input type="text" id="crmUrl" value="http://localhost:3000" placeholder="e.g. http://localhost:3000 or https://takevolet.com">
+        </div>
+
+        <div class="form-group">
+          <label for="crmPassword">Admin Secret / Password</label>
+          <input type="password" id="crmPassword" value="Nithin@Takevolet2026">
+        </div>
+
+        <div class="form-group">
+          <label for="agentName">Sales Agent Name</label>
+          <input type="text" id="agentName" placeholder="e.g. Nithin (Takevolet Team)">
+        </div>
+
+        <button id="btnTestConn" class="btn btn-secondary btn-block mt-2">
+          Test Connection
+        </button>
+        <button id="btnSaveSettings" class="btn btn-primary btn-block mt-2">
+          Save Settings
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

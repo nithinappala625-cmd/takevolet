@@ -17,7 +17,7 @@ import { uploadRoomMedia } from "@/lib/db";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
-type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "property_sales" | "build_listings" | "bookings" | "form_builder";
+type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "property_sales" | "build_listings" | "bookings" | "form_builder" | "leads";
 
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false);
@@ -37,6 +37,10 @@ export default function AdminPage() {
   const [localPropertySales, setLocalPropertySales] = useState<any[]>([]);
   const [localBuildListings, setLocalBuildListings] = useState<any[]>([]);
   const [localBookings, setLocalBookings] = useState<any[]>([]);
+  const [localLeads, setLocalLeads] = useState<any[]>([]);
+  const [leadSearch, setLeadSearch] = useState("");
+  const [leadFilter, setLeadFilter] = useState("all");
+  const [leadLoading, setLeadLoading] = useState(false);
 
   const [editItem, setEditItem] = useState<any | null>(null);
   const [editType, setEditType] = useState<"user" | "room" | "flatmate" | "property_sales" | "build_listings" | null>(null);
@@ -215,15 +219,39 @@ export default function AdminPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/data", {
-        headers: { "x-admin-password": ADMIN_PASSWORD },
-      });
-      const json = await res.json();
+      const [dataRes, leadsRes] = await Promise.all([
+        fetch("/api/admin/data", { headers: { "x-admin-password": ADMIN_PASSWORD } }),
+        fetch("/api/admin/leads", { headers: { "x-admin-password": ADMIN_PASSWORD } }).catch(() => null)
+      ]);
+      const json = await dataRes.json();
       if (json.success) setData(json);
+
+      if (leadsRes && leadsRes.ok) {
+        const leadsJson = await leadsRes.json();
+        if (leadsJson.success) setLocalLeads(leadsJson.leads || []);
+      }
     } catch (e) {
       console.error("Failed to load admin data", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLeadStatusUpdate = async (leadId: string | number, newStatus: string) => {
+    try {
+      const res = await fetch("/api/admin/leads", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": ADMIN_PASSWORD,
+        },
+        body: JSON.stringify({ id: leadId, status: newStatus }),
+      });
+      if (res.ok) {
+        setLocalLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+      }
+    } catch (e) {
+      console.error("Failed to update lead status", e);
     }
   };
 
@@ -371,12 +399,13 @@ export default function AdminPage() {
         
         <div className="flex-1 py-6 px-4 space-y-1">
           <p className="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-3 px-3">Menu</p>
-          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "property_sales", "build_listings", "bookings", "form_builder"] as Tab[]).map(tab => {
+          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "property_sales", "build_listings", "bookings", "form_builder", "leads"] as Tab[]).map(tab => {
             const label = tab === "payouts" && pendingPayouts.length > 0 ? `Payouts (${pendingPayouts.length})` 
                         : tab === "unlocks" && data?.contactUnlocks?.length > 0 ? `Unlocks (${data.contactUnlocks.length})`
                         : tab === "property_sales" ? `Property Sales`
                         : tab === "build_listings" ? `Build Listings`
                         : tab === "form_builder" ? `Form Builder`
+                        : tab === "leads" ? `Social Leads CRM`
                         : tab.charAt(0).toUpperCase() + tab.slice(1);
             
             const count = tab === "users" ? users.length 
@@ -385,6 +414,7 @@ export default function AdminPage() {
                         : tab === "property_sales" ? localPropertySales.length 
                         : tab === "build_listings" ? localBuildListings.length 
                         : tab === "bookings" ? localBookings.length 
+                        : tab === "leads" ? localLeads.length 
                         : null;
             
             const labelStr = count !== null ? `${label} (${count})` : label;
@@ -1481,6 +1511,259 @@ export default function AdminPage() {
                      </button>
                    )}
                  </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── SOCIAL LEADS CRM TAB ── */}
+        {activeTab === "leads" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-wider flex items-center gap-2 text-white">
+                  <Users className="text-primary" size={20} /> Social Leads CRM
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  Property buyer and rental leads captured from Instagram & social media via Takevolet Extension
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    if (localLeads.length === 0) {
+                      alert("No leads to export!");
+                      return;
+                    }
+                    const headers = [
+                      "S.No",
+                      "Lead Name / Handle",
+                      "Customer Comment / Inquiry",
+                      "Intent / Priority",
+                      "Instagram Profile URL",
+                      "Source Post / Reel URL",
+                      "Telangana District / Location",
+                      "Interest Category",
+                      "Budget",
+                      "Status",
+                      "Date Captured"
+                    ];
+                    const rows = localLeads.map((l, idx) => [
+                      `"${idx + 1}"`,
+                      `"${(l.name || '').replace(/"/g, '""')}"`,
+                      `"${(l.comment_text || '').replace(/"/g, '""')}"`,
+                      `"${((l.notes && l.notes.includes('High Intent')) ? '🔥 High Intent (Serious Buyer)' : 'General Inquiry').replace(/"/g, '""')}"`,
+                      `"${(l.profile_url || '').replace(/"/g, '""')}"`,
+                      `"${(l.source_url || '').replace(/"/g, '""')}"`,
+                      `"${(l.location || 'All Telangana').replace(/"/g, '""')}"`,
+                      `"${(l.category || 'Real Estate').replace(/"/g, '""')}"`,
+                      `"${(l.budget || '').replace(/"/g, '""')}"`,
+                      `"${(l.status || 'new').replace(/"/g, '""')}"`,
+                      `"${new Date(l.created_at || Date.now()).toLocaleString()}"`
+                    ]);
+                    const csv = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `Takevolet_Leads_${new Date().toISOString().split("T")[0]}.csv`;
+                    link.click();
+                  }}
+                  className="bg-primary hover:bg-primary/90 text-black px-3 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-all shadow-sm"
+                >
+                  <Download size={14} /> Export to Excel (.csv)
+                </button>
+
+                <button
+                  onClick={async () => {
+                    setLeadLoading(true);
+                    try {
+                      const res = await fetch("/api/admin/leads", { headers: { "x-admin-password": pwd || ADMIN_PASSWORD } });
+                      const json = await res.json();
+                      if (json.success) setLocalLeads(json.leads || []);
+                    } catch (e) {}
+                    setLeadLoading(false);
+                  }}
+                  className="bg-white/5 hover:bg-white/10 text-gray-200 px-3 py-2 text-xs font-bold rounded-lg border border-[#2A2E39] flex items-center gap-2 transition-all"
+                >
+                  <RefreshCw size={14} className={leadLoading ? "animate-spin" : ""} /> Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Metric Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl">
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Total Leads</p>
+                <p className="text-2xl font-black text-white mt-1">{localLeads.length}</p>
+              </div>
+              <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl">
+                <p className="text-[10px] uppercase tracking-widest text-yellow-400 font-bold">New Inquiries</p>
+                <p className="text-2xl font-black text-yellow-400 mt-1">
+                  {localLeads.filter(l => (l.status || 'new') === 'new').length}
+                </p>
+              </div>
+              <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl">
+                <p className="text-[10px] uppercase tracking-widest text-blue-400 font-bold">Contacted</p>
+                <p className="text-2xl font-black text-blue-400 mt-1">
+                  {localLeads.filter(l => l.status === 'contacted').length}
+                </p>
+              </div>
+              <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl">
+                <p className="text-[10px] uppercase tracking-widest text-green-400 font-bold">Qualified / Closed</p>
+                <p className="text-2xl font-black text-green-400 mt-1">
+                  {localLeads.filter(l => l.status === 'qualified' || l.status === 'closed').length}
+                </p>
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl flex flex-col md:flex-row gap-4 justify-between items-center">
+              <div className="flex items-center gap-2 w-full md:w-80">
+                <input
+                  type="text"
+                  placeholder="Search by name, area, comment..."
+                  value={leadSearch}
+                  onChange={e => setLeadSearch(e.target.value)}
+                  className="w-full bg-white/5 border border-[#2A2E39] px-3 py-2 text-xs rounded-lg text-white focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+                {["all", "new", "contacted", "qualified", "closed"].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setLeadFilter(st)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                      leadFilter === st
+                        ? "bg-primary text-black"
+                        : "bg-white/5 text-gray-400 hover:text-white border border-[#2A2E39]"
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Leads Table */}
+            <div className="bg-[#14171C] border border-[#2A2E39] rounded-xl overflow-hidden shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#0A0C10] text-gray-400 uppercase tracking-wider text-[10px] border-b border-[#2A2E39]">
+                    <tr>
+                      <th className="py-3 px-4 font-bold">Lead / Profile</th>
+                      <th className="py-3 px-4 font-bold">Location & Category</th>
+                      <th className="py-3 px-4 font-bold">Budget</th>
+                      <th className="py-3 px-4 font-bold">Comment / Note</th>
+                      <th className="py-3 px-4 font-bold">Status</th>
+                      <th className="py-3 px-4 font-bold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#2A2E39]">
+                    {localLeads
+                      .filter(l => {
+                        const matchesFilter = leadFilter === "all" || (l.status || "new") === leadFilter;
+                        const query = leadSearch.toLowerCase();
+                        const matchesSearch = !query || 
+                          (l.name && l.name.toLowerCase().includes(query)) ||
+                          (l.location && l.location.toLowerCase().includes(query)) ||
+                          (l.comment_text && l.comment_text.toLowerCase().includes(query));
+                        return matchesFilter && matchesSearch;
+                      })
+                      .map((lead, idx) => {
+                        const handle = (lead.name || "").replace("@", "");
+                        const igDmUrl = handle ? `https://ig.me/m/${handle}` : (lead.profile_url || "#");
+
+                        return (
+                          <tr key={lead.id || idx} className="hover:bg-white/5 transition-colors">
+                            <td className="py-3 px-4">
+                              <div className="font-bold text-white text-sm flex items-center gap-2">
+                                {lead.name}
+                              </div>
+                              {lead.profile_url && (
+                                <a
+                                  href={lead.profile_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-blue-400 hover:underline inline-block mt-0.5"
+                                >
+                                  View Social Profile ↗
+                                </a>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="inline-block bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px] font-bold">
+                                {lead.location || "Hyderabad"}
+                              </div>
+                              <p className="text-gray-400 text-[11px] mt-1">{lead.category || "Property Buyer"}</p>
+                            </td>
+                            <td className="py-3 px-4 font-semibold text-gray-200">
+                              {lead.budget || "—"}
+                            </td>
+                            <td className="py-3 px-4 max-w-xs">
+                              {lead.comment_text ? (
+                                <p className="text-gray-300 italic bg-black/30 p-2 rounded border border-[#2A2E39]/60 text-[11px]">
+                                  "{lead.comment_text}"
+                                </p>
+                              ) : (
+                                <span className="text-gray-500">—</span>
+                              )}
+                              {lead.source_url && (
+                                <a
+                                  href={lead.source_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[9px] text-gray-400 hover:text-white mt-1 block"
+                                >
+                                  Source Reel / Post ↗
+                                </a>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <select
+                                value={lead.status || "new"}
+                                onChange={(e) => handleLeadStatusUpdate(lead.id, e.target.value)}
+                                className={`px-2 py-1 text-[10px] font-bold uppercase rounded border focus:outline-none cursor-pointer ${
+                                  (lead.status || 'new') === 'new' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
+                                  lead.status === 'contacted' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                                  lead.status === 'qualified' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' :
+                                  'bg-green-500/10 text-green-400 border-green-500/30'
+                                }`}
+                              >
+                                <option value="new">New</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="qualified">Qualified</option>
+                                <option value="closed">Closed / Won</option>
+                              </select>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <a
+                                  href={igDmUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="bg-primary hover:bg-primary/90 text-black px-2.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1 shadow-sm transition-all"
+                                >
+                                  💬 Send DM
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+
+                {localLeads.length === 0 && (
+                  <div className="p-8 text-center text-gray-400">
+                    <p className="font-semibold text-sm">No leads captured yet.</p>
+                    <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                      Use the <strong>Takevolet Lead Clipper Extension</strong> on your browser while browsing Instagram property posts to clip leads and send direct messages in 1-click!
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
