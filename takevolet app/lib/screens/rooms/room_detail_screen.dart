@@ -155,6 +155,14 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           .select('full_name, phone, whatsapp, avatar_url, profession, email')
           .eq('id', room!['user_id'])
           .single();
+          
+      // Override with custom contact if the admin provided one
+      if (room!['custom_contact'] != null && room!['custom_contact'].toString().trim().isNotEmpty) {
+        final customContact = room!['custom_contact'].toString().trim();
+        profile['phone'] = customContact;
+        profile['whatsapp'] = customContact;
+      }
+      
       setState(() => posterProfile = profile);
     } catch (_) {}
   }
@@ -939,12 +947,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                         child: const Icon(Icons.share, color: Colors.white, size: 20),
                       ),
                       onPressed: () {
-                        ShareUtils.shareListing(
-                          context: context,
-                          title: room!['title'] ?? 'Room for Rent',
-                          description: 'Rent: ₹${room!['rent']}/month\nLocation: ${room!['location']}',
-                          imageUrl: images.isNotEmpty ? images.first : null,
-                        );
+                        ShareUtils.generateRoomShare(context, room!);
                       },
                     ),
                   ),

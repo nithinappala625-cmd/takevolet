@@ -355,14 +355,7 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
                   child: const Icon(Icons.share, color: Colors.white, size: 20),
                 ),
                 onPressed: () {
-                  final String title = flat!['title'] ?? 'Property for Sale';
-                  final String desc = 'Price: ₹${flat!['price']}\nLocation: ${flat!['location']}';
-                  ShareUtils.shareListing(
-                    context: context,
-                    title: title,
-                    description: desc,
-                    imageUrl: images.isNotEmpty ? images.first : null,
-                  );
+                  ShareUtils.generatePropertyShare(context, flat!);
                 },
               ),
             ],

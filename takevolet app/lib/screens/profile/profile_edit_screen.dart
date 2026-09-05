@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../../main.dart';
 import '../../data/locations.dart';
+import '../../services/r2_storage_service.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -33,6 +36,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   String _gender = 'Male';
   String _location = HYDERABAD_AREAS.first;
   String? _aadhaarUrl;
+  String? _avatarUrl;
+  File? _avatarFile;
 
   final List<String> _genderOptions = ['Male', 'Female', 'Other'];
 
@@ -70,31 +75,49 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           .from('profiles')
           .select()
           .eq('id', userId)
-          .single();
+          .maybeSingle();
 
-      _fullNameController.text = profile['full_name'] ?? '';
-      _dobController.text = profile['dob'] ?? '';
-      _phoneController.text = profile['phone'] ?? '';
-      _whatsappController.text = profile['whatsapp'] ?? '';
-      _professionController.text = profile['profession'] ?? '';
-      _ownerNameController.text = profile['owner_name'] ?? '';
-      _ownerPhoneController.text = profile['owner_phone'] ?? '';
-      _membersController.text = (profile['members_count'] ?? '').toString();
-      _colonyController.text = profile['colony'] ?? '';
-      _houseNoController.text = profile['house_no'] ?? '';
-      _upiController.text = profile['upi_id'] ?? '';
+      if (profile != null) {
+        _fullNameController.text = profile['full_name'] ?? '';
+        _dobController.text = profile['dob'] ?? '';
+        _phoneController.text = profile['phone'] ?? '';
+        _whatsappController.text = profile['whatsapp'] ?? '';
+        _professionController.text = profile['profession'] ?? '';
+        _ownerNameController.text = profile['owner_name'] ?? '';
+        _ownerPhoneController.text = profile['owner_phone'] ?? '';
+        _membersController.text = (profile['members_count'] ?? '').toString();
+        _colonyController.text = profile['colony'] ?? '';
+        _houseNoController.text = profile['house_no'] ?? '';
+        _upiController.text = profile['upi_id'] ?? '';
 
-      final gender = profile['gender'] ?? '';
-      if (_genderOptions.contains(gender)) {
-        _gender = gender;
+        final gender = profile['gender'] ?? '';
+        if (_genderOptions.contains(gender)) {
+          _gender = gender;
+        }
+
+        final loc = profile['location'] ?? '';
+        if (HYDERABAD_AREAS.contains(loc)) {
+          _location = loc;
+        }
+
+        _aadhaarUrl = profile['aadhaar_url'];
+        _avatarUrl = profile['avatar_url'];
       }
 
-      final loc = profile['location'] ?? '';
-      if (HYDERABAD_AREAS.contains(loc)) {
-        _location = loc;
+      // If no avatar from profile, fallback to Google/OAuth avatar
+      if (_avatarUrl == null || _avatarUrl!.isEmpty) {
+        final userMetadata = supabase.auth.currentUser?.userMetadata;
+        if (userMetadata != null && userMetadata['avatar_url'] != null) {
+          _avatarUrl = userMetadata['avatar_url'];
+        }
       }
 
-      _aadhaarUrl = profile['aadhaar_url'];
+      if (_fullNameController.text.isEmpty) {
+        final userMetadata = supabase.auth.currentUser?.userMetadata;
+        if (userMetadata != null && userMetadata['full_name'] != null) {
+          _fullNameController.text = userMetadata['full_name'];
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -106,6 +129,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       }
     }
     if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _pickAvatar() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _avatarFile = File(pickedFile.path);
+      });
+    }
   }
 
   Future<void> _pickDOB() async {
@@ -137,22 +173,34 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) throw Exception('Not authenticated');
 
-      await supabase.from('profiles').update({
-        'full_name': _fullNameController.text.trim(),
-        'dob': _dobController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'whatsapp': _whatsappController.text.trim(),
-        'gender': _gender,
-        'profession': _professionController.text.trim(),
-        'owner_name': _ownerNameController.text.trim(),
-        'owner_phone': _ownerPhoneController.text.trim(),
-        'members_count': int.tryParse(_membersController.text.trim()) ?? 1,
-        'location': _location,
-        'colony': _colonyController.text.trim(),
-        'house_no': _houseNoController.text.trim(),
-        'upi_id': _upiController.text.trim(),
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', userId);
+      String? uploadedAvatarUrl = _avatarUrl;
+      if (_avatarFile != null) {
+        final path =
+            'avatars/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+        uploadedAvatarUrl =
+            await R2StorageService.uploadFile(_avatarFile!, path) ?? _avatarUrl;
+      }
+
+      await supabase
+          .from('profiles')
+          .upsert({
+            'id': userId,
+            'full_name': _fullNameController.text.trim(),
+            'dob': _dobController.text.trim(),
+            'phone': _phoneController.text.trim(),
+            'whatsapp': _whatsappController.text.trim(),
+            'gender': _gender,
+            'profession': _professionController.text.trim(),
+            'owner_name': _ownerNameController.text.trim(),
+            'owner_phone': _ownerPhoneController.text.trim(),
+            'members_count': int.tryParse(_membersController.text.trim()) ?? 1,
+            'location': _location,
+            'colony': _colonyController.text.trim(),
+            'house_no': _houseNoController.text.trim(),
+            'upi_id': _upiController.text.trim(),
+            if (uploadedAvatarUrl != null) 'avatar_url': uploadedAvatarUrl,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -168,7 +216,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        if(context.canPop()) context.pop();
+        if (context.canPop()) context.pop();
       }
     } catch (e) {
       if (mounted) {
@@ -295,18 +343,54 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     ),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                          child: Text(
-                            _fullNameController.text.isNotEmpty
-                                ? _fullNameController.text[0].toUpperCase()
-                                : 'U',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                        GestureDetector(
+                          onTap: _pickAvatar,
+                          child: Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 36,
+                                backgroundColor: Colors.white.withOpacity(0.3),
+                                backgroundImage: _avatarFile != null
+                                    ? FileImage(_avatarFile!)
+                                    : (_avatarUrl != null &&
+                                                  _avatarUrl!.isNotEmpty
+                                              ? NetworkImage(_avatarUrl!)
+                                              : null)
+                                          as ImageProvider?,
+                                child:
+                                    (_avatarFile == null &&
+                                        (_avatarUrl == null ||
+                                            _avatarUrl!.isEmpty))
+                                    ? Text(
+                                        _fullNameController.text.isNotEmpty
+                                            ? _fullNameController.text[0]
+                                                  .toUpperCase()
+                                            : 'U',
+                                        style: const TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.edit,
+                                    size: 16,
+                                    color: _gold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -351,19 +435,27 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     children: [
                       TextFormField(
                         controller: _fullNameController,
-                        decoration: _inputDeco('Full Name', Icons.person_outline),
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                        decoration: _inputDeco(
+                          'Full Name',
+                          Icons.person_outline,
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Name is required'
+                            : null,
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _dobController,
-                        decoration: _inputDeco('Date of Birth', Icons.cake).copyWith(
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.calendar_today, color: _gold),
-                            onPressed: _pickDOB,
-                          ),
-                        ),
+                        decoration: _inputDeco('Date of Birth', Icons.cake)
+                            .copyWith(
+                              suffixIcon: IconButton(
+                                icon: const Icon(
+                                  Icons.calendar_today,
+                                  color: _gold,
+                                ),
+                                onPressed: _pickDOB,
+                              ),
+                            ),
                         readOnly: true,
                         onTap: _pickDOB,
                       ),
@@ -372,14 +464,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         value: _gender,
                         decoration: _inputDeco('Gender', Icons.wc),
                         items: _genderOptions
-                            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
                             .toList(),
                         onChanged: (v) => setState(() => _gender = v!),
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _professionController,
-                        decoration: _inputDeco('Profession', Icons.work_outline),
+                        decoration: _inputDeco(
+                          'Profession',
+                          Icons.work_outline,
+                        ),
                       ),
                     ],
                   ),
@@ -391,10 +488,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     children: [
                       TextFormField(
                         controller: _phoneController,
-                        decoration: _inputDeco('Phone Number', Icons.phone_outlined),
+                        decoration: _inputDeco(
+                          'Phone Number',
+                          Icons.phone_outlined,
+                        ),
                         keyboardType: TextInputType.phone,
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Phone is required' : null,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Phone is required'
+                            : null,
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
@@ -405,7 +506,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _upiController,
-                        decoration: _inputDeco('UPI ID (for payouts)', Icons.account_balance_wallet),
+                        decoration: _inputDeco(
+                          'UPI ID (for payouts)',
+                          Icons.account_balance_wallet,
+                        ),
                         keyboardType: TextInputType.emailAddress,
                       ),
                     ],
@@ -423,7 +527,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _ownerPhoneController,
-                        decoration: _inputDeco('Owner Phone', Icons.phone_in_talk),
+                        decoration: _inputDeco(
+                          'Owner Phone',
+                          Icons.phone_in_talk,
+                        ),
                         keyboardType: TextInputType.phone,
                       ),
                       const SizedBox(height: 14),
@@ -442,22 +549,33 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     children: [
                       DropdownButtonFormField<String>(
                         value: _location,
-                        decoration: _inputDeco('Area / Location', Icons.location_city),
+                        decoration: _inputDeco(
+                          'Area / Location',
+                          Icons.location_city,
+                        ),
                         isExpanded: true,
                         items: HYDERABAD_AREAS
-                            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
                             .toList(),
                         onChanged: (v) => setState(() => _location = v!),
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _colonyController,
-                        decoration: _inputDeco('Colony / Society', Icons.holiday_village),
+                        decoration: _inputDeco(
+                          'Colony / Society',
+                          Icons.holiday_village,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _houseNoController,
-                        decoration: _inputDeco('House / Flat No', Icons.door_front_door),
+                        decoration: _inputDeco(
+                          'House / Flat No',
+                          Icons.door_front_door,
+                        ),
                       ),
                     ],
                   ),
@@ -478,7 +596,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.check_circle, color: Colors.green[700], size: 20),
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green[700],
+                                size: 20,
+                              ),
                               const SizedBox(width: 10),
                               const Expanded(
                                 child: Text(
@@ -510,10 +632,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.broken_image, color: Colors.grey, size: 36),
+                                    Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                      size: 36,
+                                    ),
                                     SizedBox(height: 4),
-                                    Text('Could not load image',
-                                        style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    Text(
+                                      'Could not load image',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -527,7 +658,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Center(
-                                  child: CircularProgressIndicator(color: _gold),
+                                  child: CircularProgressIndicator(
+                                    color: _gold,
+                                  ),
                                 ),
                               );
                             },

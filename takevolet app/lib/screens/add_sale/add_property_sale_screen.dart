@@ -215,6 +215,20 @@ class _AddPropertySaleScreenState extends State<AddPropertySaleScreen> {
     }
   }
 
+  File? _selectedVideo;
+  Future<void> _pickVideo() async {
+    final picked = await _picker.pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 5));
+    if (picked != null) {
+      final file = File(picked.path);
+      final sizeMB = await file.length() / (1024 * 1024);
+      if (sizeMB > 50) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video must be under 50MB')));
+        return;
+      }
+      setState(() => _selectedVideo = file);
+    }
+  }
+
   Future<void> _submitListing() async {
     if (!_agreeTerms) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please agree to the terms.')));
@@ -244,6 +258,12 @@ class _AddPropertySaleScreenState extends State<AddPropertySaleScreen> {
         documentUrl = await R2StorageService.uploadFile(_documentFile!, path);
       }
 
+      String? uploadedVideoUrl;
+      if (_selectedVideo != null) {
+        final path = 'properties/videos/${user.id}-${DateTime.now().millisecondsSinceEpoch}-vid.mp4';
+        uploadedVideoUrl = await R2StorageService.uploadFile(_selectedVideo!, path);
+      }
+
       final propertyData = {
         'user_id': user.id,
         'purpose': _purpose,
@@ -263,6 +283,8 @@ class _AddPropertySaleScreenState extends State<AddPropertySaleScreen> {
         'cover_image': coverUrl,
         'flat_images': imageUrls,
         'video_tour': _videoTourController.text.trim(),
+        'video_url': uploadedVideoUrl,
+        'document_url': documentUrl,
         'owner_name': _ownerNameController.text.trim(),
         'owner_mobile': _mobileController.text.trim(),
         'owner_whatsapp': _whatsappController.text.trim(),
@@ -653,6 +675,12 @@ class _AddPropertySaleScreenState extends State<AddPropertySaleScreen> {
           subtitle: Text('${_gallery.length} images selected', style: const TextStyle(color: Colors.grey)),
           trailing: const Icon(Icons.photo_library, color: _gold),
           onTap: _pickGalleryImages,
+        ),
+        ListTile(
+          title: const Text('Property Video (Max 50MB)', style: TextStyle(color: Colors.black)),
+          subtitle: Text(_selectedVideo != null ? 'Video selected' : 'Tap to select', style: const TextStyle(color: Colors.grey)),
+          trailing: const Icon(Icons.videocam, color: _gold),
+          onTap: _pickVideo,
         ),
       ],
     );

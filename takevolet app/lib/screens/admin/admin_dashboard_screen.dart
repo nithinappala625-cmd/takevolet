@@ -172,12 +172,113 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     }
   }
 
+  Future<void> _showGlobalIdSearchDialog(BuildContext context) async {
+    final TextEditingController idController = TextEditingController();
+    
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Global ID Search'),
+        content: TextField(
+          controller: idController,
+          decoration: const InputDecoration(
+            hintText: 'Enter UUID to search...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final id = idController.text.trim();
+              if (id.isEmpty) return;
+              
+              Navigator.pop(ctx);
+              
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(child: CircularProgressIndicator()),
+              );
+              
+              try {
+                // Search rooms
+                var res = await supabaseAdmin.from('rooms').select('id').eq('id', id).maybeSingle();
+                if (res != null) {
+                  Navigator.pop(context); // close loader
+                  context.push('/room/$id');
+                  return;
+                }
+                
+                // Search property_sales
+                res = await supabaseAdmin.from('property_sales').select('id').eq('id', id).maybeSingle();
+                if (res != null) {
+                  Navigator.pop(context);
+                  context.push('/property/$id');
+                  return;
+                }
+                
+                // Search top_projects
+                res = await supabaseAdmin.from('top_projects').select('id').eq('id', id).maybeSingle();
+                if (res != null) {
+                  Navigator.pop(context);
+                  final fullProj = await supabaseAdmin.from('top_projects').select().eq('id', id).single();
+                  context.push('/top-project/$id', extra: fullProj);
+                  return;
+                }
+                
+                // Search social_posts (Feed)
+                res = await supabaseAdmin.from('social_posts').select('id').eq('id', id).maybeSingle();
+                if (res != null) {
+                  Navigator.pop(context);
+                  context.push('/feed');
+                  return;
+                }
+
+                // Search flatmates
+                res = await supabaseAdmin.from('flatmates').select('id').eq('id', id).maybeSingle();
+                if (res != null) {
+                  Navigator.pop(context);
+                  context.push('/flatmate/$id');
+                  return;
+                }
+
+                Navigator.pop(context); // close loader
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('ID not found in any major table')),
+                );
+              } catch (e) {
+                Navigator.pop(context); // close loader
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Search Error: $e')),
+                );
+              }
+            },
+            child: const Text('Search'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Panel', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 1,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search by ID',
+            onPressed: () {
+              _showGlobalIdSearchDialog(context);
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,

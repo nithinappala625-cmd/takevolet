@@ -1,24 +1,35 @@
-import { MetadataRoute } from 'next'
- 
+import { MetadataRoute } from "next";
+
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://takevolet.online'
-  
   return {
     rules: [
       {
-        userAgent: '*',
-        allow: '/',
+        userAgent: "*",
+        allow: "/",
         disallow: [
-          '/api/',
-          '/dashboard/',
-          '/admin/',
-          '/auth/',
-          '/profile/',
-          '/earnings/',
+          "/api/",
+          "/dashboard/",
+          "/admin/",
+          "/post/",
+          "/auth/",
+          "/checkout/",
+        ],
+      },
+      {
+        userAgent: "Googlebot",
+        allow: "/",
+        disallow: [
+          "/api/",
+          "/dashboard/",
+          "/admin/",
+          "/auth/",
+          "/checkout/",
         ],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
-    host: baseUrl,
-  }
+    sitemap: [
+      "https://takevolet.online/sitemap.xml",
+    ],
+    host: "https://takevolet.online",
+  };
 }

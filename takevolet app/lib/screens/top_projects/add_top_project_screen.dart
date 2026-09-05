@@ -27,6 +27,7 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
   // ── Step 1: Basic Project Details ──
   final _projectNameController = TextEditingController();
   final _developerNameController = TextEditingController();
+  final _devContactController = TextEditingController();
   final _reraNumberController = TextEditingController();
   String _projectType = 'Apartment';
   String _projectStatus = 'New Launch';
@@ -122,6 +123,7 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
   void dispose() {
     _projectNameController.dispose();
     _developerNameController.dispose();
+    _devContactController.dispose();
     _reraNumberController.dispose();
     _possessionDateController.dispose();
     _descriptionController.dispose();
@@ -155,16 +157,16 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   void _showSuccess(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.green),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green));
   }
 
   InputDecoration _inputDecoration(String label, {String? hint}) {
@@ -233,18 +235,18 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx'],
     );
-    if (result.isNotEmpty && result.single.path != null) {
+    if (result != null && result.isNotEmpty && result.first.path != null) {
       setState(() {
-        _brochureFile = File(result.single.path!);
+        _brochureFile = File(result.first.path!);
       });
     }
   }
 
   Future<void> _pickVideo() async {
     final result = await FilePicker.pickFiles(type: FileType.video);
-    if (result.isNotEmpty && result.single.path != null) {
+    if (result != null && result.isNotEmpty && result.first.path != null) {
       setState(() {
-        _videoFile = File(result.single.path!);
+        _videoFile = File(result.first.path!);
       });
     }
   }
@@ -367,6 +369,7 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
         // Step 1
         'project_name': _projectNameController.text.trim(),
         'developer_name': _developerNameController.text.trim(),
+        'dev_contact_person': _devContactController.text.trim(),
         'developer_rera': _reraNumberController.text.trim(),
         'project_type': _projectType,
         'project_status': _projectStatus,
@@ -410,13 +413,16 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
         'video_file_url': videoUrl,
         'marketing_video_link': _marketingVideoController.text.trim(),
         // Expiry
-        'expiry_date':
-            DateTime.now().add(const Duration(days: 30)).toIso8601String(),
+        'expiry_date': DateTime.now()
+            .add(const Duration(days: 30))
+            .toIso8601String(),
       };
 
       // Remove null / empty values
-      payload.removeWhere((key, value) =>
-          value == '' || value == null || (value is List && value.isEmpty));
+      payload.removeWhere(
+        (key, value) =>
+            value == '' || value == null || (value is List && value.isEmpty),
+      );
 
       // ── Insert into Supabase ──
       await Supabase.instance.client.from('top_projects').insert(payload);
@@ -436,7 +442,7 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
 
       if (!mounted) return;
       _showSuccess('Top Project posted successfully!');
-      if(context.canPop()) context.pop();
+      if (context.canPop()) context.pop();
     } catch (e) {
       _showError('Error: $e');
     } finally {
@@ -465,6 +471,16 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
         ),
         const SizedBox(height: 14),
         TextField(
+          controller: _devContactController,
+          style: const TextStyle(color: Colors.white),
+          decoration: _inputDecoration(
+            'Developer Contact Number *',
+            hint: 'e.g. 9876543210',
+          ),
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 14),
+        TextField(
           controller: _reraNumberController,
           style: const TextStyle(color: Colors.white),
           decoration: _inputDecoration('RERA Number'),
@@ -478,11 +494,17 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
           items: const [
             DropdownMenuItem(value: 'Apartment', child: Text('Apartment')),
             DropdownMenuItem(
-                value: 'Gated Community', child: Text('Gated Community')),
+              value: 'Gated Community',
+              child: Text('Gated Community'),
+            ),
             DropdownMenuItem(
-                value: 'Villa Community', child: Text('Villa Community')),
+              value: 'Villa Community',
+              child: Text('Villa Community'),
+            ),
             DropdownMenuItem(
-                value: 'Mixed Development', child: Text('Mixed Development')),
+              value: 'Mixed Development',
+              child: Text('Mixed Development'),
+            ),
           ],
           onChanged: (val) => setState(() => _projectType = val!),
         ),
@@ -496,10 +518,13 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
             DropdownMenuItem(value: 'Pre-Launch', child: Text('Pre-Launch')),
             DropdownMenuItem(value: 'New Launch', child: Text('New Launch')),
             DropdownMenuItem(
-                value: 'Under Construction',
-                child: Text('Under Construction')),
+              value: 'Under Construction',
+              child: Text('Under Construction'),
+            ),
             DropdownMenuItem(
-                value: 'Ready to Move', child: Text('Ready to Move')),
+              value: 'Ready to Move',
+              child: Text('Ready to Move'),
+            ),
           ],
           onChanged: (val) => setState(() => _projectStatus = val!),
         ),
@@ -507,8 +532,10 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
         TextField(
           controller: _possessionDateController,
           style: const TextStyle(color: Colors.white),
-          decoration:
-              _inputDecoration('Possession Date', hint: 'e.g. Dec 2026'),
+          decoration: _inputDecoration(
+            'Possession Date',
+            hint: 'e.g. Dec 2026',
+          ),
         ),
         const SizedBox(height: 14),
         TextField(
@@ -522,23 +549,32 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
           value: _approvalStatus,
           dropdownColor: const Color(0xFF1E1E1E),
           style: const TextStyle(color: Colors.white),
-          decoration:
-              _inputDecoration('RERA / DTCP / HMDA Approval Status'),
+          decoration: _inputDecoration('RERA / DTCP / HMDA Approval Status'),
           items: const [
             DropdownMenuItem(
-                value: 'RERA Approved', child: Text('RERA Approved')),
+              value: 'RERA Approved',
+              child: Text('RERA Approved'),
+            ),
             DropdownMenuItem(
-                value: 'DTCP Approved', child: Text('DTCP Approved')),
+              value: 'DTCP Approved',
+              child: Text('DTCP Approved'),
+            ),
             DropdownMenuItem(
-                value: 'HMDA Approved', child: Text('HMDA Approved')),
+              value: 'HMDA Approved',
+              child: Text('HMDA Approved'),
+            ),
             DropdownMenuItem(
-                value: 'Both RERA & HMDA',
-                child: Text('Both RERA & HMDA')),
+              value: 'Both RERA & HMDA',
+              child: Text('Both RERA & HMDA'),
+            ),
             DropdownMenuItem(
-                value: 'Approval Pending',
-                child: Text('Approval Pending')),
+              value: 'Approval Pending',
+              child: Text('Approval Pending'),
+            ),
             DropdownMenuItem(
-                value: 'Not Applicable', child: Text('Not Applicable')),
+              value: 'Not Applicable',
+              child: Text('Not Applicable'),
+            ),
           ],
           onChanged: (val) => setState(() => _approvalStatus = val!),
         ),
@@ -794,8 +830,9 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
           final config = entry.value;
           return Card(
             color: Colors.white.withOpacity(0.06),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             margin: const EdgeInsets.only(bottom: 16),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -826,8 +863,7 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
                     style: const TextStyle(color: Colors.white),
                     decoration: _inputDecoration('Unit Type'),
                     items: unitTypes
-                        .map((t) =>
-                            DropdownMenuItem(value: t, child: Text(t)))
+                        .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                         .toList(),
                     onChanged: (val) =>
                         setState(() => config['unit_type'] = val),
@@ -839,52 +875,84 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
                     style: const TextStyle(color: Colors.white),
                     decoration: _inputDecoration('Facing'),
                     items: facings
-                        .map((f) =>
-                            DropdownMenuItem(value: f, child: Text(f)))
+                        .map((f) => DropdownMenuItem(value: f, child: Text(f)))
                         .toList(),
-                    onChanged: (val) =>
-                        setState(() => config['facing'] = val),
+                    onChanged: (val) => setState(() => config['facing'] = val),
                   ),
                   const SizedBox(height: 12),
-                  _configTextField(config, 'carpet_area', 'Carpet Area Sq.ft',
-                      isNumber: true),
+                  _configTextField(
+                    config,
+                    'carpet_area',
+                    'Carpet Area Sq.ft',
+                    isNumber: true,
+                  ),
                   const SizedBox(height: 12),
                   _configTextField(
-                      config, 'buildup_area', 'Built-up Area Sq.ft',
-                      isNumber: true),
-                  const SizedBox(height: 12),
-                  _configTextField(config, 'super_buildup_area',
-                      'Super Built-up Area Sq.ft',
-                      isNumber: true),
-                  const SizedBox(height: 12),
-                  _configTextField(
-                      config, 'starting_price', 'Starting Price ₹',
-                      isNumber: true),
+                    config,
+                    'buildup_area',
+                    'Built-up Area Sq.ft',
+                    isNumber: true,
+                  ),
                   const SizedBox(height: 12),
                   _configTextField(
-                      config, 'maximum_price', 'Maximum Price ₹',
-                      isNumber: true),
+                    config,
+                    'super_buildup_area',
+                    'Super Built-up Area Sq.ft',
+                    isNumber: true,
+                  ),
                   const SizedBox(height: 12),
                   _configTextField(
-                      config, 'price_per_sqft', 'Price Per Sq.ft ₹',
-                      isNumber: true),
+                    config,
+                    'starting_price',
+                    'Starting Price ₹',
+                    isNumber: true,
+                  ),
                   const SizedBox(height: 12),
                   _configTextField(
-                      config, 'floor_rise_charges', 'Floor Rise Charges'),
+                    config,
+                    'maximum_price',
+                    'Maximum Price ₹',
+                    isNumber: true,
+                  ),
+                  const SizedBox(height: 12),
+                  _configTextField(
+                    config,
+                    'price_per_sqft',
+                    'Price Per Sq.ft ₹',
+                    isNumber: true,
+                  ),
+                  const SizedBox(height: 12),
+                  _configTextField(
+                    config,
+                    'floor_rise_charges',
+                    'Floor Rise Charges',
+                  ),
                   const SizedBox(height: 12),
                   _configTextField(config, 'plc_charges', 'PLC Charges'),
                   const SizedBox(height: 12),
                   _configTextField(
-                      config, 'corner_unit_charges', 'Corner Unit Charges'),
+                    config,
+                    'corner_unit_charges',
+                    'Corner Unit Charges',
+                  ),
                   const SizedBox(height: 12),
                   _configTextField(
-                      config, 'car_parking_charges', 'Car Parking Charges'),
+                    config,
+                    'car_parking_charges',
+                    'Car Parking Charges',
+                  ),
                   const SizedBox(height: 12),
                   _configTextField(
-                      config, 'clubhouse_charges', 'Clubhouse Charges'),
+                    config,
+                    'clubhouse_charges',
+                    'Clubhouse Charges',
+                  ),
                   const SizedBox(height: 12),
                   _configTextField(
-                      config, 'maintenance_charges', 'Maintenance Charges'),
+                    config,
+                    'maintenance_charges',
+                    'Maintenance Charges',
+                  ),
                   const SizedBox(height: 12),
                   _configTextField(config, 'corpus_fund', 'Corpus Fund'),
                   const SizedBox(height: 12),
@@ -907,7 +975,8 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: _gold),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
           ),
@@ -917,8 +986,11 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
   }
 
   Widget _configTextField(
-      Map<String, dynamic> config, String key, String label,
-      {bool isNumber = false}) {
+    Map<String, dynamic> config,
+    String key,
+    String label, {
+    bool isNumber = false,
+  }) {
     return TextFormField(
       initialValue: config[key]?.toString() ?? '',
       style: const TextStyle(color: Colors.white),
@@ -955,8 +1027,9 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
 
         // Additional Photos
         ListTile(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           tileColor: Colors.white.withOpacity(0.05),
           leading: const Icon(Icons.collections, color: _gold),
           title: Text(
@@ -965,8 +1038,7 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
                 : '${_additionalPhotos.length} photo(s) selected',
             style: const TextStyle(color: Colors.white),
           ),
-          trailing:
-              const Icon(Icons.arrow_forward_ios, color: _gold, size: 16),
+          trailing: const Icon(Icons.arrow_forward_ios, color: _gold, size: 16),
           onTap: _pickMultipleImages,
         ),
         const SizedBox(height: 14),
@@ -997,8 +1069,7 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
         TextField(
           controller: _marketingVideoController,
           style: const TextStyle(color: Colors.white),
-          decoration:
-              _inputDecoration('Marketing Video / YouTube URL'),
+          decoration: _inputDecoration('Marketing Video / YouTube URL'),
         ),
         const SizedBox(height: 24),
 
@@ -1064,43 +1135,46 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
   Widget build(BuildContext context) {
     final steps = <Step>[
       Step(
-        title: const Text('Basic Details',
-            style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Basic Details',
+          style: TextStyle(color: Colors.white),
+        ),
         content: _buildStep1BasicDetails(),
         isActive: _currentStep >= 0,
         state: _currentStep > 0 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title:
-            const Text('Location', style: TextStyle(color: Colors.white)),
+        title: const Text('Location', style: TextStyle(color: Colors.white)),
         content: _buildStep2LocationDetails(),
         isActive: _currentStep >= 1,
         state: _currentStep > 1 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title: const Text('Size & Construction',
-            style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Size & Construction',
+          style: TextStyle(color: Colors.white),
+        ),
         content: _buildStep3ProjectSize(),
         isActive: _currentStep >= 2,
         state: _currentStep > 2 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title:
-            const Text('Amenities', style: TextStyle(color: Colors.white)),
+        title: const Text('Amenities', style: TextStyle(color: Colors.white)),
         content: _buildStep4Amenities(),
         isActive: _currentStep >= 3,
         state: _currentStep > 3 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title: const Text('Unit Configs',
-            style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Unit Configs',
+          style: TextStyle(color: Colors.white),
+        ),
         content: _buildStep5UnitConfigurations(),
         isActive: _currentStep >= 4,
         state: _currentStep > 4 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title: const Text('Media & Pay',
-            style: TextStyle(color: Colors.white)),
+        title: const Text('Media & Pay', style: TextStyle(color: Colors.white)),
         content: _buildStep6MediaAndPayment(),
         isActive: _currentStep >= 5,
         state: _currentStep > 5 ? StepState.complete : StepState.indexed,
@@ -1128,10 +1202,9 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
       ),
       body: Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(
-                primary: _gold,
-                onSurface: Colors.white70,
-              ),
+          colorScheme: Theme.of(
+            context,
+          ).colorScheme.copyWith(primary: _gold, onSurface: Colors.white70),
           canvasColor: const Color(0xFF121212),
         ),
         child: Stepper(
@@ -1159,21 +1232,23 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed:
-                          _isSubmitting ? null : details.onStepContinue,
+                      onPressed: _isSubmitting ? null : details.onStepContinue,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _gold,
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: _isSubmitting
                           ? const SizedBox(
                               width: 22,
                               height: 22,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2.5, color: Colors.black),
+                                strokeWidth: 2.5,
+                                color: Colors.black,
+                              ),
                             )
                           : Text(
                               isLastStep ? 'Pay & Submit' : 'Continue',
@@ -1191,10 +1266,10 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
                         onPressed: details.onStepCancel,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: _gold),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: Text(
                           'Back',

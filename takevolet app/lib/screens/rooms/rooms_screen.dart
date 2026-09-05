@@ -516,7 +516,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+                            border: Border.all(color: Colors.black12, width: 1),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(

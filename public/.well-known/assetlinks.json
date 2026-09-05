@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.takevolet.app",
+      "sha256_cert_fingerprints": [
+        "EC:19:A5:EE:0A:4E:00:2C:12:FB:46:EF:50:60:FA:FC:88:DF:D1:A4:A6:C1:93:CA:2E:13:87:E0:17:DB:92:6A"
+      ]
+    }
+  }
+]

@@ -170,6 +170,14 @@ final _router = GoRouter(
       builder: (context, state) => FlatDetailScreen(id: state.pathParameters['id']!),
     ),
     GoRoute(
+      path: '/property/:id', // Deep link alias
+      builder: (context, state) => FlatDetailScreen(id: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/feed/:id', // Deep link alias for specific post (just goes to feed)
+      builder: (context, state) => const FeedScreen(),
+    ),
+    GoRoute(
       path: '/builder/:id',
       builder: (context, state) => BuilderProfileScreen(builderData: state.extra as Map<String, dynamic>),
     ),
@@ -180,6 +188,10 @@ final _router = GoRouter(
     ),
     GoRoute(
       path: '/item/:id',
+      builder: (context, state) => ItemDetailScreen(id: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/service/:id', // Deep link alias
       builder: (context, state) => ItemDetailScreen(id: state.pathParameters['id']!),
     ),
     ShellRoute(

@@ -12,25 +12,31 @@ function getOptimizedOgImage(url: string) {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  let title = "Room Details | Takevolet"
-  let description = "View details for this bachelor room handover in Hyderabad with zero brokerage."
+  let title = "Room for Rent in Hyderabad | Takevolet"
+  let description = "View details for this room for rent in Hyderabad with zero brokerage. Direct owner contact, no brokers."
   let image = "/opengraph-image"
+  let location = "Hyderabad";
+  let tenantType = "bachelor";
   
   const { id } = await params;
 
   try {
     const room = await getRoomById(id)
     if (room) {
-      title = `₹${room.rent.toLocaleString('en-IN')} - ${room.title} in ${room.location} | Zero Brokerage | Takevolet`
-      description = `Find this bachelor room in ${room.location}, Hyderabad for ₹${room.rent}/month. Zero brokerage, direct contact. ${room.description ? room.description.slice(0, 100) : ''}...`
+      location = room.location || "Hyderabad";
+      tenantType = (room as any).tenant_type || "bachelor";
+      const typeLabel = tenantType === "family" ? "Family" : "Bachelor";
+      title = `${typeLabel} Room in ${location} — ₹${room.rent.toLocaleString('en-IN')}/mo | Zero Brokerage | Takevolet`
+      description = `${typeLabel} room for rent in ${location}, Hyderabad for ₹${room.rent.toLocaleString('en-IN')}/month. ${room.furnishing || "Semi-Furnished"}. ${room.members_allowed || 2} members allowed. Zero brokerage, direct contact. ${room.description ? room.description.slice(0, 120) : ''}`
       if (room.images && room.images.length > 0) {
         image = room.images[0]
       }
     } else {
       const mock = MOCK_ROOMS.find(r => r.id === id)
       if (mock) {
-        title = `₹${mock.rent.toLocaleString('en-IN')} - ${mock.title} in ${mock.location} | Zero Brokerage | Takevolet`
-        description = `Find this bachelor room in ${mock.location}, Hyderabad for ₹${mock.rent}/month. Zero brokerage, direct contact. ${mock.description ? mock.description.slice(0, 100) : ''}...`
+        location = mock.location || "Hyderabad";
+        title = `Room in ${location} — ₹${mock.rent.toLocaleString('en-IN')}/mo | Zero Brokerage | Takevolet`
+        description = `Room for rent in ${location}, Hyderabad for ₹${mock.rent.toLocaleString('en-IN')}/month. Zero brokerage, direct contact. ${mock.description ? mock.description.slice(0, 120) : ''}`
         if (mock.images && mock.images.length > 0) {
           image = mock.images[0]
         }
@@ -39,13 +45,24 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   } catch(e) {}
 
   const finalImage = getOptimizedOgImage(image);
+  const typeLabel = tenantType === "family" ? "family" : "bachelor";
 
   return {
     title,
     description,
+    keywords: [
+      `room for rent ${location.toLowerCase()}`,
+      `${typeLabel} room ${location.toLowerCase()}`,
+      `${location.toLowerCase()} room rent`,
+      `room rent ${location.toLowerCase()} hyderabad`,
+      `zero brokerage room ${location.toLowerCase()}`,
+      "rooms for rent hyderabad",
+      "takevolet",
+    ],
     openGraph: {
       title,
       description,
+      url: `https://takevolet.online/rooms/${id}`,
       images: [
         {
           url: finalImage,
@@ -60,7 +77,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       title,
       description,
       images: [finalImage],
-    }
+    },
+    alternates: {
+      canonical: `/rooms/${id}`,
+    },
   }
 }
 

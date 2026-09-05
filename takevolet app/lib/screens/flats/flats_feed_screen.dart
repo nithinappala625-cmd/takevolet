@@ -49,7 +49,7 @@ class _FlatsFeedScreenState extends State<FlatsFeedScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => context.canPop() ? context.pop() : null,
         ),
-        title: Text(widget.category, style: GoogleFonts.outfit(color: _gold, fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text(widget.category == 'All' ? 'All Properties' : widget.category, style: GoogleFonts.outfit(color: _gold, fontWeight: FontWeight.bold, fontSize: 20)),
         centerTitle: true,
       ),
       body: CustomScrollView(

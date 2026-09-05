@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | Takevolet",
   },
   description:
-    "Takevolet is Hyderabad's #1 zero-brokerage platform for bachelors. Find & handover bachelor rooms, discover flatmates, buy/sell used furniture — all in one place. No brokers. Direct contact. Earn commission. Serving 90+ areas in Hyderabad.",
+    "Takevolet is Hyderabad's #1 zero-brokerage platform. Find rooms for rent, bachelor rooms, family rooms, 1BHK, 2BHK flats, discover flatmates, and buy/sell used furniture — all in one place. No brokers. Direct owner contact. Serving 90+ areas in Hyderabad.",
   keywords: [
     // Brand keywords
     "takevolet",
@@ -35,7 +35,19 @@ export const metadata: Metadata = {
     "takevolet online",
     "take volet",
 
-    // Bachelor rooms — generic
+    // General Rooms for Rent
+    "rooms for rent hyderabad",
+    "rooms for rent in hyderabad",
+    "room for rent hyderabad",
+    "house for rent hyderabad",
+    "flat for rent hyderabad",
+    "apartment for rent hyderabad",
+    "rental rooms hyderabad",
+    "room rent hyderabad",
+    "rooms near me hyderabad",
+    "independent house for rent hyderabad",
+    
+    // Bachelor rooms
     "bachelor rooms hyderabad",
     "bachelor room for rent in hyderabad",
     "bachelor room rent hyderabad",
@@ -45,11 +57,25 @@ export const metadata: Metadata = {
     "1rk rent hyderabad",
     "1 room kitchen hyderabad rent",
 
+    // Family Rooms
+    "family rooms hyderabad",
+    "family room for rent hyderabad",
+    "family flat for rent hyderabad",
+    "family accommodation hyderabad",
+    "family house rent hyderabad",
+    "1bhk for rent hyderabad",
+    "1bhk flat for rent hyderabad",
+    "2bhk for rent hyderabad",
+    "2bhk flat for rent hyderabad",
+    "3bhk for rent hyderabad",
+    "3bhk flat for rent hyderabad",
+
     // Zero brokerage
     "zero brokerage rooms hyderabad",
     "no broker rooms hyderabad",
     "direct owner rooms hyderabad",
     "broker free rooms hyderabad",
+    "without brokerage rooms hyderabad",
 
     // Area-specific rooms
     "room rent madhapur",
@@ -62,6 +88,8 @@ export const metadata: Metadata = {
     "room rent kphb",
     "room rent dilsukhnagar",
     "room rent uppal hyderabad",
+    "room rent secunderabad",
+    "room rent miyapur",
     "bachelor room ameerpet",
     "bachelor room madhapur",
     "bachelor room gachibowli",
@@ -83,6 +111,11 @@ export const metadata: Metadata = {
     "bachelor accommodation telangana",
     "shared room hyderabad",
     "shared flat hyderabad bachelors",
+    "paying guest hyderabad",
+    "hostel hyderabad",
+    "boys hostel hyderabad",
+    "girls pg hyderabad",
+    "co-living hyderabad",
 
     // Flatmates
     "flatmates hyderabad",

@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../legal/legal_hub_screen.dart';
+import 'dart:ui';
+import '../../widgets/smart_image.dart';
 
 class FlatsHubScreen extends StatefulWidget {
   const FlatsHubScreen({Key? key}) : super(key: key);
@@ -52,6 +54,8 @@ class _FlatsHubScreenState extends State<FlatsHubScreen> {
           SliverToBoxAdapter(child: _buildHeroBanner()),
           SliverToBoxAdapter(child: _buildTopProjects()),
           SliverToBoxAdapter(child: _buildCategoryGrid()),
+          SliverToBoxAdapter(child: _buildListedPropertiesHeader()),
+          _buildListedProperties(),
           const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
         ],
       ),
@@ -181,7 +185,7 @@ class _FlatsHubScreenState extends State<FlatsHubScreen> {
               ),
             ),
             SizedBox(
-              height: 220,
+              height: 200,
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 scrollDirection: Axis.horizontal,
@@ -193,24 +197,25 @@ class _FlatsHubScreenState extends State<FlatsHubScreen> {
                   return GestureDetector(
                     onTap: () => context.push('/top-project/${project['id']}', extra: project),
                     child: Container(
-                      width: 240,
+                      width: 200,
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))],
+                        border: Border.all(color: Colors.black12, width: 1),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                             child: Image.network(
                               imgUrl,
-                              height: 120,
+                              height: 100,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (ctx, err, stack) => Container(height: 120, color: Colors.grey[200]),
+                              errorBuilder: (ctx, err, stack) => Container(height: 100, color: Colors.grey[200]),
                             ),
                           ),
                           Padding(
@@ -245,6 +250,43 @@ class _FlatsHubScreenState extends State<FlatsHubScreen> {
     );
   }
 
+  Widget _buildCategoryBox(Map<String, dynamic> cat, {bool isGrid = false}) {
+    return InkWell(
+      onTap: () {
+        if (cat['name'] == 'Legal Cell') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalHubScreen()));
+        } else {
+          context.push('/flats/list', extra: {'category': cat['name']});
+        }
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: isGrid ? null : 80,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.black87, width: 0.8),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(cat['icon'] as IconData, size: 20, color: const Color(0xFFD4AF37)),
+            const SizedBox(height: 6),
+            Text(
+              cat['name'] as String,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black87),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCategoryGrid() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -252,61 +294,222 @@ class _FlatsHubScreenState extends State<FlatsHubScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
+            padding: const EdgeInsets.only(bottom: 12.0),
             child: Text('Property Types', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
           ),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
+              crossAxisCount: 4,
               childAspectRatio: 0.85,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
             ),
-            itemCount: _categories.length,
+            itemCount: _categories.length + 1,
             itemBuilder: (context, index) {
+              if (index == _categories.length) {
+                // The "All" button
+                return InkWell(
+                  onTap: () => context.push('/flats/list', extra: {'category': 'All'}),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _gold.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _gold.withOpacity(0.5), width: 0.8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.grid_view_rounded, size: 20, color: _gold),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'View All\nProperties',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _gold),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
               final cat = _categories[index];
-              return InkWell(
-                onTap: () {
-                  if (cat['name'] == 'Legal Cell') {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LegalHubScreen()));
-                  } else {
-                    context.push('/flats/list', extra: {'category': cat['name']});
-                  }
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
-                        boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))],
-                      ),
-                      child: Icon(cat['icon'] as IconData, size: 32, color: const Color(0xFFD4AF37)),
-                    ),
-                    const SizedBox(height: 12),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: Text(
-                        cat['name'] as String,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              return _buildCategoryBox(cat, isGrid: true);
             },
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildListedPropertiesHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 12),
+      child: Text('Listed Properties', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildListedProperties() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: Supabase.instance.client.from('property_sales').select().order('created_at', ascending: false).limit(20),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SliverToBoxAdapter(
+            child: Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())),
+          );
+        }
+        if (snapshot.hasError) {
+          return const SliverToBoxAdapter(
+            child: Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Error loading properties'))),
+          );
+        }
+
+        final data = snapshot.data ?? [];
+        if (data.isEmpty) {
+          return const SliverToBoxAdapter(
+            child: Padding(padding: EdgeInsets.all(32), child: Center(child: Text('No properties listed yet.'))),
+          );
+        }
+
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final prop = data[index];
+              return _buildPropertyCard(prop);
+            },
+            childCount: data.length,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPropertyCard(Map<String, dynamic> prop) {
+    final double price = (prop['price'] ?? prop['expected_price'] ?? 0).toDouble();
+    String formattedPrice = price >= 10000000 ? '₹${(price / 10000000).toStringAsFixed(2)} Cr' 
+                          : price >= 100000 ? '₹${(price / 100000).toStringAsFixed(2)} L' 
+                          : '₹${price.toInt()}';
+
+    final List<String> locationParts = [
+      prop['village'],
+      prop['locality'],
+      prop['area'],
+      prop['district'],
+      prop['city']
+    ].where((e) => e != null && e.toString().trim().isNotEmpty).cast<String>().toList();
+    
+    final String location = locationParts.take(2).join(', ').trim();
+    final String title = prop['title'] ?? 'Property for Sale';
+    final List images = prop['flat_images'] ?? [];
+
+    return GestureDetector(
+      onTap: () {
+        context.push('/flat-sale/${prop['id']}');
+      },
+      child: Container(
+        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 5))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: Stack(
+                children: [
+                  prop['cover_image'] != null
+                      ? SizedBox(height: 220, width: double.infinity, child: SmartImage(imageUrl: prop['cover_image'], fit: BoxFit.cover))
+                      : Container(height: 220, width: double.infinity, color: Colors.grey[800], child: const Icon(Icons.home, size: 60, color: Colors.grey)),
+                  Positioned(
+                    top: 12, right: 12,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          color: Colors.black.withOpacity(0.4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.photo_library, color: Colors.white, size: 14),
+                              const SizedBox(width: 4),
+                              Text('${images.length}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12, left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(8)),
+                      child: Text(prop['purpose'] ?? prop['listing_type'] ?? 'Sell', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                  )
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text(title, style: const TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Text(formattedPrice, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _gold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(child: Text(location.replaceAll(RegExp(r'^,\s*'), ''), style: const TextStyle(color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildFeature(Icons.category, prop['property_category'] ?? 'Apartment / Flat'),
+                      if (prop['bhk'] != null && 
+                            !(prop['property_category'] ?? '').toString().toLowerCase().contains('plot') && 
+                            !(prop['property_category'] ?? '').toString().toLowerCase().contains('land') &&
+                            !(prop['property_category'] ?? '').toString().toLowerCase().contains('commercial')) 
+                          _buildFeature(Icons.king_bed_outlined, prop['bhk']),
+                      if (prop['plot_area'] != null && prop['plot_area'].toString().isNotEmpty) 
+                        _buildFeature(Icons.square_foot, '${prop['plot_area']} ${prop['area_units']}'),
+                      if (prop['flat_size_sft'] != null && prop['flat_size_sft'].toString().isNotEmpty) 
+                        _buildFeature(Icons.square_foot, '${prop['flat_size_sft']} sqft'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeature(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: Colors.grey),
+        const SizedBox(width: 4),
+        Text(text, style: const TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 }

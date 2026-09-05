@@ -1,15 +1,130 @@
-"use client";
-
-import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Star, Zap, MapPin, Users, ChevronRight, IndianRupee, Calendar, Sofa, ShoppingBag, Wallet, Home } from "lucide-react";
+import { ArrowRight, ShieldCheck, ShoppingBag, Home, Users, MapPin, ChevronRight, IndianRupee, Wallet } from "lucide-react";
 import { HYDERABAD_AREAS } from "@/data/locations";
-import { useEffect, useState } from "react";
-import { fetchAllRoomsAction, fetchAllFlatmatesAction } from "@/lib/server-actions";
-import { TopBannerCarousel } from "@/components/TopBannerCarousel";
-import { getAllFlatmates } from "@/lib/flatmate-db";
-import type { Room } from "@/lib/db";
-import type { Flatmate } from "@/data/mock";
+import { HeroAnimations, FeaturedRoomsSection, FeaturedFlatmatesSection, AnimatedStats, AnimatedSection } from "@/components/HomepageHero";
+import type { Metadata } from "next";
+
+// ── SEO Metadata (server-side, crawlable) ──────────────────────────────────────
+export const metadata: Metadata = {
+  title: "Takevolet — Rooms for Rent in Hyderabad | Bachelor Rooms, Family Rooms, Flatmates | Zero Brokerage",
+  description:
+    "Find rooms for rent in Hyderabad with zero brokerage. Takevolet is Hyderabad's #1 platform for bachelor rooms, family rooms, flatmate matching, and used furniture marketplace. Direct owner contact. No brokers. Serving 90+ areas across Hyderabad including Madhapur, Gachibowli, Kukatpally, Kondapur, Ameerpet, SR Nagar, and more.",
+  keywords: [
+    "takevolet", "takevolet hyderabad", "takevolet rooms", "takevolet online", "take volet",
+    "rooms for rent hyderabad", "rooms for rent in hyderabad", "room for rent hyderabad",
+    "bachelor rooms hyderabad", "bachelor room for rent in hyderabad", "bachelor room rent hyderabad",
+    "family rooms hyderabad", "family room for rent hyderabad", "family flat for rent hyderabad",
+    "2bhk for rent hyderabad", "1bhk for rent hyderabad", "3bhk for rent hyderabad",
+    "house for rent hyderabad", "flat for rent hyderabad", "apartment for rent hyderabad",
+    "rooms near me hyderabad", "rental rooms hyderabad", "room rent hyderabad",
+    "bachelor flat for rent hyderabad", "bachelor accommodation hyderabad",
+    "single room rent hyderabad", "1rk rent hyderabad", "1 room kitchen hyderabad rent",
+    "zero brokerage rooms hyderabad", "no broker rooms hyderabad", "direct owner rooms hyderabad",
+    "broker free rooms hyderabad", "without brokerage rooms hyderabad",
+    "room rent madhapur", "room rent gachibowli", "room rent kukatpally", "room rent ameerpet",
+    "room rent sr nagar", "room rent kondapur", "room rent hitech city hyderabad",
+    "room rent kphb", "room rent dilsukhnagar", "room rent uppal hyderabad",
+    "bachelor room ameerpet", "bachelor room madhapur", "bachelor room gachibowli",
+    "bachelor room kondapur", "bachelor room hitec city", "bachelor room kukatpally",
+    "bachelor room sr nagar",
+    "room handover hyderabad", "flat handover hyderabad", "bachelor room handover",
+    "pg rooms hyderabad", "pg for bachelors hyderabad", "bachelor pg hyderabad",
+    "shared room hyderabad", "shared flat hyderabad bachelors",
+    "flatmates hyderabad", "find flatmate hyderabad", "roommate hyderabad",
+    "used furniture hyderabad bachelors", "buy sell furniture hyderabad",
+    "earn commission room hyderabad", "earn money handing over room",
+    "paying guest hyderabad", "hostel hyderabad", "boys hostel hyderabad",
+    "girls pg hyderabad", "co-living hyderabad",
+    "cheap rooms hyderabad", "affordable rooms hyderabad", "budget rooms hyderabad",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+};
+
+// ── JSON-LD Schemas (server-rendered, crawlable by Google) ─────────────────────
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.online";
+
+const webpageSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${APP_URL}/#webpage`,
+  name: "Takevolet — Rooms for Rent in Hyderabad | Zero Brokerage",
+  description: "Find rooms for rent in Hyderabad with zero brokerage. Bachelor rooms, family rooms, flatmates, and used furniture marketplace.",
+  url: APP_URL,
+  isPartOf: { "@id": `${APP_URL}/#website` },
+  about: { "@id": `${APP_URL}/#organization` },
+  primaryImageOfPage: { "@type": "ImageObject", url: `${APP_URL}/logo.png` },
+  breadcrumb: { "@id": `${APP_URL}/#breadcrumb` },
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "@id": `${APP_URL}/#breadcrumb`,
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: APP_URL },
+    { "@type": "ListItem", position: 2, name: "Rooms", item: `${APP_URL}/rooms` },
+    { "@type": "ListItem", position: 3, name: "Flatmates", item: `${APP_URL}/flatmates` },
+    { "@type": "ListItem", position: 4, name: "Marketplace", item: `${APP_URL}/marketplace` },
+  ],
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "What is Takevolet?",
+      acceptedAnswer: { "@type": "Answer", text: "Takevolet is the #1 zero-brokerage platform for bachelor and family room handovers, flatmate matching, and used furniture marketplace in Hyderabad. Founded in 2026, it connects people leaving their rooms directly with people searching — no brokers, no commission." },
+    },
+    {
+      "@type": "Question",
+      name: "How do I find a bachelor room without a broker in Hyderabad?",
+      acceptedAnswer: { "@type": "Answer", text: "Use Takevolet — browse rooms filtered by area, budget, furnishing, and members allowed. Unlock the poster's contact from just ₹15. Call or WhatsApp them directly. Zero brokerage, always." },
+    },
+    {
+      "@type": "Question",
+      name: "Can I find family rooms for rent in Hyderabad on Takevolet?",
+      acceptedAnswer: { "@type": "Answer", text: "Yes! Takevolet now offers both bachelor and family room listings. Filter between bachelor and family rooms to find the perfect home for your family in Hyderabad's best areas." },
+    },
+    {
+      "@type": "Question",
+      name: "Can I earn money by posting my room on Takevolet?",
+      acceptedAnswer: { "@type": "Answer", text: "Yes! When a new person takes over your room through Takevolet, you earn ₹500–₹1,000 as a handover commission. Posting your room is completely free." },
+    },
+    {
+      "@type": "Question",
+      name: "Which areas does Takevolet cover in Hyderabad?",
+      acceptedAnswer: { "@type": "Answer", text: "Takevolet covers 90+ areas across Hyderabad including Madhapur, Gachibowli, Kondapur, Kukatpally, KPHB, Ameerpet, SR Nagar, Dilsukhnagar, Uppal, Secunderabad, Begumpet, Hitech City, Miyapur, LB Nagar, and many more." },
+    },
+    {
+      "@type": "Question",
+      name: "How much does it cost to unlock a room poster's contact on Takevolet?",
+      acceptedAnswer: { "@type": "Answer", text: "Contact unlocks start at just ₹15 per contact. Bundle plans are available: 10 contacts for ₹55, 50 contacts for ₹105, and unlimited contacts for ₹200. All payments are secured by Razorpay." },
+    },
+    {
+      "@type": "Question",
+      name: "What is the average rent for rooms in Hyderabad?",
+      acceptedAnswer: { "@type": "Answer", text: "Rent varies by area: Madhapur/Gachibowli (₹10,000–₹25,000), KPHB/Kukatpally (₹5,000–₹10,000), SR Nagar/Ameerpet (₹4,500–₹9,000), Dilsukhnagar/Uppal (₹3,500–₹8,000). Family rooms range from ₹12,000–₹40,000 depending on the area and BHK type." },
+    },
+  ],
+};
+
+const howToSchema = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name: "How to Find a Room for Rent in Hyderabad Without Broker",
+  description: "A step-by-step guide to finding zero-brokerage rooms for rent in Hyderabad using Takevolet.",
+  step: [
+    { "@type": "HowToStep", name: "Leaving Your Room?", text: "Post your room with photos, leaving date, rent, advance, and how many members the room allows. It takes 2 minutes." },
+    { "@type": "HowToStep", name: "Searching for a Room?", text: "Browse rooms by area, budget, members allowed, furnishing, and gender preference. Filter exactly what you need." },
+    { "@type": "HowToStep", name: "Connect Directly", text: "View the poster's profile, profession, and phone number. Call or WhatsApp directly — no middleman, no broker." },
+    { "@type": "HowToStep", name: "Earn ₹500–₹1,000", text: "When new tenants take over your room through Takevolet, you earn a referral commission. Easy money while you move out." },
+  ],
+};
+
 const stats = [
   { value: "5,200+", label: "Bachelors Registered" },
   { value: "₹0", label: "Brokerage Fee" },
@@ -25,171 +140,42 @@ const howItWorks = [
 ];
 
 export default function LandingPage() {
-  const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
-  const [featuredFlatmates, setFeaturedFlatmates] = useState<Flatmate[]>([]);
-
-  useEffect(() => {
-    async function loadFeaturedData() {
-      // Load top 3 available rooms
-      const roomsRes = await fetchAllRoomsAction();
-      if (roomsRes && Array.isArray(roomsRes)) {
-        setFeaturedRooms(roomsRes.filter(r => r.is_available).slice(0, 3));
-      }
-      
-      // Load top 3 available flatmates
-      const fms = await getAllFlatmates();
-      setFeaturedFlatmates(fms.filter(f => f.isAvailable).slice(0, 3));
-    }
-    loadFeaturedData();
-  }, []);
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "Takevolet",
-    url: "https://takevolet.online",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: "https://takevolet.online/rooms?location={search_term_string}",
-      "query-input": "required name=search_term_string",
-    },
-  };
-
-  const organizationJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": "https://takevolet.online/#organization",
-    name: "Takevolet Technologies",
-    alternateName: "Takevolet",
-    url: "https://takevolet.online",
-    logo: {
-      "@type": "ImageObject",
-      url: "https://takevolet.online/logo.png",
-      width: "1024",
-      height: "1024"
-    },
-    description: "Takevolet Technologies is the official owner and operator of Takevolet (takevolet.online), the premier zero brokerage bachelor room handover platform in Hyderabad and Bangalore.",
-    founder: {
-      "@type": "Person",
-      name: "Nithin Patel",
-      jobTitle: "Founder & CEO",
-      sameAs: [
-        "https://wa.me/917981994870",
-        "tel:+917981994870"
-      ]
-    },
-    contactPoint: {
-      "@type": "ContactPoint",
-      telephone: "+917981994870",
-      contactType: "customer service",
-      email: "hello@takevolet.online",
-      availableLanguage: ["English", "Telugu", "Hindi"]
-    }
-  };
-
-  const localBusinessJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "RealEstateAgent",
-    "@id": "https://takevolet.online/#localbusiness",
-    name: "Takevolet",
-    image: "https://takevolet.online/logo.png",
-    description: "Zero brokerage platform for bachelor room handovers in Hyderabad and Bangalore. Owned and operated exclusively by Takevolet Technologies.",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Hyderabad",
-      addressRegion: "Telangana",
-      addressCountry: "IN",
-    },
-    url: "https://takevolet.online",
-    telephone: "+917981994870",
-    parentOrganization: {
-      "@type": "Organization",
-      "@id": "https://takevolet.online/#organization",
-      name: "Takevolet Technologies"
-    }
-  };
-
-  // FAQPage JSON-LD for homepage Google rich results
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "What is Takevolet?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Takevolet is the #1 zero-brokerage platform for bachelor room handovers, flatmate matching, and used furniture marketplace. Founded in 2026, it connects bachelors leaving their rooms directly with bachelors searching — no brokers, no commission." }
-      },
-      {
-        "@type": "Question",
-        "name": "How do I find a bachelor room without a broker?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Use Takevolet — browse rooms filtered by area, budget, furnishing, and members allowed. Unlock the poster's contact from just ₹15. Call or WhatsApp them directly. Zero brokerage, always." }
-      },
-      {
-        "@type": "Question",
-        "name": "Can I earn money by posting my room on Takevolet?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Yes! When a new bachelor takes over your room through Takevolet, you earn ₹500–₹1,000 as a handover commission. Posting your room is completely free." }
-      },
-      {
-        "@type": "Question",
-        "name": "Which areas does Takevolet cover?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Takevolet covers major areas across Hyderabad (like Madhapur, Gachibowli, Kukatpally) and Bangalore (like Koramangala, Indiranagar, Whitefield)." }
-      },
-      {
-        "@type": "Question",
-        "name": "How much does it cost to unlock a room poster's contact on Takevolet?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Contact unlocks start at just ₹15 per contact. Bundle plans are available: 10 contacts for ₹55, 50 contacts for ₹105, and unlimited contacts for ₹200. All payments are secured by Razorpay." }
-      },
-    ]
-  };
-
-  // HowTo JSON-LD for the "How It Works" section
-  const howToJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    "name": "How to Hand Over a Bachelor Room Using Takevolet",
-    "description": "A step-by-step guide to handing over your bachelor room on Takevolet and earning commission.",
-    "step": [
-      { "@type": "HowToStep", "name": "Bachelor Leaving?", "text": "Post your room with photos, leaving date, rent, advance, and how many members the room allows. It takes 2 minutes." },
-      { "@type": "HowToStep", "name": "Bachelor Searching?", "text": "Browse rooms by area, budget, members allowed, furnishing, and gender preference. Filter exactly what you need." },
-      { "@type": "HowToStep", "name": "Connect Directly", "text": "View the poster's profile, profession, and phone number. Call or WhatsApp directly — no middleman, no broker." },
-      { "@type": "HowToStep", "name": "Earn ₹500–₹1,000", "text": "When new bachelors take over your room through Takevolet, you earn a referral commission. Easy money while you move out." }
-    ]
-  };
-
   return (
     <div className="flex flex-col w-full bg-background">
-      <TopBannerCarousel />
+      <HeroAnimations />
 
-      {/* ━━━ HERO SECTION ━━━ */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
+      {/* ━━━ JSON-LD Structured Data (server-rendered, crawlable) ━━━ */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webpageSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
 
       {/* ━━━ HERO ━━━ */}
       <section className="relative py-16 md:py-24 overflow-hidden">
         <div className="absolute top-20 right-20 w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px] -z-10" />
 
         <div className="container mx-auto px-6 md:px-12 grid lg:grid-cols-2 gap-16 items-center">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-2xl">
+          <div className="max-w-2xl">
             <div className="inline-flex items-center space-x-2 border border-border px-4 py-1.5 rounded-full mb-8">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs uppercase tracking-[0.2em] font-medium text-muted-foreground">Built for Bachelors</span>
+              <span className="text-xs uppercase tracking-[0.2em] font-medium text-muted-foreground">Built for Bachelors &amp; Families</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-light tracking-tight mb-6 leading-[1.1]">
-              Leaving your room?<br />
-              <span className="font-bold gold-gradient">Relay it to the next bachelor.</span>
+              Rooms for Rent in Hyderabad.<br />
+              <span className="font-bold gold-gradient">Zero Brokerage. Direct Contact.</span>
             </h1>
 
             <p className="text-lg text-muted-foreground mb-10 leading-relaxed font-light max-w-lg">
-              Takevolet connects bachelors who are <strong className="text-foreground">leaving their rooms</strong> with bachelors who are <strong className="text-foreground">searching for rooms</strong> — directly, with zero brokerage. Post your room, sell your furniture, and earn commission.
+              Takevolet connects people <strong className="text-foreground">leaving their rooms</strong> with people <strong className="text-foreground">searching for rooms</strong> — directly, with zero brokerage. Find bachelor rooms, family rooms, flatmates, and used furniture in Hyderabad&apos;s top 90+ areas.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/rooms" className="group bg-foreground text-background px-8 py-4 flex items-center justify-center gap-3 font-semibold uppercase tracking-wider text-sm hover:bg-primary hover:text-primary-foreground transition-all">
                 Find a Room <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link href="/rooms/family" className="group border-2 border-primary text-primary px-8 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:bg-primary hover:text-primary-foreground transition-all">
+                Family Rooms
               </Link>
               <Link href="/list" className="border border-border px-8 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:border-primary hover:text-primary transition-all">
                 I&apos;m Leaving — Post My Room
@@ -205,84 +191,19 @@ export default function LandingPage() {
                 ))}
               </div>
               <div>
-                <p className="text-sm font-semibold">5,200+ bachelors</p>
+                <p className="text-sm font-semibold">5,200+ bachelors &amp; families</p>
                 <p className="text-xs text-muted-foreground">already using Takevolet</p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Hero Visual */}
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, delay: 0.3 }}
-            className="relative h-[240px] sm:h-[300px] md:h-[500px] mt-8 lg:mt-0 bg-secondary/20">
-            {featuredRooms.length > 0 ? (
-              <>
-                <div className="absolute inset-0 overflow-hidden">
-                  <img src={featuredRooms[0].images?.[0] || "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&h=800&fit=crop&q=80"}
-                    alt="Bachelor flat" loading="eager" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
-                </div>
-                <div className="absolute bottom-6 left-6 right-6 bg-background/90 backdrop-blur-xl border border-border p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Bachelor Room Available</p>
-                      <h4 className="font-bold line-clamp-1">{featuredRooms[0].title}</h4>
-                    </div>
-                    <span className="text-lg font-bold">₹{featuredRooms[0].rent.toLocaleString("en-IN")}<span className="text-xs text-muted-foreground font-normal">/mo</span></span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><MapPin size={12} /> {featuredRooms[0].location}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1"><Calendar size={12} /> Leaving {new Date(featuredRooms[0].leaving_date).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}</span>
-                    {(featuredRooms[0].commission || 0) > 0 && (
-                      <>
-                        <span>•</span>
-                        <span className="text-primary font-bold">₹{featuredRooms[0].commission} reward</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="absolute inset-0 animate-pulse flex flex-col justify-end p-6 bg-secondary/50">
-                <div className="bg-background border border-border p-5 w-full">
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="space-y-2 w-1/2">
-                      <div className="h-2 bg-muted w-1/2 rounded" />
-                      <div className="h-4 bg-muted w-full rounded" />
-                    </div>
-                    <div className="h-6 bg-muted w-20 rounded" />
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="h-3 bg-muted w-16 rounded" />
-                    <div className="h-3 bg-muted w-24 rounded" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </motion.div>
+          {/* Hero Visual — Client Component */}
+          <FeaturedRoomsSection />
         </div>
       </section>
 
       {/* ━━━ STATS ━━━ */}
-      <section className="border-y border-border bg-secondary/30">
-        <div className="container mx-auto px-6 md:px-12">
-          <div className="grid grid-cols-2 md:grid-cols-4">
-            {stats.map((stat, i) => (
-              <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-                className={`py-8 sm:py-10 text-center ${
-                  // At 2-col: only 1st col gets border-r. At 4-col: first 3 get border-r
-                  i === 0 ? 'border-r border-border' :
-                  i === 1 ? 'md:border-r md:border-border' :
-                  i === 2 ? 'border-r border-border' :
-                  ''
-                }`}>
-                <p className="text-2xl sm:text-3xl font-bold mb-1">{stat.value}</p>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <AnimatedStats stats={stats} />
 
       {/* ━━━ WHAT IS Takevolet ━━━ */}
       <section className="py-28">
@@ -290,25 +211,24 @@ export default function LandingPage() {
           <div className="mb-16 max-w-3xl">
             <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">What is Takevolet?</p>
             <h2 className="text-4xl font-light leading-tight">
-              The platform where <span className="font-bold">bachelors help bachelors</span> find rooms.
+              The platform where <span className="font-bold">people help people</span> find rooms for rent.
             </h2>
             <p className="text-muted-foreground font-light mt-4 max-w-2xl leading-relaxed">
-              When a bachelor or a group of bachelors decides to leave their current room — whether it&apos;s a transfer, job change, or just moving on — they post it on Takevolet. New bachelors searching for rooms can browse, filter by area/budget/members, and connect directly with the person leaving.
+              When a bachelor or family decides to leave their current room — whether it&apos;s a transfer, job change, or just moving on — they post it on Takevolet. New tenants searching for rooms can browse, filter by area/budget/members, and connect directly with the person leaving. Find bachelor rooms, family rooms, 1BHK, 2BHK, 3BHK flats, PG accommodations, and shared rooms across Hyderabad — all with zero brokerage.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-px bg-border">
             {[
-              { icon: Home, title: "Rooms Handover", desc: "Relay your room directly to the next bachelor when leaving, or browse rooms in Hyderabad and Bangalore with direct poster contact and zero brokerage fee." },
-              { icon: Users, title: "Flatmate Matchmaking", desc: "Have a vacancy in your flat or looking to share? Connect directly with compatible single bachelors based on age, profession, and lifestyle." },
-              { icon: ShoppingBag, title: "Bachelors Marketplace", desc: "Moving out or setting up? Don't carry it or buy brand new. List and shop for furniture, appliances, and electronics directly to/from nearby bachelors." },
+              { icon: Home, title: "Rooms for Rent — Bachelor & Family", desc: "Find bachelor rooms and family rooms for rent across Hyderabad. Direct contact with the person leaving the room. Zero brokerage — from 1RK to 3BHK, PG rooms, and shared accommodations." },
+              { icon: Users, title: "Flatmate Matchmaking", desc: "Have a vacancy in your flat or looking to share? Connect directly with compatible roommates based on age, profession, and lifestyle. Find flatmates in Madhapur, Gachibowli, Kondapur, and 90+ areas." },
+              { icon: ShoppingBag, title: "Used Furniture Marketplace", desc: "Moving out or setting up? Don't carry it or buy brand new. List and shop for furniture, appliances, and electronics directly from nearby tenants in Hyderabad." },
             ].map((f, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="bg-background p-10 group hover:bg-secondary/50 transition-colors">
+              <div key={i} className="bg-background p-10 group hover:bg-secondary/50 transition-colors">
                 <f.icon className="w-10 h-10 text-primary mb-6" strokeWidth={1} />
                 <h3 className="text-lg font-bold mb-3">{f.title}</h3>
                 <p className="text-muted-foreground font-light leading-relaxed text-sm">{f.desc}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -323,153 +243,19 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-4 gap-8">
             {howItWorks.map((item, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="relative">
+              <div key={i} className="relative">
                 <span className="text-5xl font-bold text-border block mb-4">{item.step}</span>
                 <h3 className="text-base font-bold mb-2">{item.title}</h3>
                 <p className="text-sm text-muted-foreground font-light leading-relaxed">{item.desc}</p>
                 {i < 3 && <ChevronRight className="hidden md:block absolute top-6 -right-4 w-5 h-5 text-border" />}
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ━━━ FEATURED ROOMS ━━━ */}
-      <section className="py-28">
-        <div className="container mx-auto px-6 md:px-12">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Latest Handovers</p>
-              <h2 className="text-3xl font-light">Bachelors <span className="font-bold">leaving soon</span></h2>
-            </div>
-            <Link href="/rooms" className="text-sm uppercase tracking-wider font-semibold text-primary hover:underline flex items-center gap-1">
-              View All <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {featuredRooms.map((room, i) => (
-              <motion.div key={room.id} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="border border-border overflow-hidden group hover:border-primary/30 transition-all">
-                <div className="relative h-48 overflow-hidden">
-                  <img src={room.images?.[0] || ""} alt={room.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                  <div className="absolute top-3 left-3 bg-background/90 backdrop-blur-sm px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold flex items-center gap-1">
-                    <MapPin size={10} className="text-primary" /> {room.location}
-                  </div>
-                  {(room.commission || 0) > 0 && (
-                    <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold">
-                      ₹{room.commission} reward
-                    </div>
-                  )}
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold text-sm mb-2 line-clamp-1">{room.title}</h3>
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    <span className="px-2 py-0.5 bg-secondary text-[10px] font-medium uppercase tracking-wider flex items-center gap-1"><Users size={10} /> {room.members_allowed || 1} allowed</span>
-                    <span className="px-2 py-0.5 bg-secondary text-[10px] font-medium uppercase tracking-wider flex items-center gap-1"><Sofa size={10} /> {room.furnishing}</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-3 border-t border-border">
-                    <span className="font-bold flex items-center"><IndianRupee size={14} />{room.rent.toLocaleString("en-IN")}<span className="text-xs text-muted-foreground font-normal">/mo</span></span>
-                    <Link href={`/rooms/${room.id}`} className="text-xs text-primary font-bold uppercase tracking-wider hover:underline">Details →</Link>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ━━━ FEATURED FLATMATES / ROOMMATE MATCHMAKING ━━━ */}
-      <section className="py-28 bg-secondary/15 border-t border-border">
-        <div className="container mx-auto px-6 md:px-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Premium Roommate Matchmaking</p>
-              <h2 className="text-4xl font-light">Find compatible <span className="font-bold">Flatmates</span></h2>
-              <p className="text-muted-foreground font-light mt-3 max-w-xl text-sm leading-relaxed">
-                Connect with verified bachelors who have a vacancy in their flat. Filter by budget, professional background, and lifestyle habits.
-              </p>
-            </div>
-            <div className="flex gap-4">
-              <Link href="/flatmates" className="text-xs bg-foreground text-background px-6 py-3.5 uppercase tracking-wider font-bold hover:bg-primary hover:text-primary-foreground transition-all">
-                Browse Flatmates
-              </Link>
-              <Link href="/post/flatmate" className="text-xs border border-border px-6 py-3.5 uppercase tracking-wider font-bold hover:border-primary hover:text-primary transition-all">
-                Post a Vacancy +
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {featuredFlatmates.map((fm, i) => (
-              <motion.div key={fm.id} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="border border-border bg-background overflow-hidden group hover:border-primary/45 transition-all flex flex-col justify-between shadow-sm">
-                
-                <div className="relative h-56 overflow-hidden bg-muted">
-                  <img src={fm.images[0]} alt={fm.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                  <div className="absolute top-3 left-3 bg-background/90 backdrop-blur-md px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold text-primary border border-primary/20">
-                    Vacancy: {fm.vacancyCount}
-                  </div>
-                  <div className="absolute top-3 right-3 bg-foreground text-background px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold">
-                    {fm.genderPref}
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 to-transparent p-5 pt-10 text-white">
-                    <p className="text-[10px] font-semibold tracking-wider uppercase opacity-85 mb-1 flex items-center gap-1">
-                      <MapPin size={10} className="text-primary" /> {fm.location}
-                    </p>
-                    <h3 className="font-bold text-sm line-clamp-1">{fm.title}</h3>
-                  </div>
-                </div>
-
-                <div className="p-5 flex-1 flex flex-col justify-between">
-                  <div className="space-y-4">
-                    {/* Price and host summary */}
-                    <div className="flex justify-between items-center border-b border-border pb-3">
-                      <div>
-                        <span className="block text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Rent Share /mo</span>
-                        <span className="font-bold text-lg text-primary flex items-center"><IndianRupee size={14} strokeWidth={2.5} /> {fm.rentShare.toLocaleString("en-IN")}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <img src={fm.postedBy.avatar} alt={fm.postedBy.name} className="w-8 h-8 rounded-full object-cover border border-primary/20" />
-                        <div className="text-right">
-                          <p className="text-[10px] font-bold leading-none">{fm.postedBy.name}</p>
-                          <p className="text-[9px] text-muted-foreground leading-none mt-1">{fm.postedBy.age} y/o • {fm.postedBy.profession.split(" at ")[0]}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-xs font-light text-muted-foreground line-clamp-2 leading-relaxed">
-                      {fm.description}
-                    </p>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1">
-                      {fm.lifestyleHabits.slice(0, 2).map((tag, idx) => (
-                        <span key={idx} className="bg-secondary/40 border border-border px-2 py-0.5 text-[9px] text-foreground/80 rounded-full">
-                          {tag}
-                        </span>
-                      ))}
-                      {fm.lifestyleHabits.length > 2 && (
-                        <span className="bg-secondary/20 border border-border px-2 py-0.5 text-[9px] text-muted-foreground rounded-full">
-                          +{fm.lifestyleHabits.length - 2} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-border pt-4 mt-4 flex justify-between items-center">
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-light">Prefers: <strong>{fm.professionPref}</strong></span>
-                    <Link href={`/flatmates/${fm.id}`} className="text-xs text-primary font-bold uppercase tracking-wider hover:underline">
-                      Details →
-                    </Link>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ━━━ FEATURED FLATMATES — Client Component ━━━ */}
+      <FeaturedFlatmatesSection />
 
       {/* ━━━ SELL YOUR ITEMS ━━━ */}
       <section className="py-28 bg-secondary/30 border-y border-border">
@@ -479,10 +265,10 @@ export default function LandingPage() {
               <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Leaving? Sell Your Stuff</p>
               <h2 className="text-4xl font-light mb-6">Don&apos;t carry it. <span className="font-bold">Sell it or rent it.</span></h2>
               <p className="text-muted-foreground font-light leading-relaxed mb-8">
-                Leaving your fridge, cooler, bed, or TV behind? Instead of selling for scrap, list it on Takevolet&apos;s marketplace. Other bachelors moving into your area will happily buy or rent your items at fair prices.
+                Leaving your fridge, cooler, bed, or TV behind? Instead of selling for scrap, list it on Takevolet&apos;s marketplace. Other tenants moving into your area will happily buy or rent your items at fair prices.
               </p>
               <ul className="space-y-3 mb-8 text-sm">
-                {["Sell furniture, electronics & appliances at fair prices", "Rent items monthly — passive income while you're away", "Buyers are verified bachelors in your neighbourhood", "No transport hassle — items stay in the same room/area"].map((item, i) => (
+                {["Sell furniture, electronics & appliances at fair prices", "Rent items monthly — passive income while you're away", "Buyers are verified tenants in your neighbourhood", "No transport hassle — items stay in the same room/area"].map((item, i) => (
                   <li key={i} className="flex items-start gap-2"><ShieldCheck size={16} className="text-primary mt-0.5 shrink-0" /> {item}</li>
                 ))}
               </ul>
@@ -497,7 +283,7 @@ export default function LandingPage() {
                 "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=400&fit=crop&q=80"
               ].map((src, i) => (
                 <div key={i} className="aspect-square overflow-hidden border border-border">
-                  <img src={src} alt="Item" loading="lazy" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                  <img src={src} alt="Used furniture for sale in Hyderabad" loading="lazy" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                 </div>
               ))}
             </div>
@@ -505,23 +291,65 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ━━━ AREAS ━━━ */}
+      {/* ━━━ AREAS — SSR crawlable internal links ━━━ */}
       <section className="py-28">
         <div className="container mx-auto px-6 md:px-12">
           <div className="mb-12">
-            <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Neighbourhoods</p>
-            <h2 className="text-3xl font-light">Bachelor rooms across <span className="font-bold">Hyderabad & Bangalore.</span></h2>
+            <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Neighbourhoods — Rooms for Rent</p>
+            <h2 className="text-3xl font-light">Find rooms for rent across <span className="font-bold">Hyderabad.</span></h2>
+            <p className="text-muted-foreground font-light mt-3 max-w-2xl text-sm">Browse bachelor rooms, family rooms, 1BHK, 2BHK, PG, and shared accommodations in Hyderabad&apos;s most popular areas. Zero brokerage on every listing.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {HYDERABAD_AREAS.slice(0, 40).map((area, i) => (
-              <Link key={area} href={`/rooms?location=${area}`}
+            {HYDERABAD_AREAS.slice(0, 50).map((area) => (
+              <Link key={area} href={`/rooms/in/${area.toLowerCase().replace(/\s+/g, '-')}`}
                 className="inline-flex items-center gap-1.5 px-4 py-2 border border-border bg-background hover:border-primary hover:text-primary transition-all text-xs font-medium">
-                <MapPin size={10} /> {area}
+                <MapPin size={10} /> Rooms in {area}
               </Link>
             ))}
             <Link href="/rooms" className="inline-flex items-center gap-1.5 px-4 py-2 border border-primary text-primary text-xs font-bold">
-              +{HYDERABAD_AREAS.length - 40} more areas →
+              +{HYDERABAD_AREAS.length - 50} more areas →
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━ SEO CONTENT SECTION — Server rendered, crawlable ━━━ */}
+      <section className="py-16 border-t border-border bg-secondary/10">
+        <div className="container mx-auto px-6 md:px-12">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <h2 className="text-2xl font-bold">Rooms for Rent in Hyderabad — Zero Brokerage with Takevolet</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Looking for rooms for rent in Hyderabad? Takevolet is the leading zero-brokerage platform connecting room seekers directly with room owners and current tenants. Whether you need a bachelor room, family room, 1BHK, 2BHK, 3BHK flat, PG accommodation, or shared room, Takevolet covers 90+ areas across Hyderabad and Bangalore.
+            </p>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="font-bold mb-3">Popular Areas for Bachelor Rooms</h3>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  {["Madhapur", "Gachibowli", "Kondapur", "Kukatpally", "KPHB Colony", "Ameerpet", "SR Nagar", "Dilsukhnagar", "Hitech City", "Begumpet"].map(area => (
+                    <li key={area}>
+                      <Link href={`/rooms/in/${area.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-primary transition-colors">
+                        → Bachelor rooms for rent in {area}, Hyderabad
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold mb-3">Popular Areas for Family Rooms</h3>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  {["Madhapur", "Gachibowli", "Manikonda", "Miyapur", "LB Nagar", "Secunderabad", "Uppal", "Kondapur", "Banjara Hills", "Jubilee Hills"].map(area => (
+                    <li key={area}>
+                      <Link href={`/rooms/in/${area.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-primary transition-colors">
+                        → Family rooms for rent in {area}, Hyderabad
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              All listings on Takevolet are direct from current tenants or owners — zero brokerage, always. Unlock poster contact for as low as ₹15. Find your next room in Hyderabad today. Takevolet also offers flatmate matching and a used furniture marketplace for bachelors and families moving in or out of Hyderabad.
+            </p>
           </div>
         </div>
       </section>
@@ -530,14 +358,17 @@ export default function LandingPage() {
       <section className="border-t border-border bg-foreground text-background py-28">
         <div className="container mx-auto px-6 md:px-12 text-center">
           <h2 className="text-4xl md:text-5xl font-light mb-6">
-            Are you a <span className="font-bold italic">Bachelor?</span>
+            Looking for a <span className="font-bold italic">Room?</span>
           </h2>
           <p className="text-background/50 mb-10 max-w-xl mx-auto font-light text-lg">
-            Whether you&apos;re leaving your room or searching for one — Takevolet is the only platform you need. Zero brokerage. Direct contact. Commission rewards.
+            Whether you&apos;re leaving your room or searching for one — Takevolet is the only zero-brokerage platform you need. Bachelor rooms, family rooms, flatmates, and furniture marketplace. Direct contact. Commission rewards.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/rooms" className="bg-primary text-primary-foreground px-10 py-4 text-sm uppercase tracking-widest font-bold hover:opacity-90 transition-all">
-              Find a Bachelor Room
+              Find a Room
+            </Link>
+            <Link href="/rooms/family" className="border border-primary/50 text-primary px-10 py-4 text-sm uppercase tracking-widest font-bold hover:bg-primary hover:text-primary-foreground transition-all">
+              Family Rooms
             </Link>
             <Link href="/list" className="border border-background/20 px-10 py-4 text-sm uppercase tracking-widest font-bold hover:border-primary hover:text-primary transition-all">
               Post Your Room
@@ -561,11 +392,10 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ━━━ UNLOCK CONTACT CTA (Razorpay Payment) ━━━ */}
+      {/* ━━━ UNLOCK CONTACT CTA ━━━ */}
       <section className="py-20 bg-[#0a0a0a] text-background relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/10 blur-[100px] -z-0" />
         <div className="container mx-auto px-6 md:px-12 relative z-10">
-
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 border border-primary/30 px-4 py-1.5 rounded-full mb-6">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -580,13 +410,12 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Pricing mini grid */}
           <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto mb-10">
             {[
-              { label: "1 Contact",         price: "₹15",  sub: "₹15/contact",   hot: false },
-              { label: "10 Contacts",       price: "₹55",  sub: "₹5.50/contact", hot: false },
-              { label: "50 Contacts",       price: "₹105", sub: "₹2.10/contact", hot: true,  badge: "Popular" },
-              { label: "Unlimited",         price: "₹200", sub: "₹0/contact",    hot: false, badge: "🔥 Deal" },
+              { label: "1 Contact", price: "₹15", sub: "₹15/contact", hot: false },
+              { label: "10 Contacts", price: "₹55", sub: "₹5.50/contact", hot: false },
+              { label: "50 Contacts", price: "₹105", sub: "₹2.10/contact", hot: true, badge: "Popular" },
+              { label: "Unlimited", price: "₹200", sub: "₹0/contact", hot: false, badge: "🔥 Deal" },
             ].map((p, i) => (
               <div key={i} className={`border p-4 text-center relative ${p.hot ? "border-primary bg-primary/10" : "border-white/10 bg-white/5"}`}>
                 {p.badge && (
@@ -601,7 +430,6 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* What you get + CTA */}
           <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
             <div className="bg-white/5 border border-white/10 p-5">
               <p className="text-[10px] uppercase tracking-widest text-background/50 mb-3">Each contact unlock includes</p>
@@ -633,7 +461,6 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-
         </div>
       </section>
 
@@ -643,14 +470,10 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-10 mb-14">
             <div>
               <div className="flex items-center space-x-2.5 mb-4">
-                <img
-                  src="/logo.png"
-                  alt="Takevolet logo"
-                  className="w-10 h-10 rounded-sm"
-                />
+                <img src="/logo.png" alt="Takevolet logo" className="w-10 h-10 rounded-sm" />
                 <span className="text-base font-bold tracking-[0.2em] uppercase">Take<span className="text-primary">volet</span></span>
               </div>
-              <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">Bachelor room handovers &amp; marketplace. Zero brokerage.</p>
+              <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">Rooms for rent in Hyderabad. Bachelor &amp; family room handovers, flatmate matching, and furniture marketplace. Zero brokerage.</p>
               <div className="flex items-center gap-4 mb-4">
                 <Link href="https://www.instagram.com/take_volet?igsh=MTBxdG1qMWd3MnBrZg==" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -668,6 +491,7 @@ export default function LandingPage() {
               <div className="flex flex-col gap-2">
                 {[
                   ["Browse Rooms", "/rooms"],
+                  ["Family Rooms", "/rooms/family"],
                   ["Find Flatmates", "/flatmates"],
                   ["Marketplace", "/marketplace"],
                   ["Post Your Room", "/list"],
@@ -680,8 +504,8 @@ export default function LandingPage() {
             <div>
               <h4 className="text-[10px] uppercase tracking-widest font-bold mb-3">Top Areas</h4>
               <div className="flex flex-col gap-2">
-                {["Madhapur", "Gachibowli", "Kukatpally", "SR Nagar", "Kondapur"].map(loc => (
-                  <Link key={loc} href={`/rooms?location=${loc}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{loc}</Link>
+                {["Madhapur", "Gachibowli", "Kukatpally", "SR Nagar", "Kondapur", "Ameerpet", "Hitech City", "KPHB Colony"].map(loc => (
+                  <Link key={loc} href={`/rooms/in/${loc.toLowerCase().replace(/\s+/g, '-')}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">Rooms in {loc}</Link>
                 ))}
               </div>
             </div>
@@ -690,10 +514,10 @@ export default function LandingPage() {
               <div className="flex flex-col gap-2.5">
                 {([
                   ["About Us", "/about"],
-                  ["Contact Us", "/contact"],
+                  ["Contact Us", "/contact-us"],
                   ["Pricing", "/pricing"],
-                  ["Privacy Policy", "/privacy"],
-                  ["Terms of Service", "/terms"],
+                  ["Privacy Policy", "/privacy-policy"],
+                  ["Terms of Service", "/terms-and-conditions"],
                   ["Refund Policy", "/refund-policy"],
                 ] as [string, string][]).map(([label, href]) => (
                   <Link key={label} href={href} className="text-xs text-muted-foreground hover:text-primary transition-colors">{label}</Link>
@@ -714,9 +538,8 @@ export default function LandingPage() {
                 <span>Zero Brokerage</span>
               </div>
             </div>
-            {/* Razorpay-required legal links row */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center text-[10px] text-muted-foreground/60">
-              {([["Terms of Service", "/terms"], ["Privacy Policy", "/privacy"], ["Refund Policy", "/refund-policy"], ["Pricing", "/pricing"], ["Contact", "/contact"]] as [string,string][]).map(([label, href]) => (
+              {([["Terms of Service", "/terms-and-conditions"], ["Privacy Policy", "/privacy-policy"], ["Refund Policy", "/refund-policy"], ["Pricing", "/pricing"], ["Contact", "/contact-us"]] as [string,string][]).map(([label, href]) => (
                 <Link key={label} href={href} className="hover:text-primary transition-colors">{label}</Link>
               ))}
             </div>

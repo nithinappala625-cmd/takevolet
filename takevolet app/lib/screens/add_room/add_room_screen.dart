@@ -29,6 +29,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
   final _leavingDateController = TextEditingController(); // REQUIRED
   final _commissionController = TextEditingController(); 
   final _membersController = TextEditingController(text: '1');
+  final _customContactController = TextEditingController();
   
   String _tenantType = 'bachelor';
   String _genderPref = 'Any';
@@ -39,7 +40,21 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
   String? _colony;
 
   final List<File> _selectedImages = [];
+  File? _selectedVideo;
   final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickVideo() async {
+    final picked = await _picker.pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 5));
+    if (picked != null) {
+      final file = File(picked.path);
+      final sizeMB = await file.length() / (1024 * 1024);
+      if (sizeMB > 50) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video must be under 50MB')));
+        return;
+      }
+      setState(() => _selectedVideo = file);
+    }
+  }
 
   @override
   void initState() {
@@ -52,6 +67,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
       _advanceController.text = data['advance']?.toString() ?? '';
       _addressController.text = data['full_address']?.toString() ?? '';
       _leavingDateController.text = data['leaving_date']?.toString() ?? '';
+      _customContactController.text = data['custom_contact']?.toString() ?? '';
       final metadata = data['metadata'] ?? {};
       
       _commissionController.text = metadata['commission']?.toString() ?? data['commission']?.toString() ?? '';
@@ -130,6 +146,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
       if (user == null) throw Exception('You must be logged in to post.');
 
       List<String> uploadedUrls = [];
+      String? uploadedVideoUrl;
       
       try {
         if (_selectedImages.isNotEmpty) {
@@ -142,6 +159,13 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
           uploadedUrls = (widget.initialData!['images'] as List).cast<String>();
         } else {
           uploadedUrls.add('https://images.unsplash.com/photo-1502690266266-ce3f2824cd16?w=800&q=80');
+        }
+
+        if (_selectedVideo != null) {
+          final fileName = '${DateTime.now().millisecondsSinceEpoch}_${_selectedVideo!.path.split('/').last}';
+          uploadedVideoUrl = await R2StorageService.uploadFile(_selectedVideo!, 'Takevolet/rooms/videos/$fileName');
+        } else if (widget.initialData != null && widget.initialData!['video_url'] != null) {
+          uploadedVideoUrl = widget.initialData!['video_url'];
         }
       } catch (e) {
         if (widget.initialData != null && widget.initialData!['images'] != null) {
@@ -171,9 +195,11 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
         'full_address': _addressController.text,
         'leaving_date': _leavingDateController.text.isNotEmpty ? _leavingDateController.text : DateTime.now().add(const Duration(days: 30)).toIso8601String(),
         'images': uploadedUrls,
+        'video_url': uploadedVideoUrl,
         'is_available': true,
         'city': _selectedCity,
         'metadata': metadata,
+        'custom_contact': _customContactController.text.trim().isNotEmpty ? _customContactController.text.trim() : null,
       };
 
       if (widget.initialData != null) {
@@ -259,6 +285,10 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextField(controller: _commissionController, decoration: _inputDeco('Commission/Reward (₹)', Icons.money), keyboardType: TextInputType.number),
+                        if (supabase.auth.currentUser?.email == 'nithinappala625@gmail.com' || supabase.auth.currentUser?.email == 'nithinpatel2025@gmail.com') ...[
+                          const SizedBox(height: 16),
+                          TextField(controller: _customContactController, decoration: _inputDeco('Custom Contact Number (Admin Only)', Icons.phone), keyboardType: TextInputType.phone),
+                        ],
                       ],
                     ),
                   ),
@@ -339,25 +369,44 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                     content: Column(
                       children: [
                         const SizedBox(height: 16),
-                        InkWell(
-                          onTap: _pickImages,
-                          child: Container(
-                            height: 150,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2, style: BorderStyle.solid),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: _pickImages,
+                                child: Container(
+                                  height: 120,
+                                  decoration: BoxDecoration(border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2), borderRadius: BorderRadius.circular(12)),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.add_a_photo, size: 40, color: Theme.of(context).colorScheme.primary),
+                                      const SizedBox(height: 8),
+                                      Text('Select Images\n(up to 6)', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_a_photo, size: 50, color: Theme.of(context).colorScheme.primary),
-                                const SizedBox(height: 8),
-                                Text('Select Images (up to 6)', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-                              ],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: InkWell(
+                                onTap: _pickVideo,
+                                child: Container(
+                                  height: 120,
+                                  decoration: BoxDecoration(border: Border.all(color: Colors.purple, width: 2), borderRadius: BorderRadius.circular(12)),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.videocam, size: 40, color: Colors.purple),
+                                      const SizedBox(height: 8),
+                                      Text(_selectedVideo != null ? 'Video Selected' : 'Add Video\n(max 50MB)', textAlign: TextAlign.center, style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         if (_selectedImages.isNotEmpty) 

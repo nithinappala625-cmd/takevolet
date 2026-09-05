@@ -30,6 +30,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       final data = await supabase.from('items').select().eq('id', widget.id).single();
       final profileData = await supabase.from('profiles').select('full_name, phone, whatsapp, avatar_url, email').eq('id', data['user_id']).single();
       
+      // Override contact if admin set a custom one
+      if (data['custom_contact'] != null && data['custom_contact'].toString().trim().isNotEmpty) {
+        final customContact = data['custom_contact'].toString().trim();
+        profileData['phone'] = customContact;
+        profileData['whatsapp'] = customContact;
+      }
+      
       if (mounted) {
         setState(() {
           item = data;
@@ -80,12 +87,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               child: const Icon(Icons.share, color: Colors.white, size: 20),
             ),
             onPressed: () {
-              ShareUtils.shareListing(
-                context: context,
-                title: item!['title'] ?? 'Marketplace Item',
-                description: 'Price: ₹${item!['price']}\nLocation: ${item!['location']}',
-                imageUrl: imageUrl,
-              );
+              ShareUtils.generateServiceShare(context, item!, 'item');
             },
           ),
         ],

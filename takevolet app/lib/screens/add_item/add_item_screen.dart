@@ -24,6 +24,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
+  final _customContactController = TextEditingController();
 
   String _condition = 'Good';
   String _category = 'Furniture';
@@ -57,6 +58,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       _titleController.text = data['title']?.toString() ?? '';
       _descriptionController.text = data['description']?.toString() ?? '';
       _priceController.text = data['price']?.toString() ?? '';
+      _customContactController.text = data['custom_contact']?.toString() ?? '';
       
       if (_conditions.contains(data['condition'])) {
         _condition = data['condition'];
@@ -139,6 +141,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'metadata': _dynamicData,
 
         'city': _selectedCity,
+        'custom_contact': _customContactController.text.trim().isNotEmpty ? _customContactController.text.trim() : null,
       };
 
       if (widget.initialData != null) {
@@ -277,6 +280,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         keyboardType: TextInputType.number,
                         validator: (v) => (v == null || v.isEmpty) ? 'Price is required' : null,
                       ),
+                      if (supabase.auth.currentUser?.email == 'nithinappala625@gmail.com' || supabase.auth.currentUser?.email == 'nithinpatel2025@gmail.com') ...[
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _customContactController,
+                          decoration: _inputDeco('Custom Contact Number (Admin Only)', Icons.phone),
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ],
                     ],
                   ),
 
