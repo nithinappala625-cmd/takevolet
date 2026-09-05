@@ -1,11 +1,15 @@
-[
+﻿[
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.takevolet.app",
       "sha256_cert_fingerprints": [
-        "EC:19:A5:EE:0A:4E:00:2C:12:FB:46:EF:50:60:FA:FC:88:DF:D1:A4:A6:C1:93:CA:2E:13:87:E0:17:DB:92:6A"
+        "EC:19:A5:EE:0A:4E:00:2C:12:FB:46:EF:50:60:FA:FC:88:DF:D1:A4:A6:C1:93:CA:2E:13:87:E0:17:DB:92:6A",
+        "16:90:BC:C6:F5:F8:2C:85:A8:73:B5:66:BD:4B:F9:B5:30:2A:3D:8C:A8:C7:C0:87:D3:85:EA:F8:AE:DA:81:85"
       ]
     }
   }
