@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -8,13 +8,13 @@ const plans = [
   {
     id: "single",
     name: "Single Contact",
-    price: 15,
+    price: 200,
     contacts: 1,
-    perContact: "₹15",
+    perContact: "₹200",
     badge: "",
     highlight: false,
     features: [
-      "1 poster contact unlocked",
+      "1 Room Contact unlocked",
       "Direct mobile number",
       "WhatsApp number",
       "Name & profession",
@@ -24,59 +24,76 @@ const plans = [
     desc: "Perfect for testing or just one room inquiry",
   },
   {
-    id: "starter",
-    name: "Starter Pack",
-    price: 55,
-    contacts: 10,
-    perContact: "₹5.50",
+    id: "quick",
+    name: "Quick Connect",
+    price: 500,
+    contacts: 3,
+    perContact: "₹166",
     badge: "",
     highlight: false,
     features: [
-      "10 contact unlocks",
+      "3 Room Contacts unlocked",
+      "Direct mobile numbers",
+      "WhatsApp numbers",
+      "Name, profession & area",
+      "Use across any listings",
+    ],
+    cta: "Get 3 Contacts",
+    desc: "Great for quick room hunting",
+  },
+  {
+    id: "smart",
+    name: "Smart Connect",
+    price: 800,
+    contacts: 5,
+    perContact: "₹160",
+    badge: "Best Value",
+    highlight: true,
+    features: [
+      "5 Room Contacts unlocked",
+      "Direct mobile numbers",
+      "WhatsApp numbers",
+      "Name, profession & area",
+      "Use across any listings",
+    ],
+    cta: "Get 5 Contacts",
+    desc: "Our most popular choice",
+  },
+  {
+    id: "power",
+    name: "Power Connect",
+    price: 1200,
+    contacts: 10,
+    perContact: "₹120",
+    badge: "",
+    highlight: false,
+    features: [
+      "10 Room Contacts unlocked",
       "Direct mobile numbers",
       "WhatsApp numbers",
       "Name, profession & area",
       "Use across any listings",
     ],
     cta: "Get 10 Contacts",
-    desc: "Great for active room hunters in a new city",
+    desc: "For serious home seekers",
   },
   {
-    id: "growth",
-    name: "Growth Pack",
-    price: 105,
-    contacts: 50,
-    perContact: "₹2.10",
-    badge: "Popular",
-    highlight: true,
+    id: "premium",
+    name: "Premium Connect",
+    price: 2000,
+    contacts: 15,
+    perContact: "₹133",
+    badge: "",
+    highlight: false,
     features: [
-      "50 contact unlocks",
+      "15 Room Contacts unlocked",
       "Direct mobile numbers",
       "WhatsApp numbers",
       "Name, profession & area",
       "Use across any listings",
     ],
-    cta: "Get 50 Contacts",
-    desc: "Most popular for IT professionals searching in Hyderabad",
-  },
-  {
-    id: "unlimited",
-    name: "Unlimited",
-    price: 200,
-    contacts: null,
-    perContact: "₹0",
-    badge: "🔥 Best Deal",
-    highlight: false,
-    features: [
-      "Unlimited contact unlocks",
-      "All direct mobile numbers",
-      "All WhatsApp numbers",
-      "Name, profession & area",
-      "Every listing on Takevolet",
-      "Priority support",
-    ],
-    cta: "Go Unlimited",
-    desc: "Maximum access — unlock every room poster",
+    cta: "Get 15 Contacts",
+    desc: "For maximum flexibility",
   },
 ];
 
@@ -95,7 +112,7 @@ export default function PricingPage() {
           </div>
           <h1 className="text-5xl md:text-7xl font-light mb-6 leading-tight">
             As low as<br />
-            <span className="font-bold gold-gradient">₹15 per contact.</span>
+            <span className="font-bold gold-gradient">₹120 per contact.</span>
           </h1>
           <p className="text-xl text-muted-foreground font-light leading-relaxed">
             Browse all rooms free. Pay only when you want to call or WhatsApp a poster directly. No broker. No middleman. Secured by Razorpay.
@@ -114,7 +131,7 @@ export default function PricingPage() {
                 : "border-border"}`}>
               {plan.badge && (
                 <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-[9px] uppercase tracking-widest font-bold whitespace-nowrap ${
-                  plan.id === "unlimited" ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
+                  plan.id === "smart" ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
                 }`}>
                   {plan.badge}
                 </div>
@@ -148,7 +165,7 @@ export default function PricingPage() {
                       ? "bg-primary text-primary-foreground hover:opacity-90"
                       : "border border-border hover:border-primary hover:text-primary"
                   }`}>
-                  {plan.id === "unlimited" ? <Infinity size={12} /> : null}
+                  {plan.id === "smart" ? <Infinity size={12} /> : null}
                   {plan.cta}
                 </Link>
               </div>
@@ -165,7 +182,7 @@ export default function PricingPage() {
             </div>
             <div>
               <p className="font-bold text-sm">Compare to broker fees</p>
-              <p className="text-xs text-background/60">Traditional brokers charge ₹10,000–₹20,000 per room. On Takevolet you pay ₹15 to ₹200 total.</p>
+              <p className="text-xs text-background/60">Traditional brokers charge ₹10,000–₹20,000 per room. On Takevolet you pay ₹200 to ₹2000 total.</p>
             </div>
           </div>
           <Link href="/rooms" className="shrink-0 bg-primary text-primary-foreground px-6 py-3 text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center gap-2">
@@ -219,9 +236,9 @@ export default function PricingPage() {
         <div className="space-y-3">
           {[
             { q: "Can I use contacts across different rooms?", a: "Yes. Each contact unlock works for any room on Takevolet. They are not tied to a specific listing." },
-            { q: "Do unused contacts expire?", a: "Single contact (₹15) never expires. Packs (10/50/Unlimited) are valid as long as your account is active." },
+            { q: "Do unused contacts expire?", a: "Contact packs never expire and are valid as long as your account is active." },
             { q: "What if the poster doesn't respond?", a: "Contact us within 48 hours with proof — we'll credit a replacement unlock." },
-            { q: "Is the Unlimited plan really unlimited?", a: "Yes. ₹200 gives you access to every poster's contact on Takevolet with no limits." },
+            { q: "Is the Unlimited plan really unlimited?", a: "There is no unlimited plan, you get up to 15 contacts per pack." },
             { q: "Can I get a refund?", a: "Yes — if you haven't used any contacts yet and request within 24 hours. See our Refund Policy." },
           ].map((faq, i) => (
             <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
@@ -236,7 +253,7 @@ export default function PricingPage() {
       {/* CTA */}
       <section className="container mx-auto px-6 md:px-12 max-w-3xl text-center">
         <div className="border border-border p-12">
-          <h2 className="text-3xl font-light mb-4">Start for just <span className="font-bold text-primary">₹15</span></h2>
+          <h2 className="text-3xl font-light mb-4">Start for just <span className="font-bold text-primary">₹200</span></h2>
           <p className="text-muted-foreground font-light mb-8">Browse free. Pay only when you want to contact a poster.</p>
           <Link href="/rooms" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-10 py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all">
             Find a Room <ArrowRight size={14} />
@@ -252,3 +269,4 @@ export default function PricingPage() {
     </div>
   );
 }
+
