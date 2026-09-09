@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -8,9 +8,9 @@ const plans = [
   {
     id: "single",
     name: "Single Contact",
-    price: 200,
+    price: 50,
     contacts: 1,
-    perContact: "₹200",
+    perContact: "₹50",
     badge: "",
     highlight: false,
     features: [
@@ -18,37 +18,19 @@ const plans = [
       "Direct mobile number",
       "WhatsApp number",
       "Name & profession",
-      "No expiry on single contact",
+      "No expiry on contacts",
     ],
     cta: "Buy 1 Contact",
-    desc: "Perfect for testing or just one room inquiry",
+    desc: "Perfect for a single room inquiry",
   },
   {
     id: "quick",
     name: "Quick Connect",
-    price: 500,
-    contacts: 3,
-    perContact: "₹166",
+    price: 100,
+    contacts: 5,
+    perContact: "₹20",
     badge: "",
     highlight: false,
-    features: [
-      "3 Room Contacts unlocked",
-      "Direct mobile numbers",
-      "WhatsApp numbers",
-      "Name, profession & area",
-      "Use across any listings",
-    ],
-    cta: "Get 3 Contacts",
-    desc: "Great for quick room hunting",
-  },
-  {
-    id: "smart",
-    name: "Smart Connect",
-    price: 800,
-    contacts: 5,
-    perContact: "₹160",
-    badge: "Best Value",
-    highlight: true,
     features: [
       "5 Room Contacts unlocked",
       "Direct mobile numbers",
@@ -57,34 +39,16 @@ const plans = [
       "Use across any listings",
     ],
     cta: "Get 5 Contacts",
-    desc: "Our most popular choice",
+    desc: "Great for quick room hunting",
   },
   {
-    id: "power",
-    name: "Power Connect",
-    price: 1200,
-    contacts: 10,
-    perContact: "₹120",
-    badge: "",
-    highlight: false,
-    features: [
-      "10 Room Contacts unlocked",
-      "Direct mobile numbers",
-      "WhatsApp numbers",
-      "Name, profession & area",
-      "Use across any listings",
-    ],
-    cta: "Get 10 Contacts",
-    desc: "For serious home seekers",
-  },
-  {
-    id: "premium",
-    name: "Premium Connect",
-    price: 2000,
+    id: "smart",
+    name: "Smart Connect",
+    price: 200,
     contacts: 15,
-    perContact: "₹133",
-    badge: "",
-    highlight: false,
+    perContact: "₹13",
+    badge: "Best Value",
+    highlight: true,
     features: [
       "15 Room Contacts unlocked",
       "Direct mobile numbers",
@@ -93,7 +57,25 @@ const plans = [
       "Use across any listings",
     ],
     cta: "Get 15 Contacts",
-    desc: "For maximum flexibility",
+    desc: "Our most popular choice",
+  },
+  {
+    id: "mega",
+    name: "Mega Connect",
+    price: 500,
+    contacts: 50,
+    perContact: "₹10",
+    badge: "Maximum Value",
+    highlight: false,
+    features: [
+      "50 Room Contacts unlocked",
+      "Direct mobile numbers",
+      "WhatsApp numbers",
+      "Name, profession & area",
+      "Use across any listings",
+    ],
+    cta: "Get 50 Contacts",
+    desc: "For serious home seekers considering all options",
   },
 ];
 
@@ -112,7 +94,7 @@ export default function PricingPage() {
           </div>
           <h1 className="text-5xl md:text-7xl font-light mb-6 leading-tight">
             As low as<br />
-            <span className="font-bold gold-gradient">₹120 per contact.</span>
+            <span className="font-bold gold-gradient">₹10 per contact.</span>
           </h1>
           <p className="text-xl text-muted-foreground font-light leading-relaxed">
             Browse all rooms free. Pay only when you want to call or WhatsApp a poster directly. No broker. No middleman. Secured by Razorpay.
@@ -122,7 +104,7 @@ export default function PricingPage() {
 
       {/* Pricing Table */}
       <section className="container mx-auto px-6 md:px-12 mb-24">
-        <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
           {plans.map((plan, i) => (
             <motion.div key={plan.id}
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
@@ -182,7 +164,7 @@ export default function PricingPage() {
             </div>
             <div>
               <p className="font-bold text-sm">Compare to broker fees</p>
-              <p className="text-xs text-background/60">Traditional brokers charge ₹10,000–₹20,000 per room. On Takevolet you pay ₹200 to ₹2000 total.</p>
+              <p className="text-xs text-background/60">Traditional brokers charge ₹10,000–₹20,000 per room. On Takevolet you pay ₹50 to ₹500 total.</p>
             </div>
           </div>
           <Link href="/rooms" className="shrink-0 bg-primary text-primary-foreground px-6 py-3 text-xs uppercase tracking-wider font-bold hover:opacity-90 transition-all flex items-center gap-2">
@@ -238,7 +220,7 @@ export default function PricingPage() {
             { q: "Can I use contacts across different rooms?", a: "Yes. Each contact unlock works for any room on Takevolet. They are not tied to a specific listing." },
             { q: "Do unused contacts expire?", a: "Contact packs never expire and are valid as long as your account is active." },
             { q: "What if the poster doesn't respond?", a: "Contact us within 48 hours with proof — we'll credit a replacement unlock." },
-            { q: "Is the Unlimited plan really unlimited?", a: "There is no unlimited plan, you get up to 15 contacts per pack." },
+            { q: "Is the Unlimited plan really unlimited?", a: "There is no unlimited plan, you get up to 50 contacts per pack." },
             { q: "Can I get a refund?", a: "Yes — if you haven't used any contacts yet and request within 24 hours. See our Refund Policy." },
           ].map((faq, i) => (
             <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
@@ -253,7 +235,7 @@ export default function PricingPage() {
       {/* CTA */}
       <section className="container mx-auto px-6 md:px-12 max-w-3xl text-center">
         <div className="border border-border p-12">
-          <h2 className="text-3xl font-light mb-4">Start for just <span className="font-bold text-primary">₹200</span></h2>
+          <h2 className="text-3xl font-light mb-4">Start for just <span className="font-bold text-primary">₹50</span></h2>
           <p className="text-muted-foreground font-light mb-8">Browse free. Pay only when you want to contact a poster.</p>
           <Link href="/rooms" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-10 py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all">
             Find a Room <ArrowRight size={14} />

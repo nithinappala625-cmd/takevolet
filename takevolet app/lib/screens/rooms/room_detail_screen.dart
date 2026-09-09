@@ -174,9 +174,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     try {
       String? planId;
       if (desc != 'Visitor Pass' && desc != 'Premium Visitor Pass') {
-        if (amount == 35 || amount == 55 || amount == 65 || amount == 110) planId = 'starter';
-        else if (amount == 105 || amount == 210) planId = 'growth';
-        else if (amount >= 200) planId = 'unlimited';
+        if (amount == 50) planId = 'single';
+        else if (amount == 100) planId = 'starter';
+        else if (amount == 200) planId = 'growth';
+        else if (amount >= 500) planId = 'unlimited';
         else planId = 'single';
       }
 
@@ -188,26 +189,40 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         bodyPayload['planId'] = planId;
       }
 
-      final response = await supabase.functions.invoke('create-razorpay-order', body: bodyPayload);
-      if (context.mounted) Navigator.pop(context);
+      String keyId = 'rzp_live_SqU0ZW4NCgp5jo';
+      String? orderId;
 
-      final data = response.data;
-      if (data == null || data['id'] == null) {
-        final errorDetail = data?['error'] ?? 'No order ID returned';
-        throw Exception('Failed to create order: $errorDetail');
+      try {
+        final response = await supabase.functions.invoke('create-razorpay-order', body: bodyPayload);
+        final data = response.data;
+        if (data != null && data['id'] != null) {
+          orderId = data['id'];
+          if (data['keyId'] != null) keyId = data['keyId'];
+        }
+      } catch (fnErr) {
+        debugPrint('create-razorpay-order edge function warning: $fnErr');
       }
 
-      var options = {
-        'key': data['keyId'],
+      if (context.mounted) Navigator.pop(context);
+
+      final Map<String, dynamic> options = {
+        'key': keyId,
         'amount': amount * 100,
         'name': 'Takevolet',
         'description': desc,
-        'order_id': data['id'],
+        'theme': {
+          'color': '#0F172A'
+        },
         'prefill': {
           'contact': supabase.auth.currentUser?.phone ?? '',
           'email': supabase.auth.currentUser?.email ?? 'user@takevolet.com'
         }
       };
+
+      if (orderId != null) {
+        options['order_id'] = orderId;
+      }
+
       _razorpay.open(options);
     } catch (e) {
       if (context.mounted) {
@@ -216,7 +231,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Payment Error 🚨', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            content: Text('Could not start payment:\n\n$e\n\nMake sure Edge Functions are deployed with Razorpay keys.'),
+            content: Text('Could not start payment:\n\n$e'),
             actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
           ),
         );
@@ -264,15 +279,14 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     final bool isBangalore = location.contains('bangalore') || location.contains('bengaluru') || city.contains('bangalore') || city.contains('bengaluru');
     
     // Contact plans only
-          final List<Map<String, dynamic>> plans = [
-        {'title': 'Single Contact', 'subtitle': '1 Room', 'price': 200, 'color': Colors.blue, 'unlocks': 1},
-        {'title': 'Quick Connect', 'subtitle': '3 Rooms', 'price': 500, 'color': Colors.orange, 'unlocks': 3},
-        {'title': 'Smart Connect', 'subtitle': '5 Rooms', 'price': 800, 'color': Colors.purple, 'isBestValue': true, 'unlocks': 5},
-        {'title': 'Power Connect', 'subtitle': '10 Rooms', 'price': 1200, 'color': Colors.green, 'unlocks': 10},
-        {'title': 'Premium Connect', 'subtitle': '15 Rooms', 'price': 2000, 'color': Colors.red, 'unlocks': 15},
-      ];
+    final List<Map<String, dynamic>> plans = [
+      {'title': 'Single Contact', 'subtitle': '1 Room', 'price': 50, 'color': Colors.blue, 'unlocks': 1},
+      {'title': 'Quick Connect', 'subtitle': '5 Rooms', 'price': 100, 'color': Colors.orange, 'unlocks': 5},
+      {'title': 'Smart Connect', 'subtitle': '15 Rooms', 'price': 200, 'color': Colors.purple, 'isBestValue': true, 'unlocks': 15},
+      {'title': 'Mega Connect', 'subtitle': '50 Rooms', 'price': 500, 'color': Colors.green, 'unlocks': 50},
+    ];
 
-    Map<String, dynamic>? selectedPlan = plans[2]; // Default to Growth Pack
+    Map<String, dynamic>? selectedPlan = plans[2]; // Default to Smart Connect (15 Rooms - ₹200)
 
     showModalBottomSheet(
       context: context,

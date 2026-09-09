@@ -15,15 +15,15 @@ serve(async (req) => {
     const body = await req.json();
     const { roomId, flatmateId, planId, amount } = body;
     
-    // Professional Pricing Tiers just like the Next.js website
+    // Professional Pricing Tiers
     const VALID_PLANS: Record<string, { paise: number }> = {
-      single: { paise: 1500 },
-      starter: { paise: 5500 },
-      growth: { paise: 10500 },
-      unlimited: { paise: 20000 },
+      single: { paise: 5000 },    // ₹50 (1 Contact)
+      starter: { paise: 10000 },  // ₹100 (5 Contacts)
+      growth: { paise: 20000 },   // ₹200 (15 Contacts)
+      unlimited: { paise: 50000 },// ₹500 (50 Contacts)
     };
     
-    const plan = VALID_PLANS[planId] ?? { paise: 1500 };
+    const plan = VALID_PLANS[planId] ?? { paise: 5000 };
     const finalAmount = amount ? amount : plan.paise;
     
     const auth = btoa(`${KEY_ID}:${KEY_SECRET}`);

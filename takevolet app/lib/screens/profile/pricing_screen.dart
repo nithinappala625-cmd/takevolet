@@ -18,11 +18,10 @@ class _PricingScreenState extends State<PricingScreen> {
   int _pendingUnlocks = 1;
 
   final List<Map<String, dynamic>> plans = [
-    {'title': 'Single Contact', 'subtitle': '1 Room', 'price': 200, 'color': const Color(0xFF3B82F6), 'unlocks': 1, 'icon': Icons.person},
-    {'title': 'Quick Connect', 'subtitle': '3 Rooms', 'price': 500, 'color': const Color(0xFFF59E0B), 'unlocks': 3, 'icon': Icons.flash_on},
-    {'title': 'Smart Connect', 'subtitle': '5 Rooms', 'price': 800, 'color': const Color(0xFF8B5CF6), 'isBestValue': true, 'unlocks': 5, 'icon': Icons.lightbulb},
-    {'title': 'Power Connect', 'subtitle': '10 Rooms', 'price': 1200, 'color': const Color(0xFF10B981), 'unlocks': 10, 'icon': Icons.power},
-    {'title': 'Premium Connect', 'subtitle': '15 Rooms', 'price': 2000, 'color': const Color(0xFFEF4444), 'unlocks': 15, 'icon': Icons.workspace_premium},
+    {'title': 'Single Contact', 'subtitle': '1 Room', 'price': 50, 'color': const Color(0xFF3B82F6), 'unlocks': 1, 'icon': Icons.person},
+    {'title': 'Quick Connect', 'subtitle': '5 Rooms', 'price': 100, 'color': const Color(0xFFF59E0B), 'unlocks': 5, 'icon': Icons.flash_on},
+    {'title': 'Smart Connect', 'subtitle': '15 Rooms', 'price': 200, 'color': const Color(0xFF8B5CF6), 'isBestValue': true, 'unlocks': 15, 'icon': Icons.lightbulb},
+    {'title': 'Mega Connect', 'subtitle': '50 Rooms', 'price': 500, 'color': const Color(0xFF10B981), 'unlocks': 50, 'icon': Icons.all_inclusive},
   ];
 
   @override
@@ -75,34 +74,49 @@ class _PricingScreenState extends State<PricingScreen> {
     setState(() => _pendingUnlocks = unlocks);
     showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)));
     try {
-      final response = await supabase.functions.invoke(
-        'create-razorpay-order',
-        body: {'amount': priceInRupees * 100, 'receipt': 'receipt_plan_$priceInRupees'},
-      );
-      if (context.mounted) Navigator.pop(context);
+      String keyId = 'rzp_live_SqU0ZW4NCgp5jo';
+      String? orderId;
 
-      final data = response.data;
-      if (data == null || data['id'] == null) {
-        throw Exception('Supabase failed to create order. Did you deploy functions?');
+      try {
+        final response = await supabase.functions.invoke(
+          'create-razorpay-order',
+          body: {'amount': priceInRupees * 100, 'receipt': 'receipt_plan_$priceInRupees'},
+        );
+        final data = response.data;
+        if (data != null && data['id'] != null) {
+          orderId = data['id'];
+          if (data['keyId'] != null) keyId = data['keyId'];
+        }
+      } catch (fnErr) {
+        debugPrint('create-razorpay-order edge function warning: $fnErr');
       }
 
-      var options = {
-        'key': data['keyId'],
+      if (context.mounted) Navigator.pop(context);
+
+      final Map<String, dynamic> options = {
+        'key': keyId,
         'amount': priceInRupees * 100,
         'name': 'Takevolet Premium',
         'description': planName,
-        'order_id': data['id'],
         'theme': {
           'color': '#0F172A'
         },
         'prefill': {
-          'email': supabase.auth.currentUser?.email ?? 'test@test.com'
+          'contact': supabase.auth.currentUser?.phone ?? '',
+          'email': supabase.auth.currentUser?.email ?? 'user@takevolet.com'
         }
       };
+
+      if (orderId != null) {
+        options['order_id'] = orderId;
+      }
+
       _razorpay.open(options);
     } catch (e) {
-      if (context.mounted) Navigator.pop(context);
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (context.mounted) {
+        try { Navigator.pop(context); } catch (_) {}
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error starting payment: $e'), backgroundColor: Colors.red));
+      }
     }
   }
 

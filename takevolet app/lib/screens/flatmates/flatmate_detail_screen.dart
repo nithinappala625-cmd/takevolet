@@ -23,6 +23,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
   bool _hasUnlocked = false;
   int _contactBalance = 0;
   int _pendingAmount = 0;
+  int _pendingUnlocks = 1;
 
   late Razorpay _razorpay;
   final PageController _pageController = PageController();
@@ -49,17 +50,18 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
     final userId = supabase.auth.currentUser?.id;
     if (userId != null) {
       try {
-        if (_pendingAmount == 35 || _pendingAmount == 55) {
+        await supabase.from('flatmate_contact_unlocks').insert({
+          'flatmate_id': widget.id,
+          'user_id': userId,
+        });
+
+        if (_pendingUnlocks > 1) {
+          final remainder = _pendingUnlocks - 1;
           await supabase
               .from('profiles')
-              .update({'contact_balance': _contactBalance + 5})
+              .update({'contact_balance': _contactBalance + remainder})
               .eq('id', userId);
-          if (mounted) setState(() => _contactBalance += 5);
-        } else if (_pendingAmount == 15 || _pendingAmount == 30) {
-          await supabase.from('flatmate_contact_unlocks').insert({
-            'flatmate_id': widget.id,
-            'user_id': userId,
-          });
+          if (mounted) setState(() => _contactBalance += remainder);
         }
       } catch (e) {}
     }
@@ -150,9 +152,9 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
       setState(() => posterProfile = profile);
     } catch (_) {}
   }
-
-  Future<void> _purchasePlan(int amount, String desc) async {
+  Future<void> _purchasePlan(int amount, String desc, {int unlocks = 1}) async {
     _pendingAmount = amount;
+    _pendingUnlocks = unlocks;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -161,11 +163,13 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
     try {
       String? planId;
       if (desc != 'Visitor Pass' && desc != 'Premium Visitor Pass') {
-        if (amount == 35 || amount == 55 || amount == 65 || amount == 110)
+        if (amount == 50)
+          planId = 'single';
+        else if (amount == 100)
           planId = 'starter';
-        else if (amount == 105 || amount == 210)
+        else if (amount == 200)
           planId = 'growth';
-        else if (amount >= 200)
+        else if (amount >= 500)
           planId = 'unlimited';
         else
           planId = 'single';
@@ -179,29 +183,43 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
         bodyPayload['planId'] = planId;
       }
 
-      final response = await supabase.functions.invoke(
-        'create-razorpay-order',
-        body: bodyPayload,
-      );
-      if (context.mounted) Navigator.pop(context);
+      String keyId = 'rzp_live_SqU0ZW4NCgp5jo';
+      String? orderId;
 
-      final data = response.data;
-      if (data == null || data['id'] == null) {
-        final errorDetail = data?['error'] ?? 'No order ID returned';
-        throw Exception('Failed to create order: $errorDetail');
+      try {
+        final response = await supabase.functions.invoke(
+          'create-razorpay-order',
+          body: bodyPayload,
+        );
+        final data = response.data;
+        if (data != null && data['id'] != null) {
+          orderId = data['id'];
+          if (data['keyId'] != null) keyId = data['keyId'];
+        }
+      } catch (fnErr) {
+        debugPrint('create-razorpay-order edge function warning: $fnErr');
       }
 
-      var options = {
-        'key': data['keyId'],
+      if (context.mounted) Navigator.pop(context);
+
+      final Map<String, dynamic> options = {
+        'key': keyId,
         'amount': amount * 100,
         'name': 'Takevolet',
         'description': desc,
-        'order_id': data['id'],
+        'theme': {
+          'color': '#0F172A'
+        },
         'prefill': {
           'contact': supabase.auth.currentUser?.phone ?? '',
           'email': supabase.auth.currentUser?.email ?? 'user@takevolet.com',
         },
       };
+
+      if (orderId != null) {
+        options['order_id'] = orderId;
+      }
+
       _razorpay.open(options);
     } catch (e) {
       if (context.mounted) {
@@ -216,13 +234,13 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
               style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
             content: Text(
-              'Could not start payment:\n\n$e\n\nMake sure Edge Functions are deployed with Razorpay keys.',
+              'Could not start payment:\n\n$e',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('OK'),
-              ),
+              )
             ],
           ),
         );
@@ -296,63 +314,39 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
         city.contains('bengaluru');
 
     // Contact plans only
-    final List<Map<String, dynamic>> plans = isBangalore
-        ? [
-            {
-              'title': 'Single Contact',
-              'subtitle': '1 Contact',
-              'price': 30,
-              'color': Colors.blue,
-            },
-            {
-              'title': 'Starter Pack',
-              'subtitle': '5 Contacts',
-              'price': 65,
-              'color': Colors.orange,
-            },
-            {
-              'title': 'Growth Pack',
-              'subtitle': '50 Contacts',
-              'price': 210,
-              'color': Colors.purple,
-              'isBestValue': true,
-            },
-            {
-              'title': 'Unlimited',
-              'subtitle': 'Unlimited Contacts',
-              'price': 400,
-              'color': Colors.red,
-            },
-          ]
-        : [
-            {
-              'title': 'Single Contact',
-              'subtitle': '1 Contact',
-              'price': 15,
-              'color': Colors.blue,
-            },
-            {
-              'title': 'Starter Pack',
-              'subtitle': '5 Contacts',
-              'price': 35,
-              'color': Colors.orange,
-            },
-            {
-              'title': 'Growth Pack',
-              'subtitle': '50 Contacts',
-              'price': 105,
-              'color': Colors.purple,
-              'isBestValue': true,
-            },
-            {
-              'title': 'Unlimited',
-              'subtitle': 'Unlimited Contacts',
-              'price': 200,
-              'color': Colors.red,
-            },
-          ];
+    final List<Map<String, dynamic>> plans = [
+      {
+        'title': 'Single Contact',
+        'subtitle': '1 Contact',
+        'price': 50,
+        'color': Colors.blue,
+        'unlocks': 1,
+      },
+      {
+        'title': 'Quick Connect',
+        'subtitle': '5 Contacts',
+        'price': 100,
+        'color': Colors.orange,
+        'unlocks': 5,
+      },
+      {
+        'title': 'Smart Connect',
+        'subtitle': '15 Contacts',
+        'price': 200,
+        'color': Colors.purple,
+        'isBestValue': true,
+        'unlocks': 15,
+      },
+      {
+        'title': 'Mega Connect',
+        'subtitle': '50 Contacts',
+        'price': 500,
+        'color': Colors.green,
+        'unlocks': 50,
+      },
+    ];
 
-    Map<String, dynamic>? selectedPlan = plans[2]; // Default to Growth Pack
+    Map<String, dynamic>? selectedPlan = plans[2]; // Default to Smart Connect (15 Contacts - ₹200)
 
     showModalBottomSheet(
       context: context,
@@ -511,6 +505,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                               _purchasePlan(
                                 selectedPlan!['price'],
                                 selectedPlan!['title'],
+                                unlocks: selectedPlan!['unlocks'] ?? 1,
                               );
                             }
                           : null,

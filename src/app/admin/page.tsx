@@ -1019,6 +1019,12 @@ export default function AdminPage() {
                         <p className="text-xs text-gray-400">{r.colony}, {r.location}</p>
                         <p className="text-xs text-primary font-bold mt-1">₹{r.rent?.toLocaleString("en-IN")}/mo <span className="text-[10px] text-gray-400 font-normal">· Advance: ₹{r.advance?.toLocaleString("en-IN")}</span></p>
                         {r.description && <p className="text-[11px] text-gray-400 mt-2 line-clamp-2 italic font-light">"{r.description}"</p>}
+                        <div className="mt-2 p-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded flex items-center justify-between">
+                          <div className="text-[11px] font-bold text-emerald-400">
+                            📞 Owner: <span className="text-white font-mono">{r.custom_contact || r.phone || "Not provided"}</span>
+                          </div>
+                          {r.custom_contact && <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-1 py-0.5 rounded font-bold uppercase">Uploaded</span>}
+                        </div>
                         <div className="flex flex-wrap gap-2 mt-2">
                           <span className="text-[9px] bg-[#2A2E39] px-1.5 py-0.5 font-bold uppercase text-gray-400">
                             🖼️ {r.images?.length || 0} images

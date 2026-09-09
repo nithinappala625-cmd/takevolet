@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Outfit, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -145,6 +145,7 @@ export const metadata: Metadata = {
   category: "Real Estate",
   classification: "Bachelor Accommodation, Room Rentals, Hyderabad",
   metadataBase: new URL(APP_URL),
+  alternates: { canonical: "./" },
   openGraph: {
     type: "website",
     locale: "en_IN",
@@ -402,3 +403,4 @@ export default function RootLayout({
     </html>
   );
 }
+

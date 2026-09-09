@@ -285,10 +285,12 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextField(controller: _commissionController, decoration: _inputDeco('Commission/Reward (₹)', Icons.money), keyboardType: TextInputType.number),
-                        if (supabase.auth.currentUser?.email == 'nithinappala625@gmail.com' || supabase.auth.currentUser?.email == 'nithinpatel2025@gmail.com') ...[
-                          const SizedBox(height: 16),
-                          TextField(controller: _customContactController, decoration: _inputDeco('Custom Contact Number (Admin Only)', Icons.phone), keyboardType: TextInputType.phone),
-                        ],
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _customContactController,
+                          decoration: _inputDeco('Owner Phone Number (Owner / Contact)', Icons.phone_android),
+                          keyboardType: TextInputType.phone,
+                        ),
                       ],
                     ),
                   ),

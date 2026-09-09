@@ -703,6 +703,62 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     }
   }
 
+  void _quickEditRoomOwnerNumber(Map<String, dynamic> r) {
+    final ctrl = TextEditingController(text: r['custom_contact']?.toString() ?? '');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Update Owner Phone Number', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Room: ${r['title'] ?? ''}', style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ctrl,
+              decoration: const InputDecoration(
+                labelText: 'Owner / Contact Phone Number',
+                hintText: 'e.g. 9876543210',
+                prefixIcon: Icon(Icons.phone),
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.phone,
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final newNum = ctrl.text.trim();
+              try {
+                await supabaseAdmin.from('rooms').update({
+                  'custom_contact': newNum.isNotEmpty ? newNum : null,
+                }).eq('id', r['id']);
+                _loadData();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Owner number updated successfully!'), backgroundColor: Colors.green),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to update owner number: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ─── ROOMS TAB ─────────────────────────────────────────────────
   Widget _buildRoomsTab() {
     return ListView.builder(
@@ -711,37 +767,157 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       itemBuilder: (ctx, i) {
         final r = rooms[i];
         final images = (r['images'] as List<dynamic>?)?.cast<String>() ?? [];
+
+        final String? customContact = r['custom_contact']?.toString();
+        final String posterId = r['user_id']?.toString() ?? '';
+        final poster = users.firstWhere((u) => u['id'] == posterId, orElse: () => <String, dynamic>{});
+        final String posterPhone = poster['phone']?.toString() ?? '';
+        final String posterName = poster['full_name']?.toString() ?? '';
+        final String posterEmail = poster['email']?.toString() ?? '';
+
+        final bool hasUploadedOwnerNumber = customContact != null && customContact.trim().isNotEmpty;
+        final String ownerNumber = hasUploadedOwnerNumber
+            ? customContact.trim()
+            : (posterPhone.trim().isNotEmpty ? posterPhone.trim() : 'No Number Added');
+
+        final String createdDate = (r['created_at'] != null && r['created_at'].toString().length >= 10)
+            ? r['created_at'].toString().substring(0, 10)
+            : '';
+
         return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: ClipRoundedRect(
-              images: images,
-            ),
-            title: Text(r['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text('₹${r['rent']}/mo • ${r['location'] ?? ''}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Switch(
-                  value: r['is_available'] ?? true,
-                  onChanged: (val) async {
-                    await supabaseAdmin.from('rooms').update({'is_available': val}).eq('id', r['id']);
-                    _loadData();
-                  },
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRoundedRect(images: images),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(r['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 3),
+                          Text('₹${r['rent']}/mo • ${r['location'] ?? ''}', style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w600)),
+                          if (createdDate.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('Uploaded: $createdDate', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: r['is_available'] ?? true,
+                      onChanged: (val) async {
+                        await supabaseAdmin.from('rooms').update({'is_available': val}).eq('id', r['id']);
+                        _loadData();
+                      },
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.data_object, color: Colors.purple),
-                  tooltip: 'Edit Dynamic Fields',
-                  onPressed: () => _dynamicEditItem(context, 'rooms', r),
+                const SizedBox(height: 10),
+                // ─── HIGHLIGHTED OWNER NUMBER DISPLAY BESIDE ROOM DETAILS ───
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: hasUploadedOwnerNumber ? const Color(0xFF10B981).withOpacity(0.12) : Colors.amber.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: hasUploadedOwnerNumber ? const Color(0xFF10B981) : Colors.amber.shade700,
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        hasUploadedOwnerNumber ? Icons.phone_android : Icons.phone_outlined,
+                        size: 18,
+                        color: hasUploadedOwnerNumber ? const Color(0xFF059669) : Colors.amber.shade900,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'OWNER NUMBER: ',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    color: hasUploadedOwnerNumber ? const Color(0xFF047857) : Colors.amber.shade900,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: hasUploadedOwnerNumber ? const Color(0xFF059669) : Colors.amber.shade800,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    hasUploadedOwnerNumber ? 'UPLOADED OWNER' : 'POSTER PHONE',
+                                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            SelectableText(
+                              ownerNumber,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                                color: hasUploadedOwnerNumber ? const Color(0xFF065F46) : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Edit Owner Number',
+                        icon: const Icon(Icons.edit_note, color: Colors.blueAccent, size: 22),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _quickEditRoomOwnerNumber(r),
+                      ),
+                    ],
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => _editItem(context, 'rooms', r),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _confirmDelete('rooms', r['id'], r['title'] ?? 'this room'),
+                if (posterName.isNotEmpty || posterEmail.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Uploader: ${posterName.isNotEmpty ? posterName : 'User'} ${posterEmail.isNotEmpty ? '($posterEmail)' : ''}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.data_object, color: Colors.purple, size: 20),
+                      tooltip: 'Edit Dynamic Fields',
+                      onPressed: () => _dynamicEditItem(context, 'rooms', r),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                      tooltip: 'Full Edit',
+                      onPressed: () => _editItem(context, 'rooms', r),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      tooltip: 'Delete',
+                      onPressed: () => _confirmDelete('rooms', r['id'], r['title'] ?? 'this room'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -758,38 +934,84 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       itemCount: flatmates.length,
       itemBuilder: (ctx, i) {
         final f = flatmates[i];
+        final String? customContact = f['custom_contact']?.toString();
+        final String posterId = f['user_id']?.toString() ?? '';
+        final poster = users.firstWhere((u) => u['id'] == posterId, orElse: () => <String, dynamic>{});
+        final String posterPhone = poster['phone']?.toString() ?? '';
+        final String contactNum = (customContact != null && customContact.trim().isNotEmpty)
+            ? customContact.trim()
+            : (posterPhone.trim().isNotEmpty ? posterPhone.trim() : 'No Number');
+
         return Card(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: 10),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.indigo.withOpacity(0.1),
-              child: const Icon(Icons.group, color: Colors.indigo, size: 20),
-            ),
-            title: Text(f['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text('₹${f['rent_share']}/mo • ${f['location'] ?? ''}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Switch(
-                  value: f['is_available'] ?? true,
-                  onChanged: (val) async {
-                    await supabaseAdmin.from('flatmates').update({'is_available': val}).eq('id', f['id']);
-                    _loadData();
-                  },
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Colors.indigo.withOpacity(0.1),
+                      child: const Icon(Icons.group, color: Colors.indigo, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(f['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 2),
+                          Text('₹${f['rent_share']}/mo • ${f['location'] ?? ''}', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: f['is_available'] ?? true,
+                      onChanged: (val) async {
+                        await supabaseAdmin.from('flatmates').update({'is_available': val}).eq('id', f['id']);
+                        _loadData();
+                      },
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.data_object, color: Colors.purple),
-                  tooltip: 'Edit Dynamic Fields',
-                  onPressed: () => _dynamicEditItem(context, 'flatmates', f),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.indigo.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.phone, size: 16, color: Colors.indigo),
+                      const SizedBox(width: 6),
+                      Text('Contact: $contactNum', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo)),
+                    ],
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => _editItem(context, 'flatmates', f),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _confirmDelete('flatmates', f['id'], f['title'] ?? 'this flatmate listing'),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.data_object, color: Colors.purple, size: 20),
+                      tooltip: 'Edit Dynamic Fields',
+                      onPressed: () => _dynamicEditItem(context, 'flatmates', f),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                      tooltip: 'Full Edit',
+                      onPressed: () => _editItem(context, 'flatmates', f),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      tooltip: 'Delete',
+                      onPressed: () => _confirmDelete('flatmates', f['id'], f['title'] ?? 'this flatmate listing'),
+                    ),
+                  ],
                 ),
               ],
             ),
