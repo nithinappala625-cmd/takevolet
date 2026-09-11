@@ -200,11 +200,6 @@ class _AddDayWiseScreenState extends State<AddDayWiseScreen> {
         uploadedVideoUrl = await R2StorageService.uploadFile(_videoFile!, path);
       }
 
-      final metadata = {
-        'profession_pref': _professionPref ?? '',
-        'lifestyle_habits': _lifestyleHabits,
-      };
-
       final stayMetadata = {
         'profession_pref': _professionPref ?? '',
         'lifestyle_habits': _lifestyleHabits,
