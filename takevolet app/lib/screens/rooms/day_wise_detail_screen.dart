@@ -508,6 +508,9 @@ class _DayWiseDetailScreenState extends State<DayWiseDetailScreen> {
     final displayName = name.isNotEmpty ? name : 'Takevolet Partner';
     final profession = 'Takevolet Partner';
     final avatar = posterProfile?['avatar_url'];
+    final rawPhone = (room?['custom_contact'] != null && room!['custom_contact'].toString().trim().isNotEmpty)
+        ? room!['custom_contact'].toString().trim()
+        : (posterProfile?['phone'] ?? '').toString().trim();
     final int rent = room!['rent'] ?? 0;
     final String location = (room!['location'] ?? '').toLowerCase();
     final String city = (room!['city'] ?? '').toLowerCase();
@@ -592,11 +595,11 @@ class _DayWiseDetailScreenState extends State<DayWiseDetailScreen> {
                   child: const Icon(Icons.phone_locked_rounded, color: Color(0xFF0F172A), size: 18),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'PHONE NUMBER',
                         style: TextStyle(
                           fontSize: 10,
@@ -605,18 +608,18 @@ class _DayWiseDetailScreenState extends State<DayWiseDetailScreen> {
                           letterSpacing: 1,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        _formatPartiallyRevealedPhone(phone),
-                        style: TextStyle(
+                        _formatPartiallyRevealedPhone(rawPhone),
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           color: Color(0xFF0F172A),
                           letterSpacing: 1.5,
                         ),
                       ),
-                      SizedBox(height: 2),
-                      Text(
+                      const SizedBox(height: 2),
+                      const Text(
                         'Verified Contact • First 4 digits revealed',
                         style: TextStyle(
                           fontSize: 11,

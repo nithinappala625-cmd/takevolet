@@ -18,7 +18,7 @@ void main() {
       
       if (content != newContent) {
         file.writeAsStringSync(newContent);
-        print('Fixed \');
+        print('Fixed');
       }
     }
   }

@@ -75,16 +75,17 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
     }
     
     // Call our Razorpay Payment Service
-    final success = await PaymentService.initiateUnlockPayment(
-      context: context,
-      roomId: widget.roomId,
-      posterId: room['user_id'] ?? 'dummy_poster',
-      roomTitle: room['title'],
+    await PaymentService.startRazorpayCheckout(
+      amount: 199.0,
+      phoneNumber: user.phone ?? '',
+      email: user.email ?? 'user@takevolet.com',
+      onSuccess: (res) {
+        if (mounted) setState(() => _hasUnlocked = true);
+      },
+      onError: (msg) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      },
     );
-
-    if (success) {
-      setState(() => _hasUnlocked = true);
-    }
   }
 
   @override
