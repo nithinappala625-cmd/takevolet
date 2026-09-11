@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import { fetchAllRoomsAction } from "@/lib/server-actions";
 import RoomCard from "@/components/RoomCard";
 import Link from "next/link";
-import { MapPin, ShieldCheck, HelpCircle, CheckCircle2 } from "lucide-react";
+import { MapPin, ShieldCheck, HelpCircle, CheckCircle2, Sparkles, Building2 } from "lucide-react";
 import type { Room } from "@/lib/db";
+import {
+  BANGALORE_AREAS,
+  PUNE_AREAS,
+  MUMBAI_AREAS,
+  DELHI_AREAS,
+  CHENNAI_AREAS,
+} from "@/data/locations";
 
 type Props = {
   params: Promise<{ area: string }>;
@@ -16,20 +23,39 @@ function formatAreaName(slug: string) {
     .join(" ");
 }
 
+function getCityForArea(areaSlug: string, areaName: string): string {
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "").replace(/[-_.]/g, "");
+  const target = norm(areaSlug);
+
+  if (BANGALORE_AREAS.some(a => norm(a) === target || target.includes(norm(a)))) return "Bangalore";
+  if (PUNE_AREAS.some(a => norm(a) === target || target.includes(norm(a)))) return "Pune";
+  if (MUMBAI_AREAS.some(a => norm(a) === target || target.includes(norm(a)))) return "Mumbai";
+  if (DELHI_AREAS.some(a => norm(a) === target || target.includes(norm(a)))) return "Delhi NCR";
+  if (CHENNAI_AREAS.some(a => norm(a) === target || target.includes(norm(a)))) return "Chennai";
+  return "Hyderabad";
+}
+
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params;
   const areaName = formatAreaName(params.area);
+  const cityName = getCityForArea(params.area, areaName);
+  const canonicalUrl = `https://takevolet.online/rooms/in/${params.area}`;
   
   return {
-    title: `Bachelor Rooms for Rent in ${areaName} Hyderabad — Zero Brokerage | Takevolet`,
-    description: `Find zero brokerage bachelor rooms, 1BHKs, and flatmates in ${areaName}, Hyderabad. Direct owner contact, no brokers. Find your next room today!`,
+    title: `Rooms, Flats & PGs for Rent in ${areaName}, ${cityName} — Zero Brokerage | Takevolet`,
+    description: `Find zero brokerage bachelor rooms, 1BHK/2BHK flats, PGs, and flatmates in ${areaName}, ${cityName}. Direct owner contact without broker fees. Start living in ${areaName} today!`,
     alternates: {
-      canonical: `/rooms/in/${params.area}`,
+      canonical: canonicalUrl,
     },
     openGraph: {
-      title: `Bachelor Rooms for Rent in ${areaName} | Zero Brokerage`,
-      description: `Direct bachelor room handovers and flatmates in ${areaName}, Hyderabad.`,
-      url: `https://takevolet.online/rooms/in/${params.area}`,
+      title: `Rooms & PGs for Rent in ${areaName}, ${cityName} | Zero Brokerage`,
+      description: `Direct room handovers, flats, and PGs in ${areaName}, ${cityName}. Zero brokerage.`,
+      url: canonicalUrl,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Rooms, Flats & PGs for Rent in ${areaName}, ${cityName}`,
+      description: `Verified rooms, flats, and PGs in ${areaName}, ${cityName} with zero brokerage.`,
     },
   };
 }
@@ -37,134 +63,209 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function AreaRoomsPage(props: Props) {
   const params = await props.params;
   const areaName = formatAreaName(params.area);
+  const cityName = getCityForArea(params.area, areaName);
   const allRooms = await fetchAllRoomsAction();
   
   // Filter rooms that belong to this area (case-insensitive includes)
   const areaRooms = allRooms.filter(r => 
     (r.location || "").toLowerCase().includes(areaName.toLowerCase()) || 
-    (r.colony || "").toLowerCase().includes(areaName.toLowerCase())
+    (r.colony || "").toLowerCase().includes(areaName.toLowerCase()) ||
+    (r.city || "").toLowerCase().includes(areaName.toLowerCase())
   );
+
+  // Fallback nearby/popular rooms to prevent empty thin pages (Soft 404 prevention)
+  const nearbyRooms = allRooms.filter(r =>
+    (r.city || "").toLowerCase().includes(cityName.toLowerCase())
+  ).slice(0, 6);
+
+  const fallbackRooms = areaRooms.length > 0 ? areaRooms : (nearbyRooms.length > 0 ? nearbyRooms : allRooms.slice(0, 6));
 
   const faqs = [
     {
-      q: `Are there zero brokerage rooms available in ${areaName}?`,
-      a: `Yes! All listings on Takevolet are direct handovers from existing tenants or owners. You pay zero brokerage for any room in ${areaName}.`
+      q: `Are there zero brokerage rooms available in ${areaName}, ${cityName}?`,
+      a: `Yes! All listings on Takevolet are direct handovers from existing tenants or owners. You pay zero brokerage for any room or PG in ${areaName}.`
     },
     {
       q: `How do I contact the room owner in ${areaName}?`,
       a: `Simply click on the room you like and use our secure contact unlock feature to get the poster's direct phone number or WhatsApp.`
     },
     {
-      q: `Can I post my room in ${areaName} for handover?`,
-      a: `Absolutely! If you are leaving your room in ${areaName}, you can list it on Takevolet and even earn a referral commission when someone takes it.`
+      q: `Can I post my room or flat in ${areaName} for handover?`,
+      a: `Absolutely! If you are leaving your room in ${areaName}, you can list it on Takevolet and connect directly with tenants looking for quick handovers.`
     },
     {
-      q: `What types of rooms are available for bachelors in ${areaName}?`,
-      a: `You can find single rooms, 1RKs, 1BHK flats, and shared flatmate accommodations specifically optimized for bachelor living.`
+      q: `What types of accommodations are available in ${areaName}?`,
+      a: `You can find single rooms, 1RKs, 1BHK/2BHK flats, shared flatmate rooms, Paying Guest (PG) accommodations, and day-wise stays.`
     },
     {
-      q: `Is ${areaName} a good location for bachelors?`,
-      a: `Yes, ${areaName} is a popular and bustling locality with a large population of students and working professionals, making it a highly preferred choice.`
+      q: `Is ${areaName} well connected for working professionals and students?`,
+      a: `Yes, ${areaName} in ${cityName} offers prime connectivity to nearby business parks, metro stations, transit hubs, and retail centers.`
     }
   ];
 
-  const faqSchema = {
+  const structuredData = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqs.map(faq => ({
-      "@type": "Question",
-      "name": faq.q,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": faq.a
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://takevolet.online" },
+          { "@type": "ListItem", "position": 2, "name": "Rooms", "item": "https://takevolet.online/rooms" },
+          { "@type": "ListItem", "position": 3, "name": `${areaName}, ${cityName}`, "item": `https://takevolet.online/rooms/in/${params.area}` }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": faqs.map(faq => ({
+          "@type": "Question",
+          "name": faq.q,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": faq.a
+          }
+        }))
       }
-    }))
+    ]
   };
 
   return (
-    <div className="pt-36 pb-20 min-h-screen">
-      {/* FAQ Schema Markup */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+    <div className="pt-32 pb-20 min-h-screen">
+      {/* Structured Data (Breadcrumbs & FAQs) */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
 
       <div className="container mx-auto px-6 md:px-12">
-        {/* SEO Header & Intro */}
-        <div className="mb-12 max-w-4xl">
-          <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-xs mb-4">
-            <MapPin size={14} /> Location Focus
+        {/* SEO Header & Breadcrumb */}
+        <div className="mb-10 max-w-4xl">
+          <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/" className="hover:text-primary transition">Home</Link>
+            <span>/</span>
+            <Link href="/rooms" className="hover:text-primary transition">Rooms</Link>
+            <span>/</span>
+            <span className="text-primary font-medium">{areaName}, {cityName}</span>
+          </nav>
+
+          <div className="inline-flex items-center gap-2 border border-primary/30 bg-primary/10 px-3 py-1 rounded-full text-primary font-bold uppercase tracking-widest text-[11px] mb-4">
+            <MapPin size={13} /> {cityName} Hub Focus
           </div>
-          <h1 className="text-4xl md:text-5xl font-light mb-6 leading-tight">
-            Bachelor Rooms for Rent in <span className="font-bold">{areaName}</span>, Hyderabad
+
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-6 leading-tight tracking-tight">
+            Rooms, Flats &amp; PGs for Rent in <span className="gold-gradient">{areaName}</span>, {cityName}
           </h1>
-          <div className="space-y-4 text-muted-foreground leading-relaxed">
+
+          <div className="space-y-4 text-muted-foreground leading-relaxed text-sm md:text-base">
             <p>
-              Looking for a bachelor room for rent in {areaName}, Hyderabad? Located close to major hubs and essential amenities, {areaName} has become one of the top choices for bachelors, students, and IT professionals. Whether you need a single room, a 1BHK, or a shared flatmate setup, living here offers unmatched convenience and a vibrant lifestyle.
+              Looking for a room, flat, or PG in {areaName}, {cityName}? Situated in prime proximity to major commercial corridors, metro routes, and educational centers, {areaName} is one of the most in-demand destinations for students, bachelors, and working professionals.
             </p>
             <p>
-              With Takevolet, you can discover direct room handovers from outgoing tenants without paying a single rupee in brokerage. Say goodbye to greedy brokers and hidden fees. Browse our real-time listings in {areaName} below and connect directly with verified posters!
+              On Takevolet, you connect directly with genuine property owners and departing tenants. Enjoy 100% zero brokerage, transparent rent tariffs, verified photos, and instant phone or WhatsApp contact.
             </p>
           </div>
         </div>
 
-        {/* Dynamic SEO Content Blocks */}
-        <div className="grid md:grid-cols-3 gap-10 mb-16">
-          <div className="bg-secondary/20 p-8 border border-border">
-            <h2 className="text-xl font-bold mb-5 flex items-center gap-2"><CheckCircle2 className="text-primary" /> Why bachelors choose {areaName}</h2>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex gap-2"><span>•</span> Strategic location with seamless connectivity.</li>
-              <li className="flex gap-2"><span>•</span> Highly affordable 1RK and shared 1BHK options.</li>
-              <li className="flex gap-2"><span>•</span> Abundance of local tiffin centers, gyms, and supermarkets.</li>
-              <li className="flex gap-2"><span>•</span> Excellent public transport via TSRTC and Metro.</li>
-              <li className="flex gap-2"><span>•</span> A large community of like-minded young professionals.</li>
+        {/* Locality Insights Grid */}
+        <div className="grid md:grid-cols-3 gap-6 mb-16">
+          <div className="bg-secondary/30 p-6 rounded-2xl border border-border">
+            <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-foreground">
+              <CheckCircle2 size={18} className="text-primary shrink-0" /> Why Live in {areaName}
+            </h2>
+            <ul className="space-y-2.5 text-xs text-muted-foreground">
+              <li className="flex gap-2"><span>•</span> Convenient access to major IT corridors and transit routes.</li>
+              <li className="flex gap-2"><span>•</span> Wide range of furnished 1RK, 1BHK, 2BHK, and PG choices.</li>
+              <li className="flex gap-2"><span>•</span> Abundance of supermarkets, dining hubs, and gym facilities.</li>
+              <li className="flex gap-2"><span>•</span> Active and secure residential neighborhood.</li>
             </ul>
           </div>
-          <div className="bg-secondary/20 p-8 border border-border">
-            <h2 className="text-xl font-bold mb-5 flex items-center gap-2"><CheckCircle2 className="text-primary" /> How Takevolet works</h2>
-            <ol className="space-y-3 text-sm text-muted-foreground list-decimal list-inside">
-              <li>Browse direct listings for rooms in {areaName}.</li>
-              <li>Unlock the poster's direct contact details.</li>
-              <li>Contact them instantly via Call or WhatsApp.</li>
-              <li>Finalize your room with <strong>Zero Brokerage</strong>!</li>
+
+          <div className="bg-secondary/30 p-6 rounded-2xl border border-border">
+            <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-foreground">
+              <CheckCircle2 size={18} className="text-primary shrink-0" /> Zero Brokerage Advantage
+            </h2>
+            <ol className="space-y-2.5 text-xs text-muted-foreground list-decimal list-inside">
+              <li>Browse verified room and PG listings in {areaName}.</li>
+              <li>Unlock direct contact for just ₹10–₹50.</li>
+              <li>Call or WhatsApp the owner directly.</li>
+              <li>Move in with <strong>₹0 broker commission</strong>!</li>
             </ol>
           </div>
-          <div className="bg-secondary/20 p-8 border border-border">
-            <h2 className="text-xl font-bold mb-5 flex items-center gap-2"><CheckCircle2 className="text-primary" /> Typical rent in {areaName}</h2>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex justify-between border-b border-border/50 pb-2"><span>Shared / Flatmates:</span> <strong>₹4,000 - ₹8,000</strong></li>
-              <li className="flex justify-between border-b border-border/50 pb-2"><span>1RK / Single Rooms:</span> <strong>₹8,000 - ₹12,000</strong></li>
-              <li className="flex justify-between pb-2"><span>1BHK Flats:</span> <strong>₹12,000 - ₹20,000</strong></li>
+
+          <div className="bg-secondary/30 p-6 rounded-2xl border border-border">
+            <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-foreground">
+              <CheckCircle2 size={18} className="text-primary shrink-0" /> Average Rent in {areaName}
+            </h2>
+            <ul className="space-y-2.5 text-xs text-muted-foreground">
+              <li className="flex justify-between border-b border-border/50 pb-2">
+                <span>Shared / PGs:</span> <strong className="text-foreground">₹5,000 - ₹9,000</strong>
+              </li>
+              <li className="flex justify-between border-b border-border/50 pb-2">
+                <span>1RK / Single Rooms:</span> <strong className="text-foreground">₹8,000 - ₹14,000</strong>
+              </li>
+              <li className="flex justify-between pb-2">
+                <span>1BHK / 2BHK Flats:</span> <strong className="text-foreground">₹14,000 - ₹28,000</strong>
+              </li>
             </ul>
           </div>
         </div>
 
-        {/* Room Listings */}
+        {/* Room Listings Section */}
         <div className="mb-16">
-          <h2 className="text-3xl font-light mb-8">Available Rooms in <span className="font-bold">{areaName}</span></h2>
-          
-          {areaRooms.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {areaRooms.map(room => (
-                <RoomCard key={room.id} room={room} />
-              ))}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+                {areaRooms.length > 0 ? (
+                  <>Available Accommodations in <span className="text-primary">{areaName}</span></>
+                ) : (
+                  <>Verified Properties in <span className="text-primary">{cityName}</span></>
+                )}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                {areaRooms.length > 0 
+                  ? `Showing direct verified listings in ${areaName}.`
+                  : `Currently zero active vacancies in ${areaName} proper — exploring verified options in ${cityName}:`
+                }
+              </p>
             </div>
-          ) : (
-            <div className="text-center py-20 border border-border bg-secondary/10">
-              <p className="text-2xl font-light mb-4">No rooms available in {areaName} right now.</p>
-              <p className="text-muted-foreground mb-8">Be the first to list a room here and earn referral commission!</p>
-              <Link href="/post/room" className="bg-primary text-primary-foreground px-8 py-3 text-sm font-bold uppercase tracking-wider hover:bg-primary/90 transition-all">
-                List Your Room
+            <Link
+              href="/post/room"
+              className="hidden md:inline-flex items-center gap-2 text-xs bg-primary text-primary-foreground font-bold px-4 py-2 rounded-xl hover:opacity-90 transition"
+            >
+              Post a Room in {areaName}
+            </Link>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {fallbackRooms.map(room => (
+              <RoomCard key={room.id} room={room} />
+            ))}
+          </div>
+
+          {areaRooms.length === 0 && (
+            <div className="mt-8 text-center p-8 rounded-2xl border border-border bg-secondary/20">
+              <p className="text-base font-semibold text-foreground mb-2">
+                Have a vacant room, flat, or PG in {areaName}?
+              </p>
+              <p className="text-xs text-muted-foreground mb-6 max-w-xl mx-auto">
+                Tenants are actively searching for rooms in {areaName}. List your space for free on Takevolet with zero brokerage and reach thousands of seekers across India.
+              </p>
+              <Link
+                href="/post/room"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition"
+              >
+                List Your Room in {areaName}
               </Link>
             </div>
           )}
         </div>
 
         {/* FAQs */}
-        <div className="max-w-3xl">
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><HelpCircle className="text-primary" /> FAQs about {areaName} Rooms</h2>
-          <div className="space-y-4">
+        <div className="max-w-3xl mb-16">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <HelpCircle size={22} className="text-primary" /> Frequently Asked Questions
+          </h2>
+          <div className="space-y-3">
             {faqs.map((faq, idx) => (
-              <div key={idx} className="border border-border p-5 bg-background">
-                <h3 className="font-bold mb-2">{faq.q}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
+              <div key={idx} className="border border-border p-5 rounded-xl bg-secondary/20">
+                <h3 className="font-bold text-sm mb-2 text-foreground">{faq.q}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{faq.a}</p>
               </div>
             ))}
           </div>

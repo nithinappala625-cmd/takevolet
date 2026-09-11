@@ -13,25 +13,27 @@ const BASE_URL = "https://takevolet.online";
 export const revalidate = 3600; // Re-generate sitemap every hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // ── Static Pages ───────────────────────────────────────────────────────────
+  // ── Static Pages (Canonical only, zero duplicates) ────────────────────────
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
     { url: `${BASE_URL}/rooms`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.95 },
+    { url: `${BASE_URL}/properties`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.95 },
+    { url: `${BASE_URL}/build`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/rooms/family`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/flatmates`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
     { url: `${BASE_URL}/marketplace`, lastModified: new Date(), changeFrequency: "daily", priority: 0.85 },
+    { url: `${BASE_URL}/feed`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.85 },
+    { url: `${BASE_URL}/pricing`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
-    { url: `${BASE_URL}/pricing`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
-    { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE_URL}/contact-us`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE_URL}/privacy`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
-    { url: `${BASE_URL}/privacy-policy`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
-    { url: `${BASE_URL}/terms`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
-    { url: `${BASE_URL}/terms-and-conditions`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
-    { url: `${BASE_URL}/refund-policy`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
+    { url: `${BASE_URL}/privacy-policy`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
+    { url: `${BASE_URL}/terms-and-conditions`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
+    { url: `${BASE_URL}/refund-policy`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
     { url: `${BASE_URL}/list`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/post/room`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/post/flatmate`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
+    { url: `${BASE_URL}/post/property`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
+    { url: `${BASE_URL}/post/build`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE_URL}/post/item`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
   ];
 
@@ -150,6 +152,66 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Sitemap: Error fetching items", e);
   }
 
+  // ── Dynamic Properties for Sale from Supabase ─────────────────────────────
+  let propertyPages: MetadataRoute.Sitemap = [];
+  try {
+    const { data: properties } = await supabase
+      .from("property_sales")
+      .select("id, created_at")
+      .order("created_at", { ascending: false });
+
+    if (properties) {
+      propertyPages = properties.map(p => ({
+        url: `${BASE_URL}/properties/${p.id}`,
+        lastModified: new Date(p.created_at || new Date()),
+        changeFrequency: "daily" as const,
+        priority: 0.9,
+      }));
+    }
+  } catch (e) {
+    console.error("Sitemap: Error fetching properties", e);
+  }
+
+  // ── Dynamic Top Builder Projects from Supabase ────────────────────────────
+  let projectPages: MetadataRoute.Sitemap = [];
+  try {
+    const { data: projects } = await supabase
+      .from("top_projects")
+      .select("id, created_at")
+      .order("created_at", { ascending: false });
+
+    if (projects) {
+      projectPages = projects.map(proj => ({
+        url: `${BASE_URL}/project/${proj.id}`,
+        lastModified: new Date(proj.created_at || new Date()),
+        changeFrequency: "daily" as const,
+        priority: 0.9,
+      }));
+    }
+  } catch (e) {
+    console.error("Sitemap: Error fetching top projects", e);
+  }
+
+  // ── Dynamic Build & Construction Listings from Supabase ───────────────────
+  let buildPages: MetadataRoute.Sitemap = [];
+  try {
+    const { data: builds } = await supabase
+      .from("build_listings")
+      .select("id, created_at")
+      .order("created_at", { ascending: false });
+
+    if (builds) {
+      buildPages = builds.map(b => ({
+        url: `${BASE_URL}/build/${b.id}`,
+        lastModified: new Date(b.created_at || new Date()),
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      }));
+    }
+  } catch (e) {
+    console.error("Sitemap: Error fetching build listings", e);
+  }
+
   // ── Dynamic Pages from Supabase (custom pages) ────────────────────────────
   let dynamicPages: MetadataRoute.Sitemap = [];
   try {
@@ -180,6 +242,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...chennaiAreaPages,
     ...articlePages,
     ...roomPages,
+    ...propertyPages,
+    ...projectPages,
+    ...buildPages,
     ...flatmatePages,
     ...itemPages,
     ...dynamicPages,

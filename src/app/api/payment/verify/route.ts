@@ -151,10 +151,13 @@ export async function POST(request: Request) {
           console.error("[Razorpay] Failed to fetch order notes", e);
         }
 
-        if (packContacts > 1) {
-          const { data: profile } = await supabaseAdmin.from("profiles").select("contact_balance").eq("id", userId).single();
+        const isStandalonePlan = !roomId && !body.flatmateId;
+        const contactsToAdd = isStandalonePlan ? packContacts : (packContacts > 1 ? packContacts - 1 : 0);
+
+        if (contactsToAdd > 0) {
+          const { data: profile } = await supabaseAdmin.from("profiles").select("contact_balance").eq("id", userId).maybeSingle();
           const currentBalance = profile?.contact_balance || 0;
-          await supabaseAdmin.from("profiles").update({ contact_balance: currentBalance + (packContacts - 1) }).eq("id", userId);
+          await supabaseAdmin.from("profiles").update({ contact_balance: currentBalance + contactsToAdd }).eq("id", userId);
         }
 
         if (roomId) {

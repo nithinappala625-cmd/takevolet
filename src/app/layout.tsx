@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Outfit, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -22,128 +22,105 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://takevolet.online";
 
 export const metadata: Metadata = {
   title: {
-    default: "Takevolet — Bachelor Room Handovers, Flatmates & Marketplace in Hyderabad",
+    default: "Takevolet — Zero Brokerage Rentals, Properties, Top Projects & Construction Across India",
     template: "%s | Takevolet",
   },
   description:
-    "Takevolet is Hyderabad's #1 zero-brokerage platform. Find rooms for rent, bachelor rooms, family rooms, 1BHK, 2BHK flats, discover flatmates, and buy/sell used furniture — all in one place. No brokers. Direct owner contact. Serving 90+ areas in Hyderabad.",
+    "India's premier zero-brokerage real estate & housing ecosystem. Find rooms for rent, PGs, day-wise stays, verified flatmates, buy properties & flats, explore top RERA builder projects, and hire trusted construction contractors in Hyderabad, Bangalore, Pune, Mumbai, Delhi-NCR, Chennai & nationwide.",
   keywords: [
     // Brand keywords
     "takevolet",
-    "takevolet hyderabad",
-    "takevolet rooms",
-    "takevolet online",
     "take volet",
+    "takevolet app",
+    "takevolet online",
+    "takevolet real estate",
+    "takevolet properties",
+    "takevolet rentals",
 
-    // General Rooms for Rent
-    "rooms for rent hyderabad",
-    "rooms for rent in hyderabad",
-    "room for rent hyderabad",
-    "house for rent hyderabad",
-    "flat for rent hyderabad",
-    "apartment for rent hyderabad",
-    "rental rooms hyderabad",
-    "room rent hyderabad",
-    "rooms near me hyderabad",
-    "independent house for rent hyderabad",
-    
-    // Bachelor rooms
-    "bachelor rooms hyderabad",
-    "bachelor room for rent in hyderabad",
-    "bachelor room rent hyderabad",
-    "bachelor flat for rent hyderabad",
-    "bachelor accommodation hyderabad",
-    "single room rent hyderabad",
-    "1rk rent hyderabad",
-    "1 room kitchen hyderabad rent",
+    // Zero Brokerage & Pan-India
+    "zero brokerage real estate",
+    "no broker property india",
+    "direct owner rooms and flats",
+    "broker free rental platform",
+    "zero brokerage flats for rent",
+    "zero brokerage property for sale",
 
-    // Family Rooms
-    "family rooms hyderabad",
-    "family room for rent hyderabad",
-    "family flat for rent hyderabad",
-    "family accommodation hyderabad",
-    "family house rent hyderabad",
-    "1bhk for rent hyderabad",
-    "1bhk flat for rent hyderabad",
-    "2bhk for rent hyderabad",
-    "2bhk flat for rent hyderabad",
-    "3bhk for rent hyderabad",
-    "3bhk flat for rent hyderabad",
-
-    // Zero brokerage
-    "zero brokerage rooms hyderabad",
-    "no broker rooms hyderabad",
-    "direct owner rooms hyderabad",
-    "broker free rooms hyderabad",
-    "without brokerage rooms hyderabad",
-
-    // Area-specific rooms
-    "room rent madhapur",
-    "room rent gachibowli",
-    "room rent kukatpally",
-    "room rent ameerpet",
-    "room rent sr nagar",
-    "room rent kondapur",
-    "room rent hitech city hyderabad",
-    "room rent kphb",
-    "room rent dilsukhnagar",
-    "room rent uppal hyderabad",
-    "room rent secunderabad",
-    "room rent miyapur",
-    "bachelor room ameerpet",
-    "bachelor room madhapur",
-    "bachelor room gachibowli",
-    "bachelor room kondapur",
-    "bachelor room hitec city",
-    "bachelor room kukatpally",
-    "bachelor room sr nagar",
-
-    // Room handovers
-    "room handover hyderabad",
-    "flat handover hyderabad",
-    "bachelor room handover",
-    "room takeover hyderabad",
-
-    // PG & general accommodation
-    "pg rooms hyderabad",
-    "pg for bachelors hyderabad",
-    "bachelor pg hyderabad",
-    "bachelor accommodation telangana",
-    "shared room hyderabad",
-    "shared flat hyderabad bachelors",
-    "paying guest hyderabad",
-    "hostel hyderabad",
-    "boys hostel hyderabad",
-    "girls pg hyderabad",
-    "co-living hyderabad",
+    // Room Rentals & PGs
+    "rooms for rent",
+    "room for rent near me",
+    "bachelor rooms for rent",
+    "family flats for rent",
+    "1bhk for rent",
+    "2bhk for rent",
+    "3bhk for rent",
+    "pg near me",
+    "coliving spaces",
+    "bachelor pg",
+    "luxury pg for gents and ladies",
+    "room handover",
+    "single room rent",
+    "day wise room rental",
+    "short stay accommodation",
 
     // Flatmates
-    "flatmates hyderabad",
-    "find flatmate hyderabad",
-    "flatmate search hyderabad",
-    "roommate hyderabad",
-    "flatmate madhapur",
-    "flatmate gachibowli",
-    "flatmate kondapur",
-    "shared accommodation hyderabad",
+    "find flatmates",
+    "roommate finder",
+    "flatmate matching",
+    "shared accommodation",
+    "find roommate near me",
 
-    // Furniture marketplace
-    "used furniture hyderabad bachelors",
-    "buy sell furniture hyderabad",
-    "bachelor marketplace hyderabad",
-    "second hand furniture hyderabad",
-    "used appliances hyderabad",
+    // Properties for Sale
+    "properties for sale",
+    "flats for sale",
+    "buy apartment",
+    "buy 2bhk flat",
+    "buy 3bhk luxury flat",
+    "villas for sale",
+    "independent house for sale",
+    "plots for sale",
+    "resale properties direct owner",
+    "commercial properties for sale",
 
-    // Earn commission
-    "earn commission room hyderabad",
-    "earn money handing over room",
-    "room handover commission hyderabad",
+    // Top Projects & Builders
+    "top builder projects",
+    "new launch projects",
+    "gated community apartments",
+    "rera approved projects",
+    "pre launch builder projects",
+    "luxury gated communities",
+    "under construction flats",
+
+    // Construction & Architecture
+    "house construction contractors",
+    "building construction services",
+    "interior designers",
+    "architects near me",
+    "turnkey home construction",
+    "home renovation services",
+    "civil contractors",
+
+    // Major Cities & Localities
+    "rooms for rent in hyderabad",
+    "flats for rent in bangalore",
+    "rooms for rent in bengaluru",
+    "flats for rent in pune",
+    "apartments for rent in mumbai",
+    "flats for rent in delhi ncr",
+    "rooms for rent in chennai",
+    "properties in hyderabad",
+    "properties in bangalore",
+    "properties in pune",
+    "madhapur", "gachibowli", "kondapur", "hitec city", "kukatpally", "kphb",
+    "koramangala", "indiranagar", "whitefield", "electronic city", "hsr layout",
+    "hinjewadi", "wakad", "baner", "kharadi", "viman nagar",
+    "andheri", "powai", "thane", "navi mumbai",
+    "gurgaon cyber city", "noida sector 62", "omr chennai", "velachery"
   ],
   authors: [{ name: "Takevolet" }],
   creator: "Takevolet",
   publisher: "Takevolet",
   category: "Real Estate",
-  classification: "Bachelor Accommodation, Room Rentals, Hyderabad",
+  classification: "Real Estate, Room Rentals, Properties For Sale, Construction Services, Flatmates, India",
   metadataBase: new URL(APP_URL),
   alternates: { canonical: "./" },
   openGraph: {
@@ -151,23 +128,23 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: APP_URL,
     siteName: "Takevolet",
-    title: "Takevolet — Zero Brokerage Rooms, Flatmates & Marketplace in Hyderabad",
+    title: "Takevolet — Zero Brokerage Rentals, Properties, Projects & Construction",
     description:
-      "Find or handover bachelor rooms in Hyderabad with zero brokerage. Discover flatmates, buy/sell furniture — the complete platform for Hyderabad's bachelor community. 90+ areas covered.",
+      "India's complete housing ecosystem. Zero brokerage room handovers, PGs, property sales, top RERA builder projects, and construction services across Hyderabad, Bangalore, Pune, Mumbai & major cities.",
     images: [
       {
         url: `${APP_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "Takevolet — Bachelor Rooms Hyderabad",
+        alt: "Takevolet — Zero Brokerage Real Estate Ecosystem",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Takevolet — Rooms, Flatmates & Marketplace for Bachelors in Hyderabad",
+    title: "Takevolet — Zero Brokerage Rentals, Properties, Projects & Construction",
     description:
-      "Zero brokerage room handovers, flatmate search, and used furniture marketplace. Built for Hyderabad bachelors.",
+      "Zero brokerage rooms, flatmate search, properties for sale, top builder projects, and verified construction contractors across India.",
     images: [`${APP_URL}/logo.png`],
   },
   robots: {
@@ -211,11 +188,27 @@ const organizationSchema = {
     height: "1024",
   },
   description:
-    "Takevolet is Hyderabad's #1 zero-brokerage platform for bachelor room handovers, flatmate discovery, and used furniture marketplace. An independent startup serving Hyderabad's bachelor community across 90+ areas.",
+    "Takevolet is India's premier zero-brokerage real estate platform offering verified room handovers, PG stays, flatmate discovery, property sales, top builder projects, and turnkey construction services.",
   foundingDate: "2024",
   areaServed: [
     { "@type": "City", name: "Hyderabad", addressCountry: "IN" },
-    { "@type": "State", name: "Telangana", addressCountry: "IN" },
+    { "@type": "City", name: "Bengaluru", addressCountry: "IN" },
+    { "@type": "City", name: "Pune", addressCountry: "IN" },
+    { "@type": "City", name: "Mumbai", addressCountry: "IN" },
+    { "@type": "City", name: "Delhi NCR", addressCountry: "IN" },
+    { "@type": "City", name: "Chennai", addressCountry: "IN" },
+    { "@type": "Country", name: "India" },
+  ],
+  knowsAbout: [
+    "Zero Brokerage Rentals",
+    "Bachelor Accommodations",
+    "Family Flats & Apartments",
+    "Properties For Sale",
+    "Top Builder Projects & New Launches",
+    "Civil Construction & Interior Design",
+    "Flatmate Matching",
+    "Coliving & PGs",
+    "Day-Wise Stays"
   ],
   address: {
     "@type": "PostalAddress",
@@ -230,7 +223,7 @@ const organizationSchema = {
       contactType: "customer support",
       email: "hello@takevolet.online",
       areaServed: "IN",
-      availableLanguage: ["English", "Telugu", "Hindi"],
+      availableLanguage: ["English", "Telugu", "Hindi", "Kannada"],
     },
   ],
   sameAs: [
@@ -245,7 +238,7 @@ const websiteSchema = {
   name: "Takevolet",
   url: APP_URL,
   description:
-    "Zero-brokerage bachelor room handovers, flatmates, and marketplace in Hyderabad.",
+    "Zero-brokerage room rentals, properties for sale, top builder projects, construction services and flatmates across India.",
   publisher: { "@id": `${APP_URL}/#organization` },
   potentialAction: {
     "@type": "SearchAction",
@@ -268,7 +261,7 @@ const localBusinessSchema = {
   telephone: "+917981994870",
   email: "hello@takevolet.online",
   description:
-    "Zero-brokerage bachelor room handovers, flatmate matching, and used furniture marketplace in Hyderabad. Serving bachelors across 90+ areas in Hyderabad, Telangana.",
+    "Pan-India zero-brokerage real estate platform for rentals, properties for sale, top builder projects, and construction services.",
   address: {
     "@type": "PostalAddress",
     addressLocality: "Hyderabad",
@@ -282,10 +275,10 @@ const localBusinessSchema = {
     longitude: "78.3489",
   },
   areaServed: [
+    "Hyderabad", "Bengaluru", "Pune", "Mumbai", "Delhi NCR", "Chennai", "Kolkata", "Ahmedabad",
     "Madhapur", "Gachibowli", "Kondapur", "Kukatpally", "KPHB", "Ameerpet",
-    "SR Nagar", "Dilsukhnagar", "Uppal", "Malkajgiri", "Secunderabad",
-    "Begumpet", "Hitech City", "Jubilee Hills", "Banjara Hills", "Manikonda",
-    "Nanakramguda", "Miyapur", "LB Nagar", "Nagole"
+    "Koramangala", "Indiranagar", "Whitefield", "Electronic City", "HSR Layout",
+    "Hinjewadi", "Wakad", "Baner", "Kharadi", "Andheri", "Powai"
   ],
   openingHoursSpecification: {
     "@type": "OpeningHoursSpecification",
@@ -293,7 +286,7 @@ const localBusinessSchema = {
     opens: "00:00",
     closes: "23:59",
   },
-  priceRange: "₹10 - ₹500",
+  priceRange: "₹50 - ₹500",
   currenciesAccepted: "INR",
   paymentAccepted: "UPI, Credit Card, Debit Card, Net Banking",
   parentOrganization: { "@id": `${APP_URL}/#organization` },

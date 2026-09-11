@@ -1,41 +1,23 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, ShoppingBag, Home, Users, MapPin, ChevronRight, IndianRupee, Wallet } from "lucide-react";
+import { ArrowRight, ShieldCheck, ShoppingBag, Home, Users, MapPin, ChevronRight, IndianRupee, Wallet, Building2, Hammer, Sparkles, Building } from "lucide-react";
 import { HYDERABAD_AREAS } from "@/data/locations";
 import { HeroAnimations, FeaturedRoomsSection, FeaturedFlatmatesSection, AnimatedStats, AnimatedSection } from "@/components/HomepageHero";
 import type { Metadata } from "next";
 
 // ── SEO Metadata (server-side, crawlable) ──────────────────────────────────────
 export const metadata: Metadata = {
-  title: "Takevolet — Rooms for Rent in Hyderabad | Bachelor Rooms, Family Rooms, Flatmates | Zero Brokerage",
+  title: "Takevolet — Zero Brokerage Rentals, Properties for Sale, Top Projects & Construction Across India",
   description:
-    "Find rooms for rent in Hyderabad with zero brokerage. Takevolet is Hyderabad's #1 platform for bachelor rooms, family rooms, flatmate matching, and used furniture marketplace. Direct owner contact. No brokers. Serving 90+ areas across Hyderabad including Madhapur, Gachibowli, Kukatpally, Kondapur, Ameerpet, SR Nagar, and more.",
+    "India's leading zero-brokerage platform. Find rooms for rent, bachelor rooms, family apartments, PGs, discover flatmates, buy properties & flats, explore top RERA builder projects, and hire trusted construction contractors in Hyderabad, Bangalore, Pune, Mumbai, Delhi-NCR, Chennai & nationwide.",
   keywords: [
-    "takevolet", "takevolet hyderabad", "takevolet rooms", "takevolet online", "take volet",
-    "rooms for rent hyderabad", "rooms for rent in hyderabad", "room for rent hyderabad",
-    "bachelor rooms hyderabad", "bachelor room for rent in hyderabad", "bachelor room rent hyderabad",
-    "family rooms hyderabad", "family room for rent hyderabad", "family flat for rent hyderabad",
-    "2bhk for rent hyderabad", "1bhk for rent hyderabad", "3bhk for rent hyderabad",
-    "house for rent hyderabad", "flat for rent hyderabad", "apartment for rent hyderabad",
-    "rooms near me hyderabad", "rental rooms hyderabad", "room rent hyderabad",
-    "bachelor flat for rent hyderabad", "bachelor accommodation hyderabad",
-    "single room rent hyderabad", "1rk rent hyderabad", "1 room kitchen hyderabad rent",
-    "zero brokerage rooms hyderabad", "no broker rooms hyderabad", "direct owner rooms hyderabad",
-    "broker free rooms hyderabad", "without brokerage rooms hyderabad",
-    "room rent madhapur", "room rent gachibowli", "room rent kukatpally", "room rent ameerpet",
-    "room rent sr nagar", "room rent kondapur", "room rent hitech city hyderabad",
-    "room rent kphb", "room rent dilsukhnagar", "room rent uppal hyderabad",
-    "bachelor room ameerpet", "bachelor room madhapur", "bachelor room gachibowli",
-    "bachelor room kondapur", "bachelor room hitec city", "bachelor room kukatpally",
-    "bachelor room sr nagar",
-    "room handover hyderabad", "flat handover hyderabad", "bachelor room handover",
-    "pg rooms hyderabad", "pg for bachelors hyderabad", "bachelor pg hyderabad",
-    "shared room hyderabad", "shared flat hyderabad bachelors",
-    "flatmates hyderabad", "find flatmate hyderabad", "roommate hyderabad",
-    "used furniture hyderabad bachelors", "buy sell furniture hyderabad",
-    "earn commission room hyderabad", "earn money handing over room",
-    "paying guest hyderabad", "hostel hyderabad", "boys hostel hyderabad",
-    "girls pg hyderabad", "co-living hyderabad",
-    "cheap rooms hyderabad", "affordable rooms hyderabad", "budget rooms hyderabad",
+    "takevolet", "takevolet online", "take volet app", "takevolet real estate",
+    "zero brokerage rooms", "no broker flats", "rooms for rent hyderabad",
+    "flats for rent bangalore", "rooms for rent pune", "apartments for rent mumbai",
+    "properties for sale", "buy 2bhk flat", "buy 3bhk apartment", "villas for sale",
+    "top builder projects", "rera approved projects", "new launch gated communities",
+    "house construction contractors", "civil building contractors", "architects and interior designers",
+    "bachelor rooms", "family flats for rent", "pg near me", "flatmates hyderabad", "flatmates bangalore",
+    "direct owner contact", "zero brokerage property portal india"
   ],
   alternates: {
     canonical: "/",
@@ -49,8 +31,8 @@ const webpageSchema = {
   "@context": "https://schema.org",
   "@type": "WebPage",
   "@id": `${APP_URL}/#webpage`,
-  name: "Takevolet — Rooms for Rent in Hyderabad | Zero Brokerage",
-  description: "Find rooms for rent in Hyderabad with zero brokerage. Bachelor rooms, family rooms, flatmates, and used furniture marketplace.",
+  name: "Takevolet — Zero Brokerage Rentals, Properties, Top Projects & Construction",
+  description: "Find zero brokerage rooms, properties for sale, top builder projects, construction services and flatmates across India.",
   url: APP_URL,
   isPartOf: { "@id": `${APP_URL}/#website` },
   about: { "@id": `${APP_URL}/#organization` },
@@ -64,9 +46,11 @@ const breadcrumbSchema = {
   "@id": `${APP_URL}/#breadcrumb`,
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "Home", item: APP_URL },
-    { "@type": "ListItem", position: 2, name: "Rooms", item: `${APP_URL}/rooms` },
-    { "@type": "ListItem", position: 3, name: "Flatmates", item: `${APP_URL}/flatmates` },
-    { "@type": "ListItem", position: 4, name: "Marketplace", item: `${APP_URL}/marketplace` },
+    { "@type": "ListItem", position: 2, name: "Rooms & PGs", item: `${APP_URL}/rooms` },
+    { "@type": "ListItem", position: 3, name: "Properties for Sale", item: `${APP_URL}/properties` },
+    { "@type": "ListItem", position: 4, name: "Construction Services", item: `${APP_URL}/build` },
+    { "@type": "ListItem", position: 5, name: "Flatmates", item: `${APP_URL}/flatmates` },
+    { "@type": "ListItem", position: 6, name: "Pricing", item: `${APP_URL}/pricing` },
   ],
 };
 
@@ -77,37 +61,32 @@ const faqSchema = {
     {
       "@type": "Question",
       name: "What is Takevolet?",
-      acceptedAnswer: { "@type": "Answer", text: "Takevolet is the #1 zero-brokerage platform for bachelor and family room handovers, flatmate matching, and used furniture marketplace in Hyderabad. Founded in 2026, it connects people leaving their rooms directly with people searching — no brokers, no commission." },
+      acceptedAnswer: { "@type": "Answer", text: "Takevolet is India's premier zero-brokerage real estate and housing ecosystem. It connects buyers, tenants, property owners, top builders, and verified construction contractors directly — completely free of middleman commissions." },
     },
     {
       "@type": "Question",
-      name: "How do I find a bachelor room without a broker in Hyderabad?",
-      acceptedAnswer: { "@type": "Answer", text: "Use Takevolet — browse rooms filtered by area, budget, furnishing, and members allowed. Unlock the poster's contact from just ₹15. Call or WhatsApp them directly. Zero brokerage, always." },
+      name: "How do I find a room or flat without a broker on Takevolet?",
+      acceptedAnswer: { "@type": "Answer", text: "Browse thousands of verified rooms, bachelor accommodations, family flats, and PGs across Hyderabad, Bangalore, Pune, Mumbai, and Delhi-NCR. Filter by area, budget, and furnishing, and unlock direct owner contact starting at just ₹50." },
     },
     {
       "@type": "Question",
-      name: "Can I find family rooms for rent in Hyderabad on Takevolet?",
-      acceptedAnswer: { "@type": "Answer", text: "Yes! Takevolet now offers both bachelor and family room listings. Filter between bachelor and family rooms to find the perfect home for your family in Hyderabad's best areas." },
+      name: "Can I buy properties and explore top builder projects on Takevolet?",
+      acceptedAnswer: { "@type": "Answer", text: "Yes! Takevolet features verified properties for sale (apartments, villas, plots) and top RERA-approved gated community projects and new launches with direct developer contacts." },
     },
     {
       "@type": "Question",
-      name: "Can I earn money by posting my room on Takevolet?",
-      acceptedAnswer: { "@type": "Answer", text: "Yes! When a new person takes over your room through Takevolet, you earn ₹500–₹1,000 as a handover commission. Posting your room is completely free." },
+      name: "Does Takevolet offer house construction and building services?",
+      acceptedAnswer: { "@type": "Answer", text: "Yes! Explore verified civil contractors, architects, structural engineers, and interior designers for turnkey home construction and renovations." },
     },
     {
       "@type": "Question",
-      name: "Which areas does Takevolet cover in Hyderabad?",
-      acceptedAnswer: { "@type": "Answer", text: "Takevolet covers 90+ areas across Hyderabad including Madhapur, Gachibowli, Kondapur, Kukatpally, KPHB, Ameerpet, SR Nagar, Dilsukhnagar, Uppal, Secunderabad, Begumpet, Hitech City, Miyapur, LB Nagar, and many more." },
+      name: "What are the contact unlock pricing plans on Takevolet?",
+      acceptedAnswer: { "@type": "Answer", text: "Takevolet offers transparent, affordable unlock packs: Single Contact at ₹50 (1 Contact), Quick Connect at ₹100 (5 Contacts), Smart Value at ₹200 (15 Contacts), and Mega Connect at ₹500 (50 Contacts). All payments are secured via Razorpay UPI, Cards, and Net Banking." },
     },
     {
       "@type": "Question",
-      name: "How much does it cost to unlock a room poster's contact on Takevolet?",
-      acceptedAnswer: { "@type": "Answer", text: "Contact unlocks start at just ₹15 per contact. Bundle plans are available: 10 contacts for ₹55, 50 contacts for ₹105, and unlimited contacts for ₹200. All payments are secured by Razorpay." },
-    },
-    {
-      "@type": "Question",
-      name: "What is the average rent for rooms in Hyderabad?",
-      acceptedAnswer: { "@type": "Answer", text: "Rent varies by area: Madhapur/Gachibowli (₹10,000–₹25,000), KPHB/Kukatpally (₹5,000–₹10,000), SR Nagar/Ameerpet (₹4,500–₹9,000), Dilsukhnagar/Uppal (₹3,500–₹8,000). Family rooms range from ₹12,000–₹40,000 depending on the area and BHK type." },
+      name: "Which cities does Takevolet serve?",
+      acceptedAnswer: { "@type": "Answer", text: "Takevolet serves major Indian metropolitan hubs including Hyderabad, Bangalore (Bengaluru), Pune, Mumbai, Delhi-NCR, Chennai, and expanding across India." },
     },
   ],
 };
@@ -209,25 +188,29 @@ export default function LandingPage() {
       <section className="py-28">
         <div className="container mx-auto px-6 md:px-12">
           <div className="mb-16 max-w-3xl">
-            <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">What is Takevolet?</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">Complete Housing Ecosystem</p>
             <h2 className="text-4xl font-light leading-tight">
-              The platform where <span className="font-bold">people help people</span> find rooms for rent.
+              India&apos;s premier <span className="font-bold">zero-brokerage</span> real estate network.
             </h2>
             <p className="text-muted-foreground font-light mt-4 max-w-2xl leading-relaxed">
-              When a bachelor or family decides to leave their current room — whether it&apos;s a transfer, job change, or just moving on — they post it on Takevolet. New tenants searching for rooms can browse, filter by area/budget/members, and connect directly with the person leaving. Find bachelor rooms, family rooms, 1BHK, 2BHK, 3BHK flats, PG accommodations, and shared rooms across Hyderabad — all with zero brokerage.
+              From verified rental handovers and flatmates to buying properties, discovering top builder gated communities, and hiring trusted construction contractors — Takevolet connects you directly with owners and professionals across Hyderabad, Bangalore, Pune, Mumbai, Delhi-NCR, Chennai and beyond.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-px bg-border">
+          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-px bg-border">
             {[
-              { icon: Home, title: "Rooms for Rent — Bachelor & Family", desc: "Find bachelor rooms and family rooms for rent across Hyderabad. Direct contact with the person leaving the room. Zero brokerage — from 1RK to 3BHK, PG rooms, and shared accommodations." },
-              { icon: Users, title: "Flatmate Matchmaking", desc: "Have a vacancy in your flat or looking to share? Connect directly with compatible roommates based on age, profession, and lifestyle. Find flatmates in Madhapur, Gachibowli, Kondapur, and 90+ areas." },
-              { icon: ShoppingBag, title: "Used Furniture Marketplace", desc: "Moving out or setting up? Don't carry it or buy brand new. List and shop for furniture, appliances, and electronics directly from nearby tenants in Hyderabad." },
+              { icon: Home, title: "Rooms & PGs for Rent", desc: "1RK to 3BHK flats, bachelor rooms, family apartments, day-wise stays & luxury PGs. Zero brokerage direct owner contact." },
+              { icon: Building2, title: "Properties for Sale", desc: "Browse verified flats, villas, plots & commercial properties for sale directly from owners and builders without middleman commissions." },
+              { icon: Building, title: "Top Builder Projects", desc: "Explore RERA-approved luxury apartments, gated communities and pre-launch developments from leading developers." },
+              { icon: Hammer, title: "Construction Services", desc: "Connect with verified civil contractors, architects, structural engineers and interior designers for turnkey home construction." },
+              { icon: Users, title: "Flatmate Matchmaking", desc: "Find compatible roommates and flat vacancies based on profession, lifestyle and budget across top tech hubs." },
             ].map((f, i) => (
-              <div key={i} className="bg-background p-10 group hover:bg-secondary/50 transition-colors">
-                <f.icon className="w-10 h-10 text-primary mb-6" strokeWidth={1} />
-                <h3 className="text-lg font-bold mb-3">{f.title}</h3>
-                <p className="text-muted-foreground font-light leading-relaxed text-sm">{f.desc}</p>
+              <div key={i} className="bg-background p-8 group hover:bg-secondary/50 transition-colors flex flex-col justify-between">
+                <div>
+                  <f.icon className="w-8 h-8 text-primary mb-5" strokeWidth={1.5} />
+                  <h3 className="text-base font-bold mb-2">{f.title}</h3>
+                  <p className="text-muted-foreground font-light leading-relaxed text-xs">{f.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -402,20 +385,20 @@ export default function LandingPage() {
               <span className="text-xs uppercase tracking-[0.2em] font-medium text-primary">Razorpay Secured · No Brokerage</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-light mb-4 leading-tight">
-              Like a room? Unlock the poster&apos;s contact.<br />
-              <span className="font-bold text-primary">Starting ₹15 only.</span>
+              Unlock Verified Direct Contacts.<br />
+              <span className="font-bold text-primary">Starting ₹50 only.</span>
             </h2>
             <p className="text-background/60 font-light max-w-xl mx-auto">
-              Browse free. Pay only when you want to call or WhatsApp a poster. Choose any plan below.
+              Browse free. Pay only when you want to call or WhatsApp an owner, builder, or contractor directly. Zero brokerage, always.
             </p>
           </div>
 
           <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto mb-10">
             {[
-              { label: "1 Contact", price: "₹15", sub: "₹15/contact", hot: false },
-              { label: "10 Contacts", price: "₹55", sub: "₹5.50/contact", hot: false },
-              { label: "50 Contacts", price: "₹105", sub: "₹2.10/contact", hot: true, badge: "Popular" },
-              { label: "Unlimited", price: "₹200", sub: "₹0/contact", hot: false, badge: "🔥 Deal" },
+              { label: "Single Contact", price: "₹50", sub: "1 Contact · ₹50/contact", hot: false },
+              { label: "Quick Connect", price: "₹100", sub: "5 Contacts · ₹20/contact", hot: false, badge: "Popular" },
+              { label: "Smart Value", price: "₹200", sub: "15 Contacts · ₹13.3/contact", hot: true, badge: "Best Value" },
+              { label: "Mega Connect", price: "₹500", sub: "50 Contacts · ₹10/contact", hot: false, badge: "🔥 Max Unlocks" },
             ].map((p, i) => (
               <div key={i} className={`border p-4 text-center relative ${p.hot ? "border-primary bg-primary/10" : "border-white/10 bg-white/5"}`}>
                 {p.badge && (
@@ -434,7 +417,7 @@ export default function LandingPage() {
             <div className="bg-white/5 border border-white/10 p-5">
               <p className="text-[10px] uppercase tracking-widest text-background/50 mb-3">Each contact unlock includes</p>
               <div className="space-y-2">
-                {["Full name of poster", "Direct mobile number (call & SMS)", "WhatsApp number for instant chat", "Profession & verified area", "No brokerage — ever"].map((item, i) => (
+                {["Full name of owner, builder or poster", "Direct mobile number (direct call & SMS)", "WhatsApp number for instant messaging", "Verified listing location & details", "100% Zero Brokerage — Always"].map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-background/70">
                     <span className="text-primary">✓</span> {item}
                   </div>
@@ -443,7 +426,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col justify-between">
               <div className="space-y-2.5 mb-6">
-                {["Starting at ₹15 per contact", "Instant unlock via Razorpay — UPI, Cards, NetBanking", "No house numbers for privacy — colony/area only", "Use contacts across any room on Takevolet"].map((item, i) => (
+                {["Priced transparently from ₹50 per contact", "Instant unlock via Razorpay — UPI, Cards, NetBanking", "Use contacts across any room, flat, property or project", "Lifetime access to all unlocked contact details"].map((item, i) => (
                   <div key={i} className="flex items-center gap-2.5 text-sm text-background/70">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                     {item}
@@ -451,11 +434,11 @@ export default function LandingPage() {
                 ))}
               </div>
               <div className="space-y-3">
-                <Link href="/rooms" className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all">
-                  Browse Rooms &amp; Unlock Contact <ArrowRight size={14} />
+                <Link href="/pricing" className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-4 text-sm uppercase tracking-wider font-bold hover:opacity-90 transition-all">
+                  Buy Contact Pack Online <ArrowRight size={14} />
                 </Link>
-                <Link href="/pricing" className="w-full flex items-center justify-center gap-2 border border-white/20 py-3 text-xs uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all">
-                  View Full Pricing →
+                <Link href="/rooms" className="w-full flex items-center justify-center gap-2 border border-white/20 py-3 text-xs uppercase tracking-wider font-semibold hover:border-primary hover:text-primary transition-all">
+                  Browse All Listings →
                 </Link>
                 <p className="text-center text-[10px] text-background/30">🔒 Secured by Razorpay · UPI · Cards · NetBanking</p>
               </div>
@@ -473,7 +456,7 @@ export default function LandingPage() {
                 <img src="/logo.png" alt="Takevolet logo" className="w-10 h-10 rounded-sm" />
                 <span className="text-base font-bold tracking-[0.2em] uppercase">Take<span className="text-primary">volet</span></span>
               </div>
-              <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">Rooms for rent in Hyderabad. Bachelor &amp; family room handovers, flatmate matching, and furniture marketplace. Zero brokerage.</p>
+              <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4">India&apos;s zero-brokerage real estate platform: Room rentals, properties for sale, top builder projects, and construction services.</p>
               <div className="flex items-center gap-4 mb-4">
                 <Link href="https://www.instagram.com/take_volet?igsh=MTBxdG1qMWd3MnBrZg==" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -490,11 +473,14 @@ export default function LandingPage() {
               <h4 className="text-[10px] uppercase tracking-widest font-bold mb-3">Platform</h4>
               <div className="flex flex-col gap-2">
                 {[
-                  ["Browse Rooms", "/rooms"],
+                  ["Rooms & PGs", "/rooms"],
                   ["Family Rooms", "/rooms/family"],
+                  ["Properties for Sale", "/properties"],
+                  ["Construction Services", "/build"],
                   ["Find Flatmates", "/flatmates"],
+                  ["Pricing & Plans", "/pricing"],
                   ["Marketplace", "/marketplace"],
-                  ["Post Your Room", "/list"],
+                  ["Post Your Listing", "/list"],
                   ["My Dashboard", "/dashboard"]
                 ].map(([label, href]) => (
                   <Link key={label} href={href} className="text-xs text-muted-foreground hover:text-primary transition-colors">{label}</Link>

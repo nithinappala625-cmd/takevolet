@@ -33,6 +33,27 @@ const nextConfig: NextConfig = {
 
   // Strict mode for React
   reactStrictMode: true,
+
+  // Permanent 301 redirects to eliminate Search Console 404s and duplicate canonicals
+  async redirects() {
+    return [
+      {
+        source: "/contact",
+        destination: "/contact-us",
+        permanent: true,
+      },
+      {
+        source: "/privacy",
+        destination: "/privacy-policy",
+        permanent: true,
+      },
+      {
+        source: "/terms",
+        destination: "/terms-and-conditions",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

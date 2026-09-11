@@ -1,8 +1,23 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { CheckCircle2, Zap, Shield, Phone, MessageCircle, ArrowRight, IndianRupee, Infinity } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  CheckCircle2,
+  Zap,
+  Shield,
+  Phone,
+  MessageCircle,
+  ArrowRight,
+  IndianRupee,
+  Infinity,
+  Loader2,
+  Sparkles,
+  UserCheck,
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const plans = [
   {
@@ -14,14 +29,15 @@ const plans = [
     badge: "",
     highlight: false,
     features: [
-      "1 Room Contact unlocked",
+      "1 Contact Unlocked Instantly",
       "Direct mobile number",
-      "WhatsApp number",
-      "Name & profession",
+      "Direct WhatsApp access",
+      "Verified owner / poster details",
       "No expiry on contacts",
+      "Valid for any room, flat, or PG",
     ],
-    cta: "Buy 1 Contact",
-    desc: "Perfect for a single room inquiry",
+    cta: "Get 1 Contact",
+    desc: "Ideal for a single property or PG inquiry",
   },
   {
     id: "quick",
@@ -29,17 +45,18 @@ const plans = [
     price: 100,
     contacts: 5,
     perContact: "₹20",
-    badge: "",
+    badge: "Popular",
     highlight: false,
     features: [
-      "5 Room Contacts unlocked",
+      "5 Contacts Unlocked",
       "Direct mobile numbers",
-      "WhatsApp numbers",
-      "Name, profession & area",
-      "Use across any listings",
+      "Direct WhatsApp access",
+      "Verified poster identity & area",
+      "No expiry on contacts",
+      "Use across any rooms, PGs or flatmates",
     ],
     cta: "Get 5 Contacts",
-    desc: "Great for quick room hunting",
+    desc: "Great for active house and PG hunting",
   },
   {
     id: "smart",
@@ -50,14 +67,16 @@ const plans = [
     badge: "Best Value",
     highlight: true,
     features: [
-      "15 Room Contacts unlocked",
+      "15 Contacts Unlocked",
       "Direct mobile numbers",
-      "WhatsApp numbers",
-      "Name, profession & area",
-      "Use across any listings",
+      "Direct WhatsApp access",
+      "Verified poster identity & area",
+      "No expiry on contacts",
+      "Use across any rooms, flats, PGs & stays",
+      "Priority customer assistance",
     ],
     cta: "Get 15 Contacts",
-    desc: "Our most popular choice",
+    desc: "Our most popular choice for home seekers",
   },
   {
     id: "mega",
@@ -65,25 +84,211 @@ const plans = [
     price: 500,
     contacts: 50,
     perContact: "₹10",
-    badge: "Maximum Value",
+    badge: "Maximum Savings",
     highlight: false,
     features: [
-      "50 Room Contacts unlocked",
+      "50 Contacts Unlocked",
       "Direct mobile numbers",
-      "WhatsApp numbers",
-      "Name, profession & area",
-      "Use across any listings",
+      "Direct WhatsApp access",
+      "Verified poster identity & area",
+      "No expiry on contacts",
+      "Use across all categories in India",
+      "VIP customer support",
     ],
     cta: "Get 50 Contacts",
     desc: "For serious home seekers considering all options",
   },
 ];
 
-const methods = ["UPI (GPay, PhonePe, Paytm, BHIM)", "Credit / Debit Card (Visa, Mastercard, RuPay)", "Net Banking (50+ banks)", "Wallets (Amazon Pay etc.)"];
+const methods = [
+  "UPI (GPay, PhonePe, Paytm, BHIM)",
+  "Credit / Debit Card (Visa, Mastercard, RuPay)",
+  "Net Banking (50+ banks)",
+  "Wallets (Amazon Pay, Paytm Wallet)",
+];
+
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(false);
+      return;
+    }
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 export default function PricingPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          setUser(currentUser);
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("contact_balance")
+            .eq("id", currentUser.id)
+            .maybeSingle();
+          if (profile) {
+            setBalance(profile.contact_balance ?? 0);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load user profile:", err);
+      }
+    }
+    loadUserData();
+  }, []);
+
+  const handlePurchase = async (plan: typeof plans[0]) => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) {
+      router.push("/auth?redirect=/pricing");
+      return;
+    }
+
+    try {
+      setLoadingPlan(plan.id);
+
+      const res = await fetch("/api/payment/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: plan.id,
+          amount: plan.price * 100,
+          userId: currentUser.id,
+          type: "plan_purchase",
+        }),
+      });
+
+      const orderData = await res.json();
+      if (!res.ok || !orderData.orderId) {
+        throw new Error(orderData.error || "Failed to initiate payment. Please try again.");
+      }
+
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error("Could not load payment checkout. Please check your internet connection.");
+      }
+
+      const rzpOptions = {
+        key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SqU0ZW4NCgp5jo",
+        amount: orderData.amount,
+        currency: "INR",
+        name: "Takevolet",
+        description: `${plan.name} — ${plan.contacts} Contacts Pack`,
+        image: "/icon",
+        order_id: orderData.orderId,
+        prefill: {
+          name: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "",
+          email: currentUser.email || "",
+          contact: currentUser.phone || "",
+        },
+        theme: {
+          color: "#0F172A",
+        },
+        modal: {
+          ondismiss: () => {
+            setLoadingPlan(null);
+          },
+        },
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          try {
+            const verifyRes = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                userId: currentUser.id,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok || !verifyData.success) {
+              throw new Error(verifyData.error || "Payment verification failed. Please contact support.");
+            }
+
+            const newBal = (balance ?? 0) + plan.contacts;
+            setBalance(newBal);
+            setSuccessMsg(`Payment Successful! Added ${plan.contacts} contacts to your balance. Current Balance: ${newBal} contacts.`);
+          } catch (vErr: any) {
+            setErrorMsg(vErr.message || "Payment verification error.");
+          } finally {
+            setLoadingPlan(null);
+          }
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(rzpOptions);
+      rzp.on("payment.failed", (response: any) => {
+        setLoadingPlan(null);
+        setErrorMsg(response?.error?.description || "Payment was not completed.");
+      });
+      rzp.open();
+    } catch (err: any) {
+      setLoadingPlan(null);
+      setErrorMsg(err.message || "Something went wrong while starting checkout.");
+    }
+  };
   return (
-    <div className="pt-36 pb-20 min-h-screen">
+    <div className="pt-32 pb-24 min-h-screen">
+
+      {/* Top Notification Alerts */}
+      <div className="container mx-auto px-6 max-w-4xl">
+        <AnimatePresence>
+          {successMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mb-8 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="text-emerald-400 shrink-0" size={20} />
+                <span className="text-sm font-medium">{successMsg}</span>
+              </div>
+              <Link href="/rooms" className="text-xs bg-emerald-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-400 transition">
+                Browse Rooms
+              </Link>
+            </motion.div>
+          )}
+
+          {errorMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mb-8 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 flex items-center gap-3"
+            >
+              <span className="text-sm">{errorMsg}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Hero */}
       <section className="container mx-auto px-6 md:px-12 mb-16 text-center max-w-3xl">
@@ -96,9 +301,22 @@ export default function PricingPage() {
             As low as<br />
             <span className="font-bold gold-gradient">₹10 per contact.</span>
           </h1>
-          <p className="text-xl text-muted-foreground font-light leading-relaxed">
-            Browse all rooms free. Pay only when you want to call or WhatsApp a poster directly. No broker. No middleman. Secured by Razorpay.
+          <p className="text-xl text-muted-foreground font-light leading-relaxed mb-6">
+            Browse all rooms, flats, PGs, properties, and stays free. Pay only when you want to call or WhatsApp a poster directly. No broker. No middleman. Secured by Razorpay.
           </p>
+
+          {/* User Balance Chip */}
+          {user && (
+            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-secondary/60 border border-border">
+              <UserCheck size={16} className="text-primary" />
+              <span className="text-xs text-muted-foreground">
+                Logged in as <strong className="text-foreground">{user.email?.split("@")[0]}</strong>
+              </span>
+              <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                {balance !== null ? `${balance} Unlocks Available` : "Checking balance..."}
+              </span>
+            </div>
+          )}
         </motion.div>
       </section>
 
@@ -108,11 +326,11 @@ export default function PricingPage() {
           {plans.map((plan, i) => (
             <motion.div key={plan.id}
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-              className={`border flex flex-col relative ${plan.highlight
-                ? "border-primary bg-primary/5 shadow-[0_0_40px_rgba(212,175,55,0.12)]"
-                : "border-border"}`}>
+              className={`border flex flex-col relative rounded-2xl ${plan.highlight
+                ? "border-primary bg-primary/5 shadow-[0_0_40px_rgba(212,175,55,0.12)] scale-[1.02]"
+                : "border-border bg-card/40"}`}>
               {plan.badge && (
-                <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-[9px] uppercase tracking-widest font-bold whitespace-nowrap ${
+                <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-[9px] uppercase tracking-widest font-bold rounded-full whitespace-nowrap ${
                   plan.id === "smart" ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
                 }`}>
                   {plan.badge}
@@ -141,15 +359,26 @@ export default function PricingPage() {
 
               <div className="p-5 pt-0">
                 <p className="text-[10px] text-muted-foreground mb-3 italic">{plan.desc}</p>
-                <Link href="/rooms"
-                  className={`w-full flex items-center justify-center gap-1.5 py-3 text-xs uppercase tracking-wider font-bold transition-all ${
+                <button
+                  onClick={() => handlePurchase(plan)}
+                  disabled={loadingPlan === plan.id}
+                  className={`w-full flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs uppercase tracking-wider font-bold transition-all cursor-pointer ${
                     plan.highlight
-                      ? "bg-primary text-primary-foreground hover:opacity-90"
-                      : "border border-border hover:border-primary hover:text-primary"
+                      ? "bg-primary text-primary-foreground hover:opacity-90 shadow-md shadow-primary/20"
+                      : "border border-border hover:border-primary hover:text-primary bg-secondary/50"
                   }`}>
-                  {plan.id === "smart" ? <Infinity size={12} /> : null}
-                  {plan.cta}
-                </Link>
+                  {loadingPlan === plan.id ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Opening Checkout...
+                    </>
+                  ) : (
+                    <>
+                      {plan.id === "smart" ? <Infinity size={12} /> : null}
+                      {plan.cta}
+                    </>
+                  )}
+                </button>
               </div>
             </motion.div>
           ))}

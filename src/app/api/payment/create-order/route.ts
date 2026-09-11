@@ -29,8 +29,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { roomId, flatmateId, userId, type = "contact_unlock", planId = "growth", amount } = body;
 
-    // Validate inputs
-    if (!roomId && !flatmateId) {
+    // Validate inputs - only require roomId/flatmateId if not a standalone plan purchase
+    const isPlanPurchase = type === "plan_purchase" || (!roomId && !flatmateId);
+    if (!isPlanPurchase && !roomId && !flatmateId) {
       return NextResponse.json({ error: "roomId or flatmateId is required" }, { status: 400 });
     }
     if (!userId || userId === "guest") {
@@ -40,20 +41,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Payment gateway not configured. Please set Razorpay keys." }, { status: 503 });
     }
 
-    // ─── Validate plan & amount ───────────────────────────────────────────────
-    // Amount must be in paise. Accepted plans:
+    // ─── Validate plan & amount (exact match to mobile app) ───────────────────
+    // Amount in paise:
+    // Single: 1 Contact = ₹50 (5000 paise)
+    // Quick: 5 Contacts = ₹100 (10000 paise)
+    // Smart: 15 Contacts = ₹200 (20000 paise)
+    // Mega: 50 Contacts = ₹500 (50000 paise)
     const VALID_PLANS: Record<string, { paise: number; contacts: number; label: string }> = {
-      single:    { paise: 1500,  contacts: 1,      label: "1 Contact" },
-      starter:   { paise: 3500,  contacts: 5,      label: "5 Contacts" },
-      growth:    { paise: 10500, contacts: 50,     label: "50 Contacts" },
-      unlimited: { paise: 20000, contacts: 999999, label: "Unlimited Contacts" },
+      single:    { paise: 5000,  contacts: 1,  label: "1 Contact" },
+      quick:     { paise: 10000, contacts: 5,  label: "5 Contacts" },
+      starter:   { paise: 10000, contacts: 5,  label: "5 Contacts" },
+      smart:     { paise: 20000, contacts: 15, label: "15 Contacts" },
+      growth:    { paise: 20000, contacts: 15, label: "15 Contacts" },
+      mega:      { paise: 50000, contacts: 50, label: "50 Contacts" },
+      unlimited: { paise: 50000, contacts: 50, label: "50 Contacts" },
     };
 
-    const plan = VALID_PLANS[planId] ?? VALID_PLANS["starter"]; // default to 5 contacts
+    const plan = VALID_PLANS[planId] ?? VALID_PLANS["smart"]; // default to Smart Connect (15 contacts - ₹200)
     const AMOUNT_PAISE = amount && amount > 0 ? Math.min(amount, 50000) : plan.paise;
 
     // Create a unique receipt ID (max 40 chars per Razorpay spec)
-    const targetId = roomId || flatmateId;
+    const targetId = roomId || flatmateId || userId;
     const receipt = `rcpt_${targetId.slice(0, 15)}_${Date.now().toString().slice(-8)}`;
 
     // Create order via Razorpay API
@@ -65,10 +73,10 @@ export async function POST(request: Request) {
         roomId: roomId || "",
         flatmateId: flatmateId || "",
         userId: userId || "guest",
-        type,                          // "contact_unlock"
+        type: isPlanPurchase ? "plan_purchase" : type,
         packContacts: plan.contacts.toString(),
-        validityDays: "30",
-        planId: planId || "starter",
+        validityDays: "365",
+        planId: planId || "smart",
         amountPaise: AMOUNT_PAISE.toString()
       },
     });

@@ -74,11 +74,11 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: "Rooms", href: "/rooms" },
-    { name: "Flatmates", href: "/flatmates" },
+    { name: "Rooms & PGs", href: "/rooms" },
     { name: "Properties", href: "/properties" },
-    { name: "Build", href: "/build" },
-    { name: "Join & Earn", href: "/refer" },
+    { name: "Construction", href: "/build" },
+    { name: "Flatmates", href: "/flatmates" },
+    { name: "Pricing", href: "/pricing" },
   ];
 
   const postOptions = [
