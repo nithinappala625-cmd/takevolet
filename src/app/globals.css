@@ -1,35 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0F172A;
-  --foreground: #f8fafc;
+  --background: #ffffff;
+  --foreground: #0a0a0a;
   --primary: #7B3AEC;
   --primary-foreground: #ffffff;
-  --secondary: #1E293B;
-  --secondary-foreground: #f8fafc;
-  --muted: #1E293B;
-  --muted-foreground: #94a3b8;
-  --accent: #251B42;
-  --accent-foreground: #f8fafc;
-  --border: #334155;
-  --input: #334155;
+  --secondary: #f8fafc;
+  --secondary-foreground: #0a0a0a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f5f3ff;
+  --accent-foreground: #7B3AEC;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
   --ring: #7B3AEC;
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: #0F172A;
-  --foreground: #f8fafc;
+  --background: #ffffff;
+  --foreground: #0a0a0a;
   --primary: #7B3AEC;
   --primary-foreground: #ffffff;
-  --secondary: #1E293B;
-  --secondary-foreground: #f8fafc;
-  --muted: #1E293B;
-  --muted-foreground: #94a3b8;
-  --accent: #251B42;
-  --accent-foreground: #f8fafc;
-  --border: #334155;
-  --input: #334155;
+  --secondary: #f8fafc;
+  --secondary-foreground: #0a0a0a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f5f3ff;
+  --accent-foreground: #7B3AEC;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
   --ring: #7B3AEC;
 }
 
@@ -90,14 +90,14 @@ img[loading="lazy"] {
 
 /* Premium utilities */
 .glass-panel {
-  background: rgba(30, 41, 59, 0.75);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(123, 58, 236, 0.25);
+  border: 1px solid rgba(123, 58, 236, 0.15);
 }
 
 .text-gradient {
-  background: linear-gradient(to right, #ffffff, #a3a3a3);
+  background: linear-gradient(to right, #0a0a0a, #475569);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -105,7 +105,7 @@ img[loading="lazy"] {
 
 .gold-gradient,
 .purple-gradient {
-  background: linear-gradient(135deg, #7B3AEC 0%, #9333EA 50%, #C084FC 100%);
+  background: linear-gradient(135deg, #7B3AEC 0%, #9333EA 50%, #6D28D9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
