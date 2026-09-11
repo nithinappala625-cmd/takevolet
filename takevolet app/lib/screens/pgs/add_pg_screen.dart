@@ -124,20 +124,21 @@ class _AddPgScreenState extends State<AddPgScreen> {
       }
       if (AVAILABLE_CITIES.contains(data['city'])) {
         _selectedCity = data['city'];
-        List<String> cityAreas = getAreasForCity(_selectedCity);
-        if (cityAreas.contains(data['location'])) {
-          _location = data['location'];
-        } else {
-          _location = cityAreas.first;
-        }
+      } else if (data['city'] != null && data['city'].toString().trim().isNotEmpty) {
+        _selectedCity = data['city'].toString().trim();
       } else {
         _selectedCity = 'Hyderabad';
-        if (HYDERABAD_AREAS.contains(data['location'])) {
-          _location = data['location'];
-        }
       }
-      _colony = data['colony']?.toString() != ''
-          ? data['colony']?.toString()
+
+      final cityAreas = getAreasForCity(_selectedCity);
+      if (data['location'] != null && data['location'].toString().trim().isNotEmpty) {
+        _location = data['location'].toString().trim();
+      } else {
+        _location = cityAreas.isNotEmpty ? cityAreas.first : 'Madhapur';
+      }
+
+      _colony = (data['colony'] != null && data['colony'].toString().trim().isNotEmpty)
+          ? data['colony'].toString().trim()
           : null;
       final metadata = data['metadata'] ?? {};
       final sp = metadata['sharing_prices'] as Map<String, dynamic>?;
@@ -426,8 +427,25 @@ class _AddPgScreenState extends State<AddPgScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colonies = getColonies(_location, city: _selectedCity);
-    final areas = getAreasForCity(_selectedCity);
+    final rawColonies = getColonies(_location, city: _selectedCity);
+    final colonies = [
+      if (_colony != null && _colony!.trim().isNotEmpty && !rawColonies.contains(_colony!.trim()))
+        _colony!.trim(),
+      ...rawColonies,
+    ];
+
+    final rawAreas = getAreasForCity(_selectedCity);
+    final areas = [
+      if (_location.trim().isNotEmpty && !rawAreas.contains(_location.trim()))
+        _location.trim(),
+      ...rawAreas,
+    ];
+
+    final cities = [
+      if (_selectedCity.trim().isNotEmpty && !AVAILABLE_CITIES.contains(_selectedCity.trim()))
+        _selectedCity.trim(),
+      ...AVAILABLE_CITIES,
+    ];
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -663,10 +681,10 @@ class _AddPgScreenState extends State<AddPgScreen> {
                     icon: Icons.location_on,
                     children: [
                       DropdownButtonFormField<String>(
-                        value: _selectedCity,
+                        value: cities.contains(_selectedCity) ? _selectedCity : (cities.isNotEmpty ? cities.first : null),
                         decoration: _inputDeco('City *', Icons.location_city),
                         isExpanded: true,
-                        items: AVAILABLE_CITIES
+                        items: cities
                             .map(
                               (e) => DropdownMenuItem(value: e, child: Text(e)),
                             )
@@ -679,7 +697,7 @@ class _AddPgScreenState extends State<AddPgScreen> {
                       ),
                       const SizedBox(height: 14),
                       DropdownButtonFormField<String>(
-                        value: _location,
+                        value: areas.contains(_location) ? _location : (areas.isNotEmpty ? areas.first : null),
                         decoration: _inputDeco('Area *', Icons.map),
                         isExpanded: true,
                         items: areas
@@ -694,7 +712,7 @@ class _AddPgScreenState extends State<AddPgScreen> {
                       ),
                       const SizedBox(height: 14),
                       DropdownButtonFormField<String>(
-                        value: _colony,
+                        value: (_colony != null && colonies.contains(_colony)) ? _colony : null,
                         decoration: _inputDeco('Colony', Icons.holiday_village),
                         isExpanded: true,
                         items: colonies
@@ -712,7 +730,7 @@ class _AddPgScreenState extends State<AddPgScreen> {
                     icon: Icons.tune,
                     children: [
                       DropdownButtonFormField<String>(
-                        value: _pgType,
+                        value: _pgTypes.contains(_pgType) ? _pgType : _pgTypes.first,
                         decoration: _inputDeco('PG Type *', Icons.wc),
                         items: _pgTypes
                             .map(
@@ -723,7 +741,7 @@ class _AddPgScreenState extends State<AddPgScreen> {
                       ),
                       const SizedBox(height: 14),
                       DropdownButtonFormField<String>(
-                        value: _sharingType,
+                        value: _sharingOptions.contains(_sharingType) ? _sharingType : _sharingOptions.first,
                         decoration: _inputDeco('Sharing Type *', Icons.people_alt),
                         items: _sharingOptions
                             .map(
@@ -734,7 +752,7 @@ class _AddPgScreenState extends State<AddPgScreen> {
                       ),
                       const SizedBox(height: 14),
                       DropdownButtonFormField<String>(
-                        value: _professionPref,
+                        value: (_professionPref != null && _professions.contains(_professionPref)) ? _professionPref : null,
                         decoration: _inputDeco(
                           'Profession Preference',
                           Icons.work,
