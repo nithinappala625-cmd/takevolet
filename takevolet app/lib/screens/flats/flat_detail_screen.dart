@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/smart_image.dart';
 import '../../utils/share_utils.dart';
+import '../feed/feed_video_player.dart';
 
 class FlatDetailScreen extends StatefulWidget {
   final String id;
@@ -118,31 +119,96 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
     return '₹${price.toString()}';
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+  String _formatPartiallyRevealedPhone(String? rawPhone) {
+    if (rawPhone == null || rawPhone.trim().isEmpty) return '+91 98•• ••••••';
+    final digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length >= 10) {
+      final p = digits.length == 12 && digits.startsWith('91') ? digits.substring(2) : digits;
+      if (p.length >= 4) return '+91 ${p.substring(0, 4)} •• ••••';
+    } else if (digits.length >= 4) {
+      return '+91 ${digits.substring(0, 4)} •• ••••';
+    }
+    return '+91 98•• ••••••';
+  }
+
+  Widget _buildSectionTitle(String title, {IconData? icon}) {
+    return Row(
+      children: [
+        if (icon != null) ...[
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF7B3AEC).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9), size: 18),
+          ),
+          const SizedBox(width: 10),
+        ],
+        Text(
+          title,
+          style: GoogleFonts.outfit(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildSpecItem(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: const Color(0xFFD4AF37), size: 20),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-            const SizedBox(height: 2),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          ],
-        )
-      ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 2 - 28),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF7B3AEC).withOpacity(isDark ? 0.25 : 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9), size: 16),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -158,9 +224,15 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
 
     if (isPlot) {
       // === PLOT / LAND FIELDS ===
-      final plotArea = p['plot_area']?.toString() ?? p['area']?.toString() ?? '0';
+      final rawPlotArea = p['plot_area']?.toString() ?? p['area']?.toString() ?? '0';
       final areaUnits = p['area_units']?.toString() ?? 'Sq Yards';
-      if (plotArea.isNotEmpty && plotArea != '0') specs.add(_buildSpecItem(Icons.straighten, 'Plot Area', '$plotArea $areaUnits'));
+      String formattedArea = rawPlotArea.trim();
+      final hasUnit = ['sq', 'yd', 'yard', 'acre', 'cent', 'gunta', 'gaj', 'ft', 'meter']
+          .any((u) => formattedArea.toLowerCase().contains(u));
+      if (!hasUnit && areaUnits.isNotEmpty) {
+        formattedArea = '$formattedArea $areaUnits';
+      }
+      if (rawPlotArea.isNotEmpty && rawPlotArea != '0') specs.add(_buildSpecItem(Icons.straighten, 'Plot Area', formattedArea));
       if ((p['facing'] ?? '').toString().isNotEmpty) specs.add(_buildSpecItem(Icons.compass_calibration, 'Facing', p['facing'].toString()));
       if ((p['survey_number'] ?? '').toString().isNotEmpty) specs.add(_buildSpecItem(Icons.numbers, 'Survey No.', p['survey_number'].toString()));
       if ((p['plot_number'] ?? '').toString().isNotEmpty) specs.add(_buildSpecItem(Icons.tag, 'Plot No.', p['plot_number'].toString()));
@@ -183,9 +255,9 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GridView.count(
-              crossAxisCount: 2, shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(), childAspectRatio: 3,
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
               children: specs,
             ),
             const SizedBox(height: 12),
@@ -195,8 +267,8 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
               spacing: 8, runSpacing: 8,
               children: bools.map((b) => Chip(
                 label: Text(b, style: const TextStyle(fontSize: 12)),
-                backgroundColor: const Color(0xFFD4AF37).withOpacity(0.1),
-                side: BorderSide(color: const Color(0xFFD4AF37).withOpacity(0.3)),
+                backgroundColor: const Color(0xFF7B3AEC).withOpacity(0.1),
+                side: BorderSide(color: const Color(0xFF7B3AEC).withOpacity(0.3)),
               )).toList(),
             ),
           ],
@@ -222,7 +294,11 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
       
       final String size = p['flat_size_sft']?.toString() ?? p['area']?.toString() ?? '';
       if (size.isNotEmpty && size != '0') {
-        specs.add(_buildSpecItem(Icons.square_foot, isHouse ? 'Area (Sq Yards)' : 'Built-up Area', '$size ${isHouse ? 'Sq Yards' : 'sqft'}'));
+        String formattedSize = size;
+        if (!formattedSize.toLowerCase().contains('sq') && !formattedSize.toLowerCase().contains('yard')) {
+          formattedSize = '$formattedSize ${isHouse ? 'Sq Yards' : 'sqft'}';
+        }
+        specs.add(_buildSpecItem(Icons.square_foot, isHouse ? 'Area (Sq Yards)' : 'Built-up Area', formattedSize));
       }
       
       final String furn = (p['furnishing'] ?? p['furnishing_status'] ?? '').toString();
@@ -285,15 +361,14 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
       }
     }
 
-    return GridView.count(
-      crossAxisCount: 2, shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(), childAspectRatio: 3,
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
       children: specs,
     );
   }
 
   void _openFullScreenGallery(int startIndex, List<String> images) {
-    int currentIndex = startIndex;
     showDialog(
       context: context,
       builder: (context) {
@@ -305,7 +380,6 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
               PageView.builder(
                 controller: PageController(initialPage: startIndex),
                 itemCount: images.length,
-                onPageChanged: (index) => currentIndex = index,
                 itemBuilder: (context, index) {
                   return InteractiveViewer(
                     minScale: 1.0,
@@ -339,6 +413,23 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
       images.addAll(List<String>.from(flat!['flat_images']));
     }
 
+    final rawVideo = flat!['video_url']?.toString().trim();
+    final String? videoUrl = (rawVideo != null && rawVideo.isNotEmpty) ? rawVideo : null;
+
+    final List<Map<String, String>> mediaItems = [];
+    if (images.isNotEmpty) {
+      mediaItems.add({'type': 'image', 'url': images[0]});
+    }
+    if (videoUrl != null) {
+      mediaItems.add({'type': 'video', 'url': videoUrl});
+    }
+    if (images.length > 1) {
+      for (int i = 1; i < images.length; i++) {
+        mediaItems.add({'type': 'image', 'url': images[i]});
+      }
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final amenities = List<String>.from(flat!['amenities'] ?? []);
 
     return Scaffold(
@@ -362,16 +453,49 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 children: [
-                  if (images.isNotEmpty)
+                  if (mediaItems.isNotEmpty)
                     PageView.builder(
                       onPageChanged: (i) => setState(() => _currentImageIndex = i),
-                      itemCount: images.length,
+                      itemCount: mediaItems.length,
                       itemBuilder: (context, index) {
+                        final item = mediaItems[index];
+                        if (item['type'] == 'video') {
+                          return Container(
+                            color: Colors.black,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                FeedVideoPlayer(videoUrl: item['url']!),
+                                Positioned(
+                                  top: 45,
+                                  left: 16,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.65),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: Colors.white24),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.videocam_rounded, color: Color(0xFFA78BFA), size: 14),
+                                        SizedBox(width: 5),
+                                        Text('PROPERTY VIDEO', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        final imgIndex = images.indexOf(item['url']!);
                         return GestureDetector(
-                          onTap: () => _openFullScreenGallery(index, images),
+                          onTap: () => _openFullScreenGallery(imgIndex >= 0 ? imgIndex : 0, images),
                           child: SizedBox(
                             width: double.infinity,
-                            child: SmartImage(imageUrl: images[index], fit: BoxFit.cover),
+                            child: SmartImage(imageUrl: item['url']!, fit: BoxFit.cover),
                           ),
                         );
                       },
@@ -379,18 +503,40 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
                   else
                     Container(color: Colors.grey[300], child: const Center(child: Icon(Icons.home, size: 80, color: Colors.grey))),
                   
-                  if (images.length > 1)
+                  if (mediaItems.length > 1)
                     Positioned(
                       bottom: 20, left: 0, right: 0,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: images.asMap().entries.map((entry) {
+                        children: mediaItems.asMap().entries.map((entry) {
+                          final i = entry.key;
+                          final isSelected = _currentImageIndex == i;
+                          final isVideo = entry.value['type'] == 'video';
+                          if (isVideo) {
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: isSelected ? const Color(0xFF7B3AEC) : Colors.black.withValues(alpha: 0.55),
+                                border: Border.all(color: isSelected ? Colors.white : Colors.white24),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.play_arrow_rounded, size: 12, color: isSelected ? Colors.white : Colors.white70),
+                                  const SizedBox(width: 2),
+                                  Text('Video', style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            );
+                          }
                           return Container(
-                            width: 8, height: 8,
+                            width: isSelected ? 16 : 8, height: 8,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _currentImageIndex == entry.key ? const Color(0xFFD4AF37) : Colors.white.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(4),
+                              color: isSelected ? const Color(0xFF7B3AEC) : Colors.white.withValues(alpha: 0.5),
                             ),
                           );
                         }).toList(),
@@ -406,67 +552,332 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Badges
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(_formatPrice(flat!['expected_price'] ?? 0), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37))),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                        child: Text(flat!['listing_type'] ?? 'Sale', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF7B3AEC).withOpacity(isDark ? 0.25 : 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF7B3AEC).withOpacity(0.4)),
+                        ),
+                        child: Text(
+                          (flat!['property_category'] ?? flat!['property_type'] ?? 'PROPERTY').toString().toUpperCase(),
+                          style: GoogleFonts.outfit(
+                            color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF059669).withOpacity(isDark ? 0.2 : 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF059669).withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.verified_rounded, color: Color(0xFF059669), size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Verified Listing',
+                              style: GoogleFonts.outfit(
+                                color: const Color(0xFF059669),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(flat!['title'] ?? '', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.grey, size: 18),
-                      const SizedBox(width: 4),
-                      Expanded(child: Text(
-                          [
-                            if ((flat!['locality'] ?? '').toString().isNotEmpty) flat!['locality'],
-                            if ((flat!['village'] ?? '').toString().isNotEmpty) flat!['village'],
-                            if ((flat!['mandal'] ?? '').toString().isNotEmpty) flat!['mandal'],
-                            if ((flat!['district'] ?? '').toString().isNotEmpty) flat!['district'],
-                            if ((flat!['city'] ?? '').toString().isNotEmpty) flat!['city'],
-                          ].where((e) => e != null && e.toString().isNotEmpty).join(', '),
-                        style: TextStyle(color: Colors.grey[700], fontSize: 16),
-                      )),
-                    ],
+                  const SizedBox(height: 12),
+
+                  // Title
+                  Text(
+                    flat!['title'] ?? 'Property For ${(flat!['listing_type'] ?? 'Sale').toString().toUpperCase()}',
+                    style: GoogleFonts.outfit(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // High-visibility Location Pill
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE11D48).withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.location_on_rounded, color: Color(0xFFE11D48), size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            [
+                              if ((flat!['locality'] ?? '').toString().isNotEmpty) flat!['locality'],
+                              if ((flat!['village'] ?? '').toString().isNotEmpty) flat!['village'],
+                              if ((flat!['mandal'] ?? '').toString().isNotEmpty) flat!['mandal'],
+                              if ((flat!['district'] ?? '').toString().isNotEmpty) flat!['district'],
+                              if ((flat!['city'] ?? '').toString().isNotEmpty) flat!['city'],
+                            ].where((e) => e != null && e.toString().isNotEmpty).join(', '),
+                            style: GoogleFonts.outfit(
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Luxury Pricing Card
+                  // Modern Ultra-Clean Pricing Card (matching Rooms/PGs)
+                  Builder(
+                    builder: (context) {
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final isRent = (flat!['listing_type'] ?? 'Sale').toString().toLowerCase() == 'rent';
+                      final listingType = (flat!['listing_type'] ?? (isRent ? 'RENT' : 'FOR SALE')).toString().toUpperCase();
+                      return Container(
+                        margin: const EdgeInsets.only(top: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isDark
+                                ? [const Color(0xFF1E1B4B), const Color(0xFF0F172A)]
+                                : [const Color(0xFFFAF5FF), const Color(0xFFF3E8FF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF4338CA) : const Color(0xFFDDD6FE),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF7B3AEC).withOpacity(isDark ? 0.25 : 0.12),
+                              blurRadius: 16,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF7B3AEC).withOpacity(0.15),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.currency_rupee_rounded, size: 12, color: Color(0xFF7B3AEC)),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isRent ? 'MONTHLY RENT' : 'EXPECTED PRICE',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF7B3AEC),
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  children: [
+                                    Text(
+                                      _formatPrice(flat!['expected_price'] ?? 0),
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 30,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                    if (isRent) ...[
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '/ month',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF7B3AEC), Color(0xFF6D28D9)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF7B3AEC).withOpacity(0.35),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.verified_rounded, size: 14, color: Colors.white),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    listingType,
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
-                  const Divider(),
 
-                  _buildSectionTitle('Property Specifications'),
-                  _buildPropertySpecs(flat!),
-                  const Divider(),
-
-                  if (!['plot', 'land', 'agricultural', 'farm', 'independent house', 'commercial'].any((e) => (flat!['property_category'] ?? flat!['property_type'] ?? '').toString().toLowerCase().contains(e))) ...[
-                    _buildSectionTitle('Amenities'),
-                    if (amenities.isEmpty) const Text('No amenities specified') else Wrap(
-                      spacing: 8, runSpacing: 8,
-                      children: amenities.map((a) => Chip(
-                        label: Text(a),
-                        backgroundColor: const Color(0xFFD4AF37).withOpacity(0.1),
-                        side: BorderSide(color: const Color(0xFFD4AF37).withOpacity(0.2)),
-                      )).toList(),
+                  // Property Specifications Box
+                  _buildSectionTitle('Property Specifications', icon: Icons.straighten_rounded),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    const Divider(),
+                    child: _buildPropertySpecs(flat!),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Amenities & Facilities Box
+                  if (!['plot', 'land', 'agricultural', 'farm'].any((e) => (flat!['property_category'] ?? flat!['property_type'] ?? '').toString().toLowerCase().contains(e)) && amenities.isNotEmpty) ...[
+                    _buildSectionTitle('Amenities & Facilities', icon: Icons.pool_rounded),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: amenities.map((a) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 14),
+                              const SizedBox(width: 6),
+                              Text(
+                                a,
+                                style: GoogleFonts.outfit(
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
 
                   // Location Details Section
                   if ((flat!['village'] != null && flat!['village'].toString().isNotEmpty) || (flat!['mandal'] != null && flat!['mandal'].toString().isNotEmpty)) ...[
-                    _buildSectionTitle('Location Details'),
+                    _buildSectionTitle('Location Specifics', icon: Icons.map_rounded),
+                    const SizedBox(height: 12),
                     Container(
+                      width: double.infinity,
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(16)),
-                      child: Column(
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
                         children: [
                           if ((flat!['locality'] ?? '').toString().isNotEmpty) _buildSpecItem(Icons.map, 'Locality', flat!['locality'].toString()),
                           if ((flat!['village'] ?? '').toString().isNotEmpty) _buildSpecItem(Icons.holiday_village, 'Village', flat!['village'].toString()),
-                          if ((flat!['mandal'] ?? '').toString().isNotEmpty) _buildSpecItem(Icons.location_city, 'Mandal/Municipality', flat!['mandal'].toString()),
+                          if ((flat!['mandal'] ?? '').toString().isNotEmpty) _buildSpecItem(Icons.location_city, 'Mandal', flat!['mandal'].toString()),
                           if ((flat!['district'] ?? '').toString().isNotEmpty) _buildSpecItem(Icons.map_outlined, 'District', flat!['district'].toString()),
                           if ((flat!['state'] ?? '').toString().isNotEmpty) _buildSpecItem(Icons.public, 'State', flat!['state'].toString()),
                         ],
@@ -475,28 +886,64 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  _buildSectionTitle('Description'),
-                  Text(flat!['description'] ?? 'No description provided.', style: const TextStyle(fontSize: 16, height: 1.5)),
+                  // Property Description Box
+                  _buildSectionTitle('Property Description', icon: Icons.description_rounded),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      (flat!['description'] ?? '').toString().trim().isNotEmpty
+                          ? flat!['description']
+                          : 'Property verified by Homies Rentals. Contact owner directly for immediate scheduling.',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A),
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
+                  // Property Documents
                   if (flat!['document_url'] != null && flat!['document_url'].toString().isNotEmpty) ...[
-                    const Divider(),
-                    _buildSectionTitle('Property Documents'),
+                    _buildSectionTitle('Property Documents', icon: Icons.folder_shared_rounded),
+                    const SizedBox(height: 12),
                     InkWell(
                       onTap: () => launchUrlString(flat!['document_url'], mode: LaunchMode.externalApplication),
                       child: Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD4AF37).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFD4AF37)),
+                          color: const Color(0xFF7B3AEC).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF7B3AEC)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.picture_as_pdf, color: Color(0xFFD4AF37)),
-                            SizedBox(width: 8),
-                            Text('View Documents', style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+                            const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF6D28D9)),
+                            const SizedBox(width: 10),
+                            Text(
+                              'View Verified Documents (PDF)',
+                              style: GoogleFonts.outfit(
+                                color: const Color(0xFF6D28D9),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -504,31 +951,163 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
                     const SizedBox(height: 24),
                   ],
                   
+                  // RERA Details
                   if (flat!['rera_number'] != null && flat!['rera_number'].toString().isNotEmpty) ...[
-                    const Divider(),
-                    _buildSectionTitle('RERA Details'),
-                    Text('RERA Number: ${flat!['rera_number']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 24),
-                  ],
-
-                  const Divider(),
-                  _buildSectionTitle('Contact Owner'),
-                  if (_hasUnlocked) ...[
-                    ListTile(
-                      leading: const CircleAvatar(backgroundColor: Colors.green, child: Icon(Icons.person, color: Colors.white)),
-                      title: Text(flat!['owner_name'] ?? 'Owner', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    _buildSectionTitle('RERA Registration', icon: Icons.verified_user_rounded),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF6EE7B7)),
+                      ),
+                      child: Row(
                         children: [
-                          Text('Phone: ${flat!['owner_mobile']}', style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-                          if (flat!['alt_contact'] != null && flat!['alt_contact'].toString().isNotEmpty)
-                            Text('Alt: ${flat!['alt_contact']}'),
+                          const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 20),
+                          const SizedBox(width: 10),
+                          Text(
+                            'RERA ID: ${flat!['rera_number']}',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF065F46),
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ] else ...[
-                    const Text('To view contact details, please unlock the owner contact.'),
+                    const SizedBox(height: 24),
                   ],
+
+
+
+                  // Contact Owner Section
+                  _buildSectionTitle('Owner / Agent Contact', icon: Icons.person_rounded),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _hasUnlocked ? const Color(0xFF059669).withOpacity(0.4) : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        width: _hasUnlocked ? 1.5 : 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: _hasUnlocked
+                        ? Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF059669).withOpacity(0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.person, color: Color(0xFF059669), size: 28),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      flat!['owner_name'] ?? 'Property Owner',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Phone: ${flat!['owner_mobile'] ?? 'Verified'}',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF059669),
+                                      ),
+                                    ),
+                                    if (flat!['alt_contact'] != null && flat!['alt_contact'].toString().isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Alt: ${flat!['alt_contact']}',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF7B3AEC).withOpacity(isDark ? 0.25 : 0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.lock_rounded, color: Color(0xFF7B3AEC), size: 24),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      flat!['owner_name'] ?? 'Property Owner',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF7B3AEC).withOpacity(isDark ? 0.25 : 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        'Phone: ${_formatPartiallyRevealedPhone(flat!['owner_mobile']?.toString() ?? flat!['contact_phone']?.toString())}',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                          color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF7B3AEC),
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      'Unlock instantly to reveal full phone number & call directly.',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -538,14 +1117,67 @@ class _FlatDetailScreenState extends State<FlatDetailScreen> {
       ),
       bottomNavigationBar: !_hasUnlocked ? SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: _unlockContact,
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              child: const Text('Unlock Owner Contact (₹49)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          child: InkWell(
+            onTap: _unlockContact,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7B3AEC), Color(0xFF6D28D9)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7B3AEC).withOpacity(0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.lock_open_rounded, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Unlock Owner Contact (₹49)',
+                    style: GoogleFonts.outfit(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'INSTANT ACCESS',
+                      style: GoogleFonts.outfit(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF6D28D9),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

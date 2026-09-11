@@ -31,7 +31,7 @@ export default function ContactUsPage() {
             <li>Couple-Friendly Rooms</li>
           </ul>
 
-          <p className="mt-6">Currently serving Hyderabad and Bangalore with plans for future expansion.</p>
+          <p className="mt-6">Currently serving Hyderabad, Bangalore, Pune, Mumbai, Delhi, and Chennai with plans for future expansion.</p>
           <p><strong>Founder:</strong> Nithin Patel</p>
         </div>
       </div>

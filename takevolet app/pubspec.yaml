@@ -100,6 +100,8 @@ flutter:
     - assets/images/newlogo.jpg
     - assets/images/newlogo_filled.jpg
     - assets/images/tvl_logo_transparent.png
+    - assets/images/app_logo_circle.png
+    - assets/images/app_logo_adaptive.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -131,7 +133,7 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/newlogo_filled.jpg"
+  image_path: "assets/images/app_logo_circle.png"
   adaptive_icon_background: "#0A192C"
-  adaptive_icon_foreground: "assets/images/newlogo_filled.jpg"
+  adaptive_icon_foreground: "assets/images/app_logo_circle.png"
   min_sdk_size: 21

@@ -14,7 +14,7 @@ class LegalFeedScreen extends StatefulWidget {
 }
 
 class _LegalFeedScreenState extends State<LegalFeedScreen> {
-  static const Color _gold = Color(0xFFD4AF37);
+  static const Color _gold = Color(0xFF7B3AEC);
   String _searchQuery = '';
   final _searchCtrl = TextEditingController();
 

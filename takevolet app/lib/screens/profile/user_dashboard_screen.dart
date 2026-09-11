@@ -18,8 +18,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         appBar: AppBar(
           title: const Text('My User Panel', style: TextStyle(fontWeight: FontWeight.bold)),
           bottom: const TabBar(
-            indicatorColor: Color(0xFFD4AF37),
-            labelColor: Color(0xFFD4AF37),
+            indicatorColor: Color(0xFF7B3AEC),
+            labelColor: Color(0xFF7B3AEC),
             unselectedLabelColor: Colors.grey,
             tabs: [
               Tab(text: 'My Bookings'),

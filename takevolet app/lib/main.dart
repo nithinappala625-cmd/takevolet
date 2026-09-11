@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'screens/pgs/pgs_screen.dart';
+import 'screens/pgs/add_pg_screen.dart';
+import 'screens/rooms/add_day_wise_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +16,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 
 import 'services/onesignal_service.dart';
+import 'theme/app_theme.dart';
 
 import 'screens/build/build_hub_screen.dart';
 import 'screens/build/add_build_listing_screen.dart';
@@ -38,6 +42,7 @@ import 'screens/auth/otp_verification_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/rooms/rooms_screen.dart';
+import 'screens/rooms/day_wise_screen.dart';
 import 'screens/flatmates/flatmates_screen.dart';
 import 'screens/marketplace/marketplace_screen.dart';
 import 'screens/profile/profile_dashboard_screen.dart';
@@ -117,6 +122,17 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final _router = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: '/',
+  redirect: (context, state) {
+    final uri = state.uri;
+    if (uri.scheme == 'takevolet') {
+      final host = uri.host;
+      final path = uri.path;
+      if (host.isNotEmpty && host != 'app' && host != 'takevolet.online' && host != 'www.takevolet.online') {
+        return '/$host$path';
+      }
+    }
+    return null;
+  },
   routes: [
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
         GoRoute(path: '/client-dashboard', builder: (context, state) => const ClientDashboardScreen()),
@@ -162,6 +178,14 @@ final _router = GoRouter(
       builder: (context, state) => RoomDetailScreen(id: state.pathParameters['id']!),
     ),
     GoRoute(
+      path: '/pg/:id',
+      builder: (context, state) => RoomDetailScreen(id: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/day-wise-stay/:id',
+      builder: (context, state) => RoomDetailScreen(id: state.pathParameters['id']!),
+    ),
+    GoRoute(
       path: '/flatmate/:id',
       builder: (context, state) => FlatmateDetailScreen(id: state.pathParameters['id']!),
     ),
@@ -182,9 +206,21 @@ final _router = GoRouter(
       builder: (context, state) => BuilderProfileScreen(builderData: state.extra as Map<String, dynamic>),
     ),
     GoRoute(path: '/add-top-project', builder: (context, state) => const AddTopProjectScreen()),
+    GoRoute(path: '/add-pg', builder: (context, state) => const AddPgScreen()),
+    GoRoute(path: '/add-day-wise', builder: (context, state) => const AddDayWiseScreen()),
     GoRoute(
       path: '/top-project/:id',
-      builder: (context, state) => TopProjectDetailScreen(project: state.extra as Map<String, dynamic>),
+      builder: (context, state) => TopProjectDetailScreen(
+        id: state.pathParameters['id'],
+        project: state.extra as Map<String, dynamic>?,
+      ),
+    ),
+    GoRoute(
+      path: '/project/:id', // Deep link alias
+      builder: (context, state) => TopProjectDetailScreen(
+        id: state.pathParameters['id'],
+        project: state.extra as Map<String, dynamic>?,
+      ),
     ),
     GoRoute(
       path: '/item/:id',
@@ -198,8 +234,30 @@ final _router = GoRouter(
       builder: (context, state, child) => MainShell(child: child),
       routes: [
         GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
-        GoRoute(path: '/rooms', builder: (context, state) => RoomsScreen(city: state.extra as String?)),
-        GoRoute(path: '/flatmates', builder: (context, state) => FlatmatesScreen(city: state.extra as String?)),
+        GoRoute(
+          path: '/rooms',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: RoomsScreen(city: state.extra as String?),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+          ),
+        ),
+        GoRoute(
+          path: '/day-wise',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: DayWiseScreen(city: state.extra as String?),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+          ),
+        ),
+        GoRoute(
+          path: '/flatmates',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: FlatmatesScreen(city: state.extra as String?),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+          ),
+        ),
         GoRoute(path: '/flats', builder: (context, state) => const FlatsHubScreen()),
         GoRoute(
           path: '/flats/list',
@@ -229,10 +287,12 @@ final _router = GoRouter(
         GoRoute(path: '/build/detail', builder: (context, state) => BuildDetailScreen(listing: state.extra as Map<String, dynamic>)),
         GoRoute(path: '/marketplace', builder: (context, state) => const MarketplaceScreen()),
         GoRoute(path: '/feed', builder: (context, state) => const FeedScreen()),
-        GoRoute(path: '/profile', builder: (context, state) => const ProfileDashboardScreen()),
+        GoRoute(path: '/pgs', builder: (context, state) => const PgsScreen()),
+        
       ],
     ),
     GoRoute(path: '/add-room', builder: (context, state) => const AddRoomScreen()),
+    GoRoute(path: '/profile', builder: (context, state) => const ProfileDashboardScreen()),
     GoRoute(path: '/add-flatmate', builder: (context, state) => const AddFlatmateScreen()),
     GoRoute(path: '/add-item', builder: (context, state) => const AddItemScreen()),
     GoRoute(path: '/add-requirement', builder: (context, state) => const AddRequirementScreen()),
@@ -261,12 +321,26 @@ class _TakevoletAppState extends State<TakevoletApp> {
       title: 'Takevolet',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFD4AF37),
-          primary: const Color(0xFFD4AF37),
+          seedColor: AppTheme.primary,
+          primary: AppTheme.primary,
           surface: Colors.white,
           brightness: Brightness.light,
         ),
         scaffoldBackgroundColor: Colors.white,
+        dialogTheme: const DialogThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          elevation: 12,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        ),
+        bottomSheetTheme: const BottomSheetThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          elevation: 12,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+        ),
         textTheme: GoogleFonts.outfitTextTheme(Theme.of(context).textTheme),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
@@ -277,7 +351,7 @@ class _TakevoletAppState extends State<TakevoletApp> {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             elevation: 8,
-            shadowColor: const Color(0xFFD4AF37).withOpacity(0.5),
+            shadowColor: AppTheme.primary.withOpacity(0.35),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
@@ -285,8 +359,8 @@ class _TakevoletAppState extends State<TakevoletApp> {
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFD4AF37),
-          primary: const Color(0xFFD4AF37),
+          seedColor: AppTheme.primary,
+          primary: AppTheme.primary,
           brightness: Brightness.dark,
         ),
         textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
@@ -298,3 +372,7 @@ class _TakevoletAppState extends State<TakevoletApp> {
     );
   }
 }
+
+
+
+

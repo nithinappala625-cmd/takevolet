@@ -6,7 +6,7 @@ class BuilderProfileScreen extends StatelessWidget {
 
   const BuilderProfileScreen({super.key, required this.builderData});
 
-  static const _gold = Color(0xFFD4AF37);
+  static const _gold = Color(0xFF7B3AEC);
   static const _surfaceDark = Color(0xFF1A1A2E);
   static const _cardDark = Color(0xFF16213E);
 

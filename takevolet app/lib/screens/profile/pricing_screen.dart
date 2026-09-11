@@ -138,7 +138,7 @@ class _PricingScreenState extends State<PricingScreen> {
             top: -100, left: -100,
             child: Container(
               width: 300, height: 300,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFD4AF37).withOpacity(0.15)),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF7B3AEC).withOpacity(0.15)),
             ),
           ),
           Positioned(
@@ -173,9 +173,9 @@ class _PricingScreenState extends State<PricingScreen> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFF1E293B).withOpacity(0.8),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: isBestValue ? const Color(0xFFD4AF37) : const Color(0xFF334155), width: isBestValue ? 2 : 1),
+                                border: Border.all(color: isBestValue ? const Color(0xFF7B3AEC) : const Color(0xFF334155), width: isBestValue ? 2 : 1),
                                 boxShadow: [
-                                  if (isBestValue) BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 15, spreadRadius: 2)
+                                  if (isBestValue) BoxShadow(color: const Color(0xFF7B3AEC).withOpacity(0.2), blurRadius: 15, spreadRadius: 2)
                                 ],
                               ),
                               child: ClipRRect(
@@ -210,7 +210,7 @@ class _PricingScreenState extends State<PricingScreen> {
                                             ElevatedButton(
                                               onPressed: () => _purchasePlan(plan['price'], plan['title'], plan['unlocks']),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: isBestValue ? const Color(0xFFD4AF37) : const Color(0xFF334155),
+                                                backgroundColor: isBestValue ? const Color(0xFF7B3AEC) : const Color(0xFF334155),
                                                 foregroundColor: isBestValue ? Colors.black : Colors.white,
                                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -233,9 +233,9 @@ class _PricingScreenState extends State<PricingScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(colors: [Color(0xFFD4AF37), Color(0xFFFBBF24)]),
+                                    gradient: const LinearGradient(colors: [Color(0xFF7B3AEC), Color(0xFF9333EA)]),
                                     borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.4), blurRadius: 8)],
+                                    boxShadow: [BoxShadow(color: const Color(0xFF7B3AEC).withOpacity(0.4), blurRadius: 8)],
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,

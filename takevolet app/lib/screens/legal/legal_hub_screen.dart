@@ -29,7 +29,7 @@ class LegalHubScreen extends StatelessWidget {
         ),
         title: const Text(
           'Legal Cell',
-          style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFF7B3AEC), fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -76,10 +76,10 @@ class LegalHubScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFD4AF37).withOpacity(0.1),
+                              color: const Color(0xFF7B3AEC).withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(item['icon'] as IconData, color: const Color(0xFFD4AF37), size: 28),
+                            child: Icon(item['icon'] as IconData, color: const Color(0xFF7B3AEC), size: 28),
                           ),
                           const SizedBox(height: 12),
                           Padding(

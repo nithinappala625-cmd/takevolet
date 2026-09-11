@@ -53,10 +53,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(length: 16, vsync: this);
-    supabaseAdmin = SupabaseClient(
-      'https://gfhmdpzmhakznuqhstrn.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3Y3FvdnJidmh6dHBrdWx0cWpsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzgyMDYwOCwiZXhwIjoyMDkzMzk2NjA4fQ.5OKsvAVnHSqhk_wsddohOgbsNhJS1u2oOC1UXWseLn8',
-    );
+    supabaseAdmin = Supabase.instance.client;
     _loadData();
   }
 
@@ -552,18 +549,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                   height: 56,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFD4AF37), width: 2),
+                    border: Border.all(color: const Color(0xFF7B3AEC), width: 2),
                   ),
                   child: ClipOval(
                     child: avatar != null
                         ? Image.network(avatar, fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFFD4AF37).withOpacity(0.15),
-                              child: Center(child: Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFFD4AF37)))),
+                              color: const Color(0xFF7B3AEC).withOpacity(0.15),
+                              child: Center(child: Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFF7B3AEC)))),
                             ))
                         : Container(
-                            color: const Color(0xFFD4AF37).withOpacity(0.15),
-                            child: Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'U', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFFD4AF37)))),
+                            color: const Color(0xFF7B3AEC).withOpacity(0.15),
+                            child: Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'U', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFF7B3AEC)))),
                           ),
                   ),
                 ),
@@ -605,7 +602,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37).withOpacity(0.1),
+                        color: const Color(0xFF7B3AEC).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text('Joined', style: TextStyle(color: Colors.grey[600], fontSize: 10, fontWeight: FontWeight.w600)),
@@ -1188,9 +1185,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                 Row(children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: const Color(0xFFD4AF37).withOpacity(0.15),
+                    backgroundColor: const Color(0xFF7B3AEC).withOpacity(0.15),
                     backgroundImage: u['avatar_url'] != null ? NetworkImage(u['avatar_url']) : null,
-                    child: u['avatar_url'] == null ? Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37))) : null,
+                    child: u['avatar_url'] == null ? Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF7B3AEC))) : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1298,7 +1295,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddCarouselDialog,
-        backgroundColor: const Color(0xFFD4AF37),
+        backgroundColor: const Color(0xFF7B3AEC),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: ListView.builder(

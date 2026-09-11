@@ -11,6 +11,7 @@ import '../../services/payment_service.dart';
 import '../../services/onesignal_service.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../data/locations.dart';
+import '../../widgets/video_picker_preview.dart';
 
 class AddPropertySaleScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -21,7 +22,7 @@ class AddPropertySaleScreen extends StatefulWidget {
 }
 
 class _AddPropertySaleScreenState extends State<AddPropertySaleScreen> {
-  static const _gold = Color(0xFFD4AF37);
+  static const _gold = Color(0xFF7B3AEC);
   static const _surfaceDark = Color(0xFF1A1A2E);
   static const _cardDark = Color(0xFF16213E);
 
@@ -159,16 +160,145 @@ class _AddPropertySaleScreenState extends State<AddPropertySaleScreen> {
   }
 
   Future<ImageSource?> _showImageSourceDialog() async {
-    return showDialog<ImageSource>(
+    return showModalBottomSheet<ImageSource>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Select Image Source'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(leading: const Icon(Icons.camera_alt), title: const Text('Camera'), onTap: () => Navigator.pop(ctx, ImageSource.camera)),
-            ListTile(leading: const Icon(Icons.photo_library), title: const Text('Gallery'), onTap: () => Navigator.pop(ctx, ImageSource.gallery)),
-          ],
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Upload Property Photos',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Select an option to add photos to your property listing',
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F3FF),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFDDD6FE), width: 1.2),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFF7B3AEC), Color(0xFF6D28D9)],
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Camera',
+                              style: GoogleFonts.outfit(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Take a picture',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Gallery',
+                              style: GoogleFonts.outfit(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Choose from album',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
         ),
       ),
     );
@@ -504,16 +634,12 @@ class _AddPropertySaleScreenState extends State<AddPropertySaleScreen> {
 
   Future<void> _triggerNotifications(Map<String, dynamic> propertyData) async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user != null) {
-        // In-App Notification
-        await Supabase.instance.client.from('notifications').insert({
-          'user_id': user.id,
-          'title': 'Property Listed',
-          'body': 'Your property in ${propertyData['locality']}, ${propertyData['city']} has been successfully listed!',
-          'type': 'property',
-        });
-      }
+      // In-App Notification Broadcast
+      await OneSignalService.broadcastInAppNotification(
+        title: 'New Property Listed!',
+        body: 'A new property is available in ${propertyData['locality']}, ${propertyData['city']} for ₹${propertyData['expected_price']}.',
+        type: 'flat',
+      );
       
       // Push Notification
       await OneSignalService.sendPushNotification(
@@ -676,11 +802,13 @@ class _AddPropertySaleScreenState extends State<AddPropertySaleScreen> {
           trailing: const Icon(Icons.photo_library, color: _gold),
           onTap: _pickGalleryImages,
         ),
-        ListTile(
-          title: const Text('Property Video (Max 50MB)', style: TextStyle(color: Colors.black)),
-          subtitle: Text(_selectedVideo != null ? 'Video selected' : 'Tap to select', style: const TextStyle(color: Colors.grey)),
-          trailing: const Icon(Icons.videocam, color: _gold),
-          onTap: _pickVideo,
+        const SizedBox(height: 8),
+        VideoPickerPreview(
+          videoFile: _selectedVideo,
+          videoUrl: widget.initialData != null ? widget.initialData!['video_url'] : null,
+          onPick: _pickVideo,
+          onRemove: () => setState(() => _selectedVideo = null),
+          primaryColor: _gold,
         ),
       ],
     );

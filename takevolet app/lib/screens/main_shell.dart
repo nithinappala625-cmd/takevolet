@@ -87,6 +87,30 @@ class MainShell extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildPostOption(
                   context: sheetContext,
+                  icon: Icons.wb_sunny_rounded,
+                  title: 'Post Day Wise Stay',
+                  subtitle: 'Hourly or daily rooms & stays',
+                  color: const Color(0xFFE67E22),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePostNavigation(parentContext, '/add-day-wise');
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildPostOption(
+                  context: sheetContext,
+                  icon: Icons.hotel_rounded,
+                  title: 'List your PG / Hostel',
+                  subtitle: 'Mens, Womens & Co-ed PG / Hostels',
+                  color: const Color(0xFF27AE60),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handlePostNavigation(parentContext, '/add-pg');
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildPostOption(
+                  context: sheetContext,
                   icon: Icons.people_alt_rounded,
                   title: 'Find a Flatmate',
                   subtitle: 'Share your current apartment',
@@ -94,18 +118,6 @@ class MainShell extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(sheetContext);
                     _handlePostNavigation(parentContext, '/add-flatmate');
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildPostOption(
-                  context: sheetContext,
-                  icon: Icons.assignment_rounded,
-                  title: 'Post a Requirement',
-                  subtitle: 'Looking for a room or flatmate?',
-                  color: const Color(0xFF27AE60),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    _handlePostNavigation(parentContext, '/add-requirement');
                   },
                 ),
                 const SizedBox(height: 16),
@@ -138,7 +150,7 @@ class MainShell extends StatelessWidget {
                   icon: Icons.gavel_rounded,
                   title: 'Become Legal Partner',
                   subtitle: 'Lawyers, Notaries, MeeSeva & More (₹100 Fee)',
-                  color: const Color(0xFFD4AF37),
+                  color: const Color(0xFF7B3AEC),
                   onTap: () {
                     Navigator.pop(sheetContext);
                     _handlePostNavigation(parentContext, '/add-legal-partner'); 
@@ -213,10 +225,10 @@ class MainShell extends StatelessWidget {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
     if (location.startsWith('/feed')) return 1;
-    if (location.startsWith('/rooms') || location.startsWith('/flatmates')) return 2;
-    if (location.startsWith('/flats')) return 3;
-    if (location.startsWith('/build')) return 4;
-    if (location.startsWith('/profile')) return 5;
+    if (location.startsWith('/rooms') || location.startsWith('/flatmates') || location.startsWith('/day-wise')) return 2;
+    if (location.startsWith('/pgs')) return 3;
+    if (location.startsWith('/flats')) return 4;
+    if (location.startsWith('/build')) return 5;
     return 0;
   }
 
@@ -232,13 +244,13 @@ class MainShell extends StatelessWidget {
         context.go('/rooms');
         break;
       case 3:
-        context.go('/flats');
+        context.go('/pgs');
         break;
       case 4:
-        context.go('/build');
+        context.go('/flats');
         break;
       case 5:
-        context.go('/profile');
+        context.go('/build');
         break;
     }
   }
@@ -267,9 +279,9 @@ class MainShell extends StatelessWidget {
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.feed_outlined), selectedIcon: Icon(Icons.feed), label: 'Feed'),
           NavigationDestination(icon: Icon(Icons.bed_outlined), selectedIcon: Icon(Icons.bed), label: 'Rooms'),
+          NavigationDestination(icon: Icon(Icons.hotel_outlined), selectedIcon: Icon(Icons.hotel), label: 'PGs'),
           NavigationDestination(icon: Icon(Icons.apartment_outlined), selectedIcon: Icon(Icons.apartment), label: 'Properties'),
           NavigationDestination(icon: Icon(Icons.construction_outlined), selectedIcon: Icon(Icons.construction), label: 'Build'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );

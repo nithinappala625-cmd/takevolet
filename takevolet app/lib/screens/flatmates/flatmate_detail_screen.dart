@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
 import '../../utils/share_utils.dart';
@@ -307,12 +308,6 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
 
     final String location = (flatmate?['location'] ?? '').toLowerCase();
     final String city = (flatmate?['city'] ?? '').toLowerCase();
-    final bool isBangalore =
-        location.contains('bangalore') ||
-        location.contains('bengaluru') ||
-        city.contains('bangalore') ||
-        city.contains('bengaluru');
-
     // Contact plans only
     final List<Map<String, dynamic>> plans = [
       {
@@ -631,7 +626,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                   children: [
                     CircleAvatar(
                       radius: 28,
-                      backgroundColor: const Color(0xFFD4AF37).withOpacity(0.2),
+                      backgroundColor: const Color(0xFF7B3AEC).withOpacity(0.2),
                       backgroundImage: avatar != null
                           ? NetworkImage(avatar)
                           : null,
@@ -641,7 +636,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 22,
-                                color: Color(0xFFD4AF37),
+                                color: Color(0xFF7B3AEC),
                               ),
                             )
                           : null,
@@ -766,16 +761,14 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
     final int rentShare = flatmate!['rent_share'] ?? 0;
     final String location = (flatmate!['location'] ?? '').toLowerCase();
     final String city = (flatmate!['city'] ?? '').toLowerCase();
-    final bool isBangalore =
-        location.contains('bangalore') ||
-        location.contains('bengaluru') ||
-        city.contains('bangalore') ||
-        city.contains('bengaluru');
+    final bool isTier1City = city.contains('bangalore') || city.contains('bengaluru') ||
+                             city.contains('pune') || city.contains('mumbai') ||
+                             city.contains('delhi') || city.contains('chennai');
 
     // Show only visiting charges on button (not total)
     int visitingCharges = 0;
     int platformFee = 0;
-    if (isBangalore) {
+    if (isTier1City) {
       if (rentShare <= 20000) {
         visitingCharges = 600;
         platformFee = 2400;
@@ -825,7 +818,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: const Color(0xFFD4AF37).withOpacity(0.2),
+                backgroundColor: const Color(0xFF7B3AEC).withOpacity(0.2),
                 backgroundImage: avatar != null
                     ? CachedNetworkImageProvider(avatar)
                     : null,
@@ -837,7 +830,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 24,
-                          color: Color(0xFFD4AF37),
+                          color: Color(0xFF7B3AEC),
                         ),
                       )
                     : null,
@@ -857,7 +850,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                     Text(
                       profession,
                       style: const TextStyle(
-                        color: Color(0xFFD4AF37),
+                        color: Color(0xFF7B3AEC),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -865,17 +858,17 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                     const SizedBox(height: 4),
                     const Row(
                       children: [
-                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
-                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
-                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
-                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
-                        Icon(Icons.star, color: Color(0xFFD4AF37), size: 16),
+                        Icon(Icons.star, color: Color(0xFF7B3AEC), size: 16),
+                        Icon(Icons.star, color: Color(0xFF7B3AEC), size: 16),
+                        Icon(Icons.star, color: Color(0xFF7B3AEC), size: 16),
+                        Icon(Icons.star, color: Color(0xFF7B3AEC), size: 16),
+                        Icon(Icons.star, color: Color(0xFF7B3AEC), size: 16),
                         SizedBox(width: 4),
                         Text(
                           'Verified',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFFD4AF37),
+                            color: Color(0xFF7B3AEC),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -886,118 +879,71 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildProgressStep('1', 'INTERESTED', true),
-              Expanded(
-                child: Divider(
-                  color: Theme.of(context).colorScheme.primary,
-                  thickness: 2,
-                ),
-              ),
-              _buildProgressStep('2', 'VISIT ROOM', false),
-              Expanded(
-                child: Divider(color: Colors.grey.shade300, thickness: 2),
-              ),
-              _buildProgressStep('3', 'CONFIRMED', false),
-            ],
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          // Masked phone container
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.lock, color: Colors.grey, size: 20),
-                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A).withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.phone_locked_rounded, color: Color(0xFF0F172A), size: 18),
+                ),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: Text(
-                    '+91 ••••• •••••',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade600,
-                      letterSpacing: 2,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'PHONE NUMBER',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF94A3B8),
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _formatPartiallyRevealedPhone(
+                          flatmate?['custom_contact']?.toString() ??
+                          posterProfile?['phone']?.toString() ??
+                          flatmate?['contact_phone']?.toString() ??
+                          flatmate?['phone']?.toString()
+                        ),
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF7B3AEC),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          const SizedBox(height: 20),
-          const Text(
-            'UNLOCK OPTIONS',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+
+          // Trust Badges Row
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () =>
-                      _purchasePlan(visitingCharges, 'Visitor Pass'),
-                  icon: const Icon(Icons.star, size: 18),
-                  label: Text(
-                    'Visitor Pass\n(₹$visitingCharges)',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
+              _buildTrustMiniBadge(Icons.shield_outlined, '100% Genuine'),
               const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _showUnlockDialog,
-                  icon: const Icon(Icons.lock_open, size: 18),
-                  label: const Text(
-                    'Contact\nUnlock',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(Icons.info_outline, size: 14, color: Colors.grey.shade500),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Visiting charges: ₹$visitingCharges, Platform fee: ₹$platformFee',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade500,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
+              _buildTrustMiniBadge(Icons.bolt_rounded, 'Direct Contact'),
+              const SizedBox(width: 12),
+              _buildTrustMiniBadge(Icons.lock_clock_rounded, 'Instant Unlock'),
             ],
           ),
         ],
@@ -1005,30 +951,18 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
     );
   }
 
-  Widget _buildProgressStep(String number, String label, bool active) {
-    return Column(
+  Widget _buildTrustMiniBadge(IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        CircleAvatar(
-          radius: 12,
-          backgroundColor: active
-              ? Theme.of(context).colorScheme.primary
-              : Colors.grey.shade300,
-          child: Text(
-            number,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
+        Icon(icon, size: 13, color: const Color(0xFF16A34A)),
+        const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: active ? Theme.of(context).colorScheme.primary : Colors.grey,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF334155),
           ),
         ),
       ],
@@ -1170,7 +1104,7 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                         ),
                       ),
                       onPressed: () {
-                        ShareUtils.generateRoomShare(context, flatmate!);
+                        ShareUtils.generateFlatmateShare(context, flatmate!);
                       },
                     ),
                   ),
@@ -1187,152 +1121,376 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Category Badge + Available Badge
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: Text(
-                              flatmate!['title'] ?? 'Flatmate Needed',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F3FF),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFDDD6FE)),
+                            ),
+                            child: const Text(
+                              'FLATMATE WANTED',
+                              style: TextStyle(
+                                color: Color(0xFF7B3AEC),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                             decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withOpacity(0.5),
-                              ),
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF86EFAC)),
                             ),
-                            child: Column(
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
+                                Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF16A34A)),
+                                SizedBox(width: 4),
                                 Text(
-                                  '₹${flatmate!['rent_share']}',
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 28,
-                                  ),
-                                ),
-                                const Text(
-                                  '/share',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  'Available Now',
+                                  style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w800, fontSize: 11),
                                 ),
                               ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            color: Colors.grey,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${flatmate!['colony'] ?? flatmate!['location'] ?? ''}',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 32),
-                      const Text(
-                        'Overview',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(height: 10),
+
+                      // Listing Title
+                      Text(
+                        flatmate!['title'] ?? 'Flatmate Required',
+                        style: GoogleFonts.outfit(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF0F172A),
+                          letterSpacing: -0.5,
+                          height: 1.25,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          _buildOverviewChip(
-                            Icons.wc,
-                            metadata['gender_pref']?.toString() ??
-                                flatmate!['gender_pref']?.toString() ??
-                                'Any',
-                          ),
-                          _buildOverviewChip(
-                            Icons.group,
-                            '${metadata['vacancy_count']?.toString() ?? flatmate!['vacancy_count']?.toString() ?? 1} Vacancy',
-                          ),
-                          _buildOverviewChip(Icons.home_work, 'Shared Flat'),
-                        ],
-                      ),
-                      if (metadata.keys.any(
-                        (k) => ![
-                          'gender_pref',
-                          'vacancy_count',
-                          'lifestyle_habits',
-                        ].contains(k),
-                      )) ...[
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Additional Details',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      const SizedBox(height: 10),
+
+                      // Location Badge (NO ash color, NO leading comma)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
                         ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: metadata.entries
-                              .where(
-                                (e) => ![
-                                  'gender_pref',
-                                  'vacancy_count',
-                                  'lifestyle_habits',
-                                ].contains(e.key),
-                              )
-                              .map(
-                                (e) => _buildOverviewChip(
-                                  Icons.info_outline,
-                                  '${e.key.replaceAll('_', ' ').split(' ').map((s) => s.isNotEmpty ? '${s[0].toUpperCase()}${s.substring(1)}' : '').join(' ')}: ${e.value}',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.location_on_rounded, color: Color(0xFFE11D48), size: 18),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                '${flatmate!['colony'] ?? flatmate!['location'] ?? ''}'.replaceAll(RegExp(r'^,\s*'), '').isNotEmpty
+                                    ? '${flatmate!['colony'] ?? flatmate!['location'] ?? ''}'.replaceAll(RegExp(r'^,\s*'), '')
+                                    : 'Location verified with flatmate',
+                                style: const TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
                                 ),
-                              )
-                              .toList(),
+                                softWrap: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Modern Ultra-Clean Pricing Card
+                      Builder(
+                        builder: (context) {
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
+                          return Container(
+                            margin: const EdgeInsets.only(top: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: isDark
+                                    ? [const Color(0xFF1E1B4B), const Color(0xFF0F172A)]
+                                    : [const Color(0xFFFAF5FF), const Color(0xFFF3E8FF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF4338CA) : const Color(0xFFDDD6FE),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF7B3AEC).withOpacity(isDark ? 0.25 : 0.12),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF7B3AEC).withOpacity(0.15),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(Icons.currency_rupee_rounded, size: 12, color: Color(0xFF7B3AEC)),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'MONTHLY SHARE',
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                            color: const Color(0xFF7B3AEC),
+                                            letterSpacing: 1.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Text(
+                                          '₹${_formatNumber(flatmate!['rent_share'])}',
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 30,
+                                            fontWeight: FontWeight.w900,
+                                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '/ share',
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF059669), Color(0xFF047857)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF059669).withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.shield_rounded, color: Colors.white, size: 14),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        '0 Brokerage',
+                                        style: GoogleFonts.outfit(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 11.5,
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Box-Oriented Overview & Highlights Card
+                      Container(
+                        margin: const EdgeInsets.only(top: 20),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3)),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF7B3AEC).withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.group_rounded, color: Color(0xFF6D28D9), size: 18),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                'Overview & Highlights',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                              ),
+                            ]),
+                            const SizedBox(height: 14),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                _buildOverviewBox(
+                                  Icons.wc_rounded,
+                                  'Preference',
+                                  metadata['gender_pref']?.toString() ??
+                                      flatmate!['gender_pref']?.toString() ??
+                                      'Any',
+                                ),
+                                _buildOverviewBox(
+                                  Icons.group_rounded,
+                                  'Vacancy',
+                                  '${metadata['vacancy_count']?.toString() ?? flatmate!['vacancy_count']?.toString() ?? 1} Vacancy',
+                                ),
+                                _buildOverviewBox(Icons.home_work_rounded, 'Space Type', 'Shared Flat'),
+                                if (metadata['occupancy_type'] != null)
+                                  _buildOverviewBox(Icons.person_outline_rounded, 'Occupancy', metadata['occupancy_type'].toString()),
+                                if (metadata['furnishing'] != null)
+                                  _buildOverviewBox(Icons.chair_rounded, 'Furnishing', metadata['furnishing'].toString()),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Box-Oriented Additional Details Card
+                      if (metadata.keys.any((k) => !['gender_pref', 'vacancy_count', 'lifestyle_habits', 'occupancy_type', 'furnishing'].contains(k))) ...[
+                        Container(
+                          margin: const EdgeInsets.only(top: 16),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3)),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF7B3AEC).withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.tune_rounded, color: Color(0xFF6D28D9), size: 18),
+                                ),
+                                const SizedBox(width: 10),
+                                const Text(
+                                  'Additional Details',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                ),
+                              ]),
+                              const SizedBox(height: 14),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: metadata.entries
+                                    .where((e) => !['gender_pref', 'vacancy_count', 'lifestyle_habits', 'occupancy_type', 'furnishing'].contains(e.key))
+                                    .where((e) => e.value != null && e.value.toString().trim().isNotEmpty)
+                                    .map((e) {
+                                      final keyName = e.key.replaceAll('_', ' ').split(' ').map((s) => s.isNotEmpty ? '${s[0].toUpperCase()}${s.substring(1)}' : '').join(' ');
+                                      return _buildOverviewBox(Icons.info_outline_rounded, keyName, e.value.toString());
+                                    })
+                                    .toList(),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Description',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+
+                      // Box-Oriented Property Description Card (Bold, High Contrast, Rich UI)
+                      Container(
+                        margin: const EdgeInsets.only(top: 16),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3)),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        flatmate!['description'] ??
-                            'Looking for a compatible flatmate to share the space.',
-                        style: const TextStyle(color: Colors.grey, height: 1.5),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF7B3AEC).withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.notes_rounded, color: Color(0xFF6D28D9), size: 18),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                'Flatmate & Room Description',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                              ),
+                            ]),
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Text(
+                                (flatmate!['description'] != null && flatmate!['description'].toString().trim().isNotEmpty)
+                                    ? flatmate!['description'].toString().trim()
+                                    : 'Looking for a compatible flatmate to share the space. All amenities are readily available and verified.',
+                                style: const TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.6,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       if ((metadata['lifestyle_habits'] ??
                                   flatmate!['lifestyle_habits']) !=
@@ -1376,13 +1534,221 @@ class _FlatmateDetailScreenState extends State<FlatmateDetailScreen> {
                   _buildContactUnlockedCard()
                 else
                   _buildPosterInfoCard(),
-                const SizedBox(height: 100),
+                const SizedBox(height: 120),
               ],
             ),
           ),
         ],
       ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: _buildBottomActionButtons(),
+        ),
+      ),
       bottomSheet: const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildBottomActionButtons() {
+    if (_hasUnlocked) {
+      final phone = posterProfile?['phone'] ?? flatmate?['phone'] ?? '';
+      final whatsapp = posterProfile?['whatsapp'] ?? flatmate?['whatsapp'] ?? phone;
+      return Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: phone.toString().isNotEmpty ? () => launchUrl(Uri.parse('tel:$phone')) : null,
+              icon: const Icon(Icons.call_rounded, size: 18),
+              label: const Text('Call Flatmate', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF16A34A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: whatsapp.toString().isNotEmpty
+                  ? () => launchUrl(Uri.parse('https://wa.me/${whatsapp.toString().replaceAll(RegExp(r'[^\d]'), '')}'))
+                  : null,
+              icon: const Icon(Icons.chat_bubble_rounded, size: 18),
+              label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF25D366),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      return Container(
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF7B3AEC), Color(0xFF6D28D9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7B3AEC).withOpacity(0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ElevatedButton(
+          onPressed: _showUnlockDialog,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.lock_open_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Unlock Flatmate Details',
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'DIRECT ACCESS',
+                  style: GoogleFonts.outfit(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF6D28D9),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  String _formatPartiallyRevealedPhone(String? rawPhone) {
+    if (rawPhone == null || rawPhone.trim().isEmpty) return '+91 98•• ••••••';
+    final digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length >= 10) {
+      final p = digits.length == 12 && digits.startsWith('91') ? digits.substring(2) : digits;
+      if (p.length >= 4) return '+91 ${p.substring(0, 4)} •• ••••';
+    } else if (digits.length >= 4) {
+      return '+91 ${digits.substring(0, 4)} •• ••••';
+    }
+    return '+91 98•• ••••••';
+  }
+
+  String _formatNumber(dynamic n) {
+    if (n == null) return '0';
+    final str = n.toString().replaceAll(',', '');
+    final numVal = int.tryParse(str);
+    if (numVal == null) return str;
+    final s = numVal.toString();
+    if (s.length <= 3) return s;
+    final lastThree = s.substring(s.length - 3);
+    final otherNumbers = s.substring(0, s.length - 3);
+    final formatted = otherNumbers.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{2})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '$formatted,$lastThree';
+  }
+
+  Widget _buildOverviewBox(IconData icon, String title, String value) {
+    return Container(
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 2 - 28),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF7B3AEC).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: const Color(0xFF6D28D9)),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF64748B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                  softWrap: true,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

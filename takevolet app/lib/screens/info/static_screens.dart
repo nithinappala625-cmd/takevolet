@@ -353,7 +353,7 @@ Takevolet is a bachelor-focused accommodation platform helping users discover:
 * Furnished Rooms
 * Couple-Friendly Rooms
 
-Currently serving Hyderabad and Bangalore with plans for future expansion.
+Currently serving Hyderabad, Bangalore, Pune, Mumbai, Delhi, and Chennai with plans for future expansion.
 
 Founder: Nithin Patel''',
       );

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
 import '../../widgets/smart_image.dart';
+import '../../data/locations.dart';
 
 class MarketplaceScreen extends StatefulWidget {
   const MarketplaceScreen({super.key});
@@ -30,7 +31,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   String _selectedCity = 'Hyderabad';
 
   final List<String> _filters = ['All', 'Furniture', 'Electronics', 'Appliances', 'Vehicles', 'Other'];
-  final List<String> _cities = ['Hyderabad', 'Bangalore'];
+  final List<String> _cities = AVAILABLE_CITIES;
 
   @override
   void initState() {
@@ -102,38 +103,40 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       body: Column(
         children: [
           // City Selector
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: _cities.map((city) {
+          SizedBox(
+            height: 50,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: _cities.length,
+              itemBuilder: (context, index) {
+                final city = _cities[index];
                 final selected = _selectedCity == city;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedCity = city);
-                      _fetchItems();
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: selected ? const Color(0xFFD4AF37) : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: selected ? const Color(0xFFD4AF37) : Colors.grey[300]!),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.location_city, size: 16, color: selected ? Colors.white : Colors.grey[600]),
-                          const SizedBox(width: 6),
-                          Text(city, style: TextStyle(fontWeight: FontWeight.bold, color: selected ? Colors.white : Colors.grey[700], fontSize: 14)),
-                        ],
-                      ),
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedCity = city);
+                    _fetchItems();
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: selected ? const Color(0xFF7B3AEC) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: selected ? const Color(0xFF7B3AEC) : Colors.grey[400]!, width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.location_city, size: 16, color: selected ? Colors.white : Colors.black54),
+                        const SizedBox(width: 6),
+                        Text(city, style: TextStyle(fontWeight: FontWeight.bold, color: selected ? Colors.white : Colors.black87, fontSize: 14)),
+                      ],
                     ),
                   ),
                 );
-              }).toList(),
+              },
             ),
           ),
           // Search Bar
@@ -167,10 +170,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     label: Text(f, style: TextStyle(fontWeight: FontWeight.w600, color: selected ? Colors.white : Colors.black87, fontSize: 13)),
                     selected: selected,
                     onSelected: (_) { _selectedFilter = f; _applyFilters(); },
-                    selectedColor: const Color(0xFFD4AF37),
+                    selectedColor: const Color(0xFF7B3AEC),
                     backgroundColor: Colors.grey[100],
                     checkmarkColor: Colors.white,
-                    side: BorderSide(color: selected ? const Color(0xFFD4AF37) : Colors.grey[300]!),
+                    side: BorderSide(color: selected ? const Color(0xFF7B3AEC) : Colors.grey[300]!),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                 );
@@ -236,7 +239,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5EFD0),
+                  color: const Color(0xFFF8FAFC),
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -245,7 +248,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         imageUrl: thumbnailUrl,
                         fit: BoxFit.cover,
                       )
-                    : const Center(child: Icon(Icons.shopping_bag, size: 44, color: Color(0xFFD4AF37))),
+                    : const Center(child: Icon(Icons.shopping_bag_outlined, size: 44, color: Color(0xFF94A3B8))),
               ),
             ),
             // Info
@@ -270,7 +273,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: const Color(0xFFD4AF37), borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: const Color(0xFF7B3AEC), borderRadius: BorderRadius.circular(10)),
                         child: Text('₹$price', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                       ),
                       Container(
@@ -314,14 +317,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         onPressed: _fetchItems,
         icon: const Icon(Icons.refresh),
         label: const Text('Try Again'),
-        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: Colors.white),
+        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7B3AEC), foregroundColor: Colors.white),
       ),
     ]));
   }
 
   Widget _buildEmpty() {
     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.shopping_bag_outlined, size: 64, color: Color(0xFFD4AF37)),
+      const Icon(Icons.shopping_bag_outlined, size: 64, color: Color(0xFF7B3AEC)),
       const SizedBox(height: 12),
       const Text('No items found', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
       const SizedBox(height: 6),
@@ -332,7 +335,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         onPressed: _fetchItems,
         icon: const Icon(Icons.refresh),
         label: const Text('Refresh'),
-        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: Colors.white),
+        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7B3AEC), foregroundColor: Colors.white),
       ),
     ]));
   }

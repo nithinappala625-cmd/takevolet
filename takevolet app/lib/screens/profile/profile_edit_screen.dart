@@ -14,7 +14,7 @@ class ProfileEditScreen extends StatefulWidget {
 }
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
-  static const _gold = Color(0xFFD4AF37);
+  static const _gold = Color(0xFF7B3AEC);
 
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = true;

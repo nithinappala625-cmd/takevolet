@@ -67,15 +67,15 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ),
                 ),
-                // Gold glowing edge on the wave
+                // Purple glowing edge on the wave
                 ClipPath(
                   clipper: WaveEdgeClipper(),
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFFD4AF37).withOpacity(0.8),
-                          const Color(0xFFFBBF24).withOpacity(0.2),
+                          const Color(0xFF7B3AEC).withOpacity(0.85),
+                          const Color(0xFF9333EA).withOpacity(0.2),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -96,26 +96,29 @@ class _SplashScreenState extends State<SplashScreen> {
                   SizedBox(height: MediaQuery.of(context).size.height * 0.15),
                   // App Logo (Transparent)
                   Container(
-                    width: 120,
-                    height: 120,
+                    width: 130,
+                    height: 130,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
+                      shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFD4AF37).withOpacity(0.3),
-                          blurRadius: 30,
-                          spreadRadius: 2,
+                          color: const Color(0xFF7B3AEC).withOpacity(0.4),
+                          blurRadius: 35,
+                          spreadRadius: 3,
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: Image.asset(
-                        'assets/images/newlogo.jpg',
-                        fit: BoxFit.cover,
-                      ),
+                    child: Image.asset(
+                      'assets/images/app_logo_circle.png',
+                      fit: BoxFit.contain,
                     ),
-                  ),const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 24),
                   
                   // App Name
                   Text(
@@ -123,7 +126,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFFD4AF37), // Gold
+                      color: const Color(0xFF7B3AEC), // Electric Purple
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -143,7 +146,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                   // Loading Indicator
                   const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7B3AEC)),
                     strokeWidth: 3,
                   ),
                   const SizedBox(height: 16),

@@ -106,8 +106,8 @@ class _UnlockHistoryScreenState extends State<UnlockHistoryScreen> with SingleTi
         title: const Text('Unlock History', style: TextStyle(fontWeight: FontWeight.bold)),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFFD4AF37),
-          labelColor: const Color(0xFFD4AF37),
+          indicatorColor: const Color(0xFF7B3AEC),
+          labelColor: const Color(0xFF7B3AEC),
           unselectedLabelColor: Colors.grey,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold),
           tabs: const [

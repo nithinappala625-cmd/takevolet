@@ -16,7 +16,7 @@ class AddFlatmateScreen extends StatefulWidget {
 }
 
 class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
-  static const _gold = Color(0xFFD4AF37);
+  static const _gold = Color(0xFF7B3AEC);
   final _formKey = GlobalKey<FormState>();
 
   final _titleController = TextEditingController();
@@ -81,12 +81,13 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
       _customContactController.text = data['custom_contact']?.toString() ?? '';
 
       _genderPref = data['gender_pref']?.toString() ?? 'Any';
-      if (data['city'] == 'Bangalore') {
-        _selectedCity = 'Bangalore';
-        if (BANGALORE_AREAS.contains(data['location'])) {
+      if (AVAILABLE_CITIES.contains(data['city'])) {
+        _selectedCity = data['city'];
+        List<String> cityAreas = getAreasForCity(_selectedCity);
+        if (cityAreas.contains(data['location'])) {
           _location = data['location'];
         } else {
-          _location = BANGALORE_AREAS.first;
+          _location = cityAreas.first;
         }
       } else {
         _selectedCity = 'Hyderabad';
@@ -211,12 +212,12 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
         }
 
         try {
-          await supabase.from('notifications').insert({
-            'title': 'Flatmate Required',
-            'message':
+          await OneSignalService.broadcastInAppNotification(
+            title: 'Flatmate Required',
+            body:
                 'Looking for a flatmate in $_location, $_selectedCity. Rent share: ₹${flatmateData['rent_share']}/mo.',
-            'type': 'flatmate',
-          });
+            type: 'flatmate',
+          );
         } catch (e) {
           debugPrint('In-App Notification DB error: $e');
         }
@@ -244,14 +245,23 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
   InputDecoration _inputDeco(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: _gold),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      labelStyle: TextStyle(color: Colors.grey[700], fontSize: 14),
+      prefixIcon: Icon(icon, color: _gold, size: 22),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _gold, width: 2),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: _gold, width: 1.5),
       ),
       filled: true,
-      fillColor: Colors.grey[50],
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
@@ -260,11 +270,20 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
     required IconData icon,
     required List<Widget> children,
   }) {
-    return Card(
-      elevation: 2,
-      shadowColor: _gold.withOpacity(0.15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.only(bottom: 16),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -273,24 +292,25 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: _gold.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: _gold, size: 20),
+                  child: Icon(icon, color: _gold, size: 22),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             ...children,
           ],
         ),
@@ -301,11 +321,10 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
   @override
   Widget build(BuildContext context) {
     final colonies = getColonies(_location, city: _selectedCity);
-    final areas = _selectedCity == 'Bangalore'
-        ? BANGALORE_AREAS
-        : HYDERABAD_AREAS;
+    final areas = getAreasForCity(_selectedCity);
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
           widget.initialData != null
@@ -478,16 +497,14 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
                         value: _selectedCity,
                         decoration: _inputDeco('City *', Icons.location_city),
                         isExpanded: true,
-                        items: ['Hyderabad', 'Bangalore']
+                        items: AVAILABLE_CITIES
                             .map(
                               (e) => DropdownMenuItem(value: e, child: Text(e)),
                             )
                             .toList(),
                         onChanged: (v) => setState(() {
                           _selectedCity = v!;
-                          _location = _selectedCity == 'Bangalore'
-                              ? BANGALORE_AREAS.first
-                              : HYDERABAD_AREAS.first;
+                          _location = getAreasForCity(_selectedCity).first;
                           _colony = null;
                         }),
                       ),

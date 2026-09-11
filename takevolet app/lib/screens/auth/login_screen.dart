@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
               style: GoogleFonts.inter(
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
-                color: const Color(0xFFD4AF37), // Gold
+                color: const Color(0xFF7B3AEC), // Gold
                 letterSpacing: -0.5,
               ),
             ),
@@ -183,10 +183,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD4AF37).withOpacity(0.1),
+                    color: const Color(0xFF7B3AEC).withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.verified_user_outlined, color: Color(0xFFD4AF37), size: 24),
+                  child: const Icon(Icons.verified_user_outlined, color: Color(0xFF7B3AEC), size: 24),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -214,12 +214,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     TextSpan(
                       text: 'Terms of Service',
-                      style: GoogleFonts.inter(color: const Color(0xFFD4AF37), fontWeight: FontWeight.bold),
+                      style: GoogleFonts.inter(color: const Color(0xFF7B3AEC), fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(text: '\nand '),
                     TextSpan(
                       text: 'Privacy Policy.',
-                      style: GoogleFonts.inter(color: const Color(0xFFD4AF37), fontWeight: FontWeight.bold),
+                      style: GoogleFonts.inter(color: const Color(0xFF7B3AEC), fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),

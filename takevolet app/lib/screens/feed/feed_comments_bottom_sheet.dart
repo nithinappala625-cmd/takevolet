@@ -226,7 +226,7 @@ class _FeedCommentsBottomSheetState extends State<FeedCommentsBottomSheet> {
                 isPosting 
                     ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
                     : IconButton(
-                        icon: const Icon(Icons.send, color: Color(0xFFD4AF37)),
+                        icon: const Icon(Icons.send, color: Color(0xFF7B3AEC)),
                         onPressed: _postComment,
                       )
               ],

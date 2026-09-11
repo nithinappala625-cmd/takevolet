@@ -6,7 +6,7 @@ class LegalPartnerDetailScreen extends StatelessWidget {
 
   const LegalPartnerDetailScreen({super.key, required this.partner});
 
-  static const Color _gold = Color(0xFFD4AF37);
+  static const Color _gold = Color(0xFF7B3AEC);
 
   @override
   Widget build(BuildContext context) {

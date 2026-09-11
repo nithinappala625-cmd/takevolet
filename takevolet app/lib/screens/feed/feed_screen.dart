@@ -24,7 +24,7 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  static const _gold = Color(0xFFD4AF37);
+  static const _gold = Color(0xFF7B3AEC);
   static const _blue = Color(0xFF1DA1F2);
   bool isLoading = true;
   List<Map<String, dynamic>> posts = [];
@@ -755,16 +755,19 @@ class _FeedScreenState extends State<FeedScreen> {
     final spans = <InlineSpan>[];
     final regex = RegExp(r'(#\w+)|(@[\w\s]+?)(?=\s@|\s#|$)');
     int lastEnd = 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultTextColor = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
 
     for (final match in regex.allMatches(content)) {
       if (match.start > lastEnd) {
         spans.add(
           TextSpan(
             text: content.substring(lastEnd, match.start),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               height: 1.5,
-              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+              color: defaultTextColor,
             ),
           ),
         );
@@ -774,11 +777,11 @@ class _FeedScreenState extends State<FeedScreen> {
         spans.add(
           TextSpan(
             text: matchedText,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               height: 1.5,
-              color: _blue,
-              fontWeight: FontWeight.w600,
+              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+              fontWeight: FontWeight.w800,
             ),
             recognizer: TapGestureRecognizer()
               ..onTap = () => _filterByTag(matchedText),
@@ -788,11 +791,11 @@ class _FeedScreenState extends State<FeedScreen> {
         spans.add(
           TextSpan(
             text: matchedText,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               height: 1.5,
-              color: _gold,
-              fontWeight: FontWeight.w700,
+              color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9),
+              fontWeight: FontWeight.w800,
             ),
           ),
         );
@@ -803,10 +806,11 @@ class _FeedScreenState extends State<FeedScreen> {
       spans.add(
         TextSpan(
           text: content.substring(lastEnd),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 15,
             height: 1.5,
-            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+            color: defaultTextColor,
           ),
         ),
       );
@@ -814,10 +818,11 @@ class _FeedScreenState extends State<FeedScreen> {
     if (spans.isEmpty)
       return Text(
         content,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
           height: 1.5,
-          color: Colors.black87,
+          fontWeight: FontWeight.w600,
+          color: defaultTextColor,
         ),
       );
     return RichText(text: TextSpan(children: spans));
@@ -825,27 +830,29 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.groups, color: _gold, size: 28),
-            SizedBox(width: 10),
+            const Icon(Icons.groups, color: _gold, size: 28),
+            const SizedBox(width: 10),
             Text(
               'Community',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 22,
                 letterSpacing: -0.5,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
             ),
           ],
         ),
         elevation: 0,
         scrolledUnderElevation: 1,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
         centerTitle: false,
         actions: [
           IconButton(
@@ -914,7 +921,7 @@ class _FeedScreenState extends State<FeedScreen> {
           if (_trendingTags.isNotEmpty)
             SliverToBoxAdapter(
               child: Container(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 padding: const EdgeInsets.only(left: 16, top: 6, bottom: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1002,10 +1009,11 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Widget _buildComposer() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return CompositedTransformTarget(
       link: _layerLink,
       child: Container(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         margin: const EdgeInsets.only(top: 1),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
         child: Column(
@@ -1055,11 +1063,14 @@ class _FeedScreenState extends State<FeedScreen> {
                   child: TextField(
                     controller: _postController,
                     maxLines: null,
-                    style: const TextStyle(fontSize: 15),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Share updates, brochures, links...',
                       hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
+                        color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
                         fontSize: 15,
                       ),
                       border: InputBorder.none,
@@ -1400,17 +1411,21 @@ class _FeedScreenState extends State<FeedScreen> {
     final isLiked = post['is_liked'] == true;
     final likeCount = post['like_count'] ?? 0;
     final commentCount = post['comment_count'] ?? 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black12, width: 1),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -1456,9 +1471,10 @@ class _FeedScreenState extends State<FeedScreen> {
                           Flexible(
                             child: Text(
                               name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15.5,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1475,30 +1491,33 @@ class _FeedScreenState extends State<FeedScreen> {
                           Text(
                             timeAgo,
                             style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 12,
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5,
                             ),
                           ),
                           if (locationName != null) ...[
                             Text(
                               ' • ',
                               style: TextStyle(
-                                color: Colors.grey.shade400,
+                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF64748B),
+                                fontWeight: FontWeight.w800,
                                 fontSize: 12,
                               ),
                             ),
-                            Icon(
+                            const Icon(
                               Icons.location_on,
-                              color: Colors.red.shade300,
-                              size: 12,
+                              color: Color(0xFFE11D48),
+                              size: 13,
                             ),
                             const SizedBox(width: 2),
                             Flexible(
                               child: Text(
                                 locationName,
                                 style: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 12,
+                                  color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF0F172A),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12.5,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1511,7 +1530,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 ),
                 if (canEditDelete)
                   PopupMenuButton<String>(
-                    icon: Icon(Icons.more_horiz, color: Colors.grey.shade500),
+                    icon: Icon(Icons.more_horiz, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1551,7 +1570,11 @@ class _FeedScreenState extends State<FeedScreen> {
                 padding: const EdgeInsets.only(top: 6, left: 58),
                 child: Text(
                   fullDate,
-                  style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11.5,
+                  ),
                 ),
               ),
 
@@ -1578,7 +1601,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     fit: BoxFit.cover,
                     errorBuilder: (c, e, s) => Container(
                       height: 200,
-                      color: Colors.grey.shade100,
+                      color: isDark ? const Color(0xFF0F172A) : Colors.grey.shade100,
                       child: const Center(
                         child: Icon(
                           Icons.broken_image,
@@ -1613,9 +1636,9 @@ class _FeedScreenState extends State<FeedScreen> {
                   margin: const EdgeInsets.only(top: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
+                    color: isDark ? const Color(0xFF0F172A) : Colors.orange.shade50,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orange.shade200),
+                    border: Border.all(color: isDark ? const Color(0xFF9A3412) : Colors.orange.shade200),
                   ),
                   child: Row(
                     children: [
@@ -1625,21 +1648,23 @@ class _FeedScreenState extends State<FeedScreen> {
                         size: 28,
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Document / Brochure',
                               style: TextStyle(
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 fontSize: 14,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
                               ),
                             ),
                             Text(
                               'Tap to view or download',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                fontWeight: FontWeight.w700,
                                 fontSize: 12,
                               ),
                             ),
@@ -1648,7 +1673,7 @@ class _FeedScreenState extends State<FeedScreen> {
                       ),
                       Icon(
                         Icons.download_rounded,
-                        color: Colors.orange.shade700,
+                        color: isDark ? const Color(0xFFFB923C) : Colors.orange.shade700,
                       ),
                     ],
                   ),
@@ -1667,9 +1692,9 @@ class _FeedScreenState extends State<FeedScreen> {
                   margin: const EdgeInsets.only(top: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: _blue.withAlpha(12),
+                    color: isDark ? const Color(0xFF0F172A) : _blue.withAlpha(12),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _blue.withAlpha(40)),
+                    border: Border.all(color: isDark ? const Color(0xFF0369A1) : _blue.withAlpha(40)),
                   ),
                   child: Row(
                     children: [
@@ -1680,7 +1705,7 @@ class _FeedScreenState extends State<FeedScreen> {
                           linkUrl,
                           style: const TextStyle(
                             color: _blue,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w700,
                             fontSize: 13,
                             decoration: TextDecoration.underline,
                           ),
@@ -1707,7 +1732,8 @@ class _FeedScreenState extends State<FeedScreen> {
                       Text(
                         '$likeCount',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          fontWeight: FontWeight.w800,
                           fontSize: 13,
                         ),
                       ),
@@ -1717,14 +1743,15 @@ class _FeedScreenState extends State<FeedScreen> {
                     if (commentCount > 0) ...[
                       Icon(
                         Icons.chat_bubble,
-                        color: Colors.grey.shade400,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                         size: 14,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '$commentCount',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          fontWeight: FontWeight.w800,
                           fontSize: 13,
                         ),
                       ),
@@ -1733,7 +1760,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 ),
               ),
 
-            Divider(height: 16, color: Colors.grey.shade200),
+            Divider(height: 16, color: isDark ? const Color(0xFF334155) : Colors.grey.shade200),
 
             // Actions
             Row(
@@ -1741,21 +1768,21 @@ class _FeedScreenState extends State<FeedScreen> {
                 _actionButton(
                   isLiked ? Icons.favorite : Icons.favorite_border,
                   'Like',
-                  isLiked ? Colors.red : Colors.grey.shade600,
+                  isLiked ? Colors.red : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF1E293B)),
                   () => _toggleLike(post['id'], isLiked),
                 ),
-                Container(width: 1, height: 20, color: Colors.grey.shade200),
+                Container(width: 1, height: 20, color: isDark ? const Color(0xFF334155) : Colors.grey.shade200),
                 _actionButton(
                   Icons.chat_bubble_outline,
                   'Comment',
-                  Colors.grey.shade600,
+                  isDark ? const Color(0xFFCBD5E1) : const Color(0xFF1E293B),
                   () => _showComments(post['id']),
                 ),
-                Container(width: 1, height: 20, color: Colors.grey.shade200),
+                Container(width: 1, height: 20, color: isDark ? const Color(0xFF334155) : Colors.grey.shade200),
                 _actionButton(
                   Icons.share_outlined,
                   'Share',
-                  Colors.grey.shade600,
+                  isDark ? const Color(0xFFCBD5E1) : const Color(0xFF1E293B),
                   () => _sharePost(post),
                 ),
               ],

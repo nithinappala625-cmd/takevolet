@@ -46,8 +46,9 @@ class SmartImage extends StatelessWidget {
 
   Widget _buildErrorWidget() {
     return Container(
-      color: const Color(0xFFF5EFD0),
-      child: const Icon(Icons.image_not_supported_rounded, size: 56, color: Color(0xFFD4AF37)),
+      color: const Color(0xFFF8FAFC),
+      child: const Icon(Icons.image_rounded, size: 48, color: Color(0xFF94A3B8)),
     );
   }
 }
+

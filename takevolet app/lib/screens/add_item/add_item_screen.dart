@@ -18,7 +18,7 @@ class AddItemScreen extends StatefulWidget {
 }
 
 class _AddItemScreenState extends State<AddItemScreen> {
-  static const _gold = Color(0xFFD4AF37);
+  static const _gold = Color(0xFF7B3AEC);
   final _formKey = GlobalKey<FormState>();
 
   final _titleController = TextEditingController();
@@ -66,12 +66,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
       if (_categories.contains(data['category'])) {
         _category = data['category'];
       }
-      if (data['city'] == 'Bangalore') {
-        _selectedCity = 'Bangalore';
-        if (BANGALORE_AREAS.contains(data['location'])) {
+      if (AVAILABLE_CITIES.contains(data['city'])) {
+        _selectedCity = data['city'];
+        List<String> cityAreas = getAreasForCity(_selectedCity);
+        if (cityAreas.contains(data['location'])) {
           _location = data['location'];
         } else {
-          _location = BANGALORE_AREAS.first;
+          _location = cityAreas.first;
         }
       } else {
         _selectedCity = 'Hyderabad';
@@ -202,7 +203,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final areas = _selectedCity == 'Bangalore' ? BANGALORE_AREAS : HYDERABAD_AREAS;
+    final areas = getAreasForCity(_selectedCity);
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.initialData != null ? 'Edit Item' : 'Sell an Item', style: const TextStyle(fontWeight: FontWeight.bold))),
@@ -324,10 +325,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         value: _selectedCity,
                         decoration: _inputDeco('City', Icons.location_city),
                         isExpanded: true,
-                        items: ['Hyderabad', 'Bangalore'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        items: AVAILABLE_CITIES.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                         onChanged: (v) => setState(() { 
                           _selectedCity = v!; 
-                          _location = _selectedCity == 'Bangalore' ? BANGALORE_AREAS.first : HYDERABAD_AREAS.first;
+                          _location = getAreasForCity(_selectedCity).first;
                         }),
                       ),
                       const SizedBox(height: 14),

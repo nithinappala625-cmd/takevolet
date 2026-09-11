@@ -15,7 +15,7 @@ class FlatsFeedScreen extends StatefulWidget {
 }
 
 class _FlatsFeedScreenState extends State<FlatsFeedScreen> {
-  static const _gold = Color(0xFFD4AF37);
+  static const _gold = Color(0xFF7B3AEC);
 
   String _searchQuery = '';
 
@@ -237,9 +237,12 @@ class _FlatsFeedScreenState extends State<FlatsFeedScreen> {
                   Positioned(
                     top: 12, left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(8)),
-                      child: Text(prop['purpose'] ?? prop['listing_type'] ?? 'Sell', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
+                      child: Text(
+                        (prop['purpose'] ?? prop['listing_type'] ?? 'Sell').toString().toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
+                      ),
                     ),
                   )
                 ],

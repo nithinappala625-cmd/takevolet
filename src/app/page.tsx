@@ -319,7 +319,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto space-y-8">
             <h2 className="text-2xl font-bold">Rooms for Rent in Hyderabad — Zero Brokerage with Takevolet</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Looking for rooms for rent in Hyderabad? Takevolet is the leading zero-brokerage platform connecting room seekers directly with room owners and current tenants. Whether you need a bachelor room, family room, 1BHK, 2BHK, 3BHK flat, PG accommodation, or shared room, Takevolet covers 90+ areas across Hyderabad and Bangalore.
+              Looking for rooms for rent in Hyderabad? Takevolet is the leading zero-brokerage platform connecting room seekers directly with room owners and current tenants. Whether you need a bachelor room, family room, 1BHK, 2BHK, 3BHK flat, PG accommodation, or shared room, Takevolet covers 90+ areas across Hyderabad, Bangalore, Pune, Mumbai, Delhi, and Chennai.
             </p>
             <div className="grid md:grid-cols-2 gap-8">
               <div>

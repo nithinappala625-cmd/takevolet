@@ -78,7 +78,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
       height: 200,
       color: Colors.black12,
       child: const Center(
-        child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
+        child: CircularProgressIndicator(color: Color(0xFF7B3AEC)),
       ),
     );
   }

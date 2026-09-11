@@ -16,7 +16,7 @@ class AddLegalPartnerScreen extends StatefulWidget {
 }
 
 class _AddLegalPartnerScreenState extends State<AddLegalPartnerScreen> {
-  static const Color _gold = Color(0xFFD4AF37);
+  static const Color _gold = Color(0xFF7B3AEC);
   int _currentStep = 0;
   bool _isLoading = false;
 

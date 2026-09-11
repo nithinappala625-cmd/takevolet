@@ -1811,6 +1811,10 @@ export default function AdminPage() {
                           <select value={editItem.city || "Hyderabad"} onChange={e => setEditItem({ ...editItem, city: e.target.value })} className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none">
                             <option value="Hyderabad">Hyderabad</option>
                             <option value="Bangalore">Bangalore</option>
+                            <option value="Pune">Pune</option>
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Chennai">Chennai</option>
                           </select>
                         </div>
 

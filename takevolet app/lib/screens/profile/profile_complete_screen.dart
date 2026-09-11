@@ -17,7 +17,7 @@ class ProfileCompleteScreen extends StatefulWidget {
 
 class _ProfileCompleteScreenState extends State<ProfileCompleteScreen> {
   // ── Constants ──────────────────────────────────────────────────────────
-  static const _gold = Color(0xFFD4AF37);
+  static const _gold = Color(0xFF7B3AEC);
   static const _goldLight = Color(0xFFF5E6B8);
   static const _goldDark = Color(0xFFB8960C);
   static const _surfaceDark = Color(0xFF1A1A2E);

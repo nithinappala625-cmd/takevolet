@@ -1,14 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
 
-class TopProjectDetailScreen extends StatelessWidget {
-  const TopProjectDetailScreen({super.key, required this.project});
+class TopProjectDetailScreen extends StatefulWidget {
+  final String? id;
+  final Map<String, dynamic>? project;
 
-  final Map<String, dynamic> project;
+  const TopProjectDetailScreen({super.key, this.id, this.project});
 
-  static const _gold = Color(0xFFD4AF37);
+  @override
+  State<TopProjectDetailScreen> createState() => _TopProjectDetailScreenState();
+}
+
+class _TopProjectDetailScreenState extends State<TopProjectDetailScreen> {
+  static const _gold = Color(0xFF7B3AEC);
+  Map<String, dynamic>? _project;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.project != null && widget.project!.isNotEmpty) {
+      _project = widget.project;
+    } else if (widget.id != null) {
+      _fetchProjectById();
+    }
+  }
+
+  Future<void> _fetchProjectById() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await Supabase.instance.client
+          .from('top_projects')
+          .select()
+          .eq('id', widget.id!)
+          .maybeSingle();
+      if (mounted) {
+        setState(() {
+          _project = res;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   String _val(dynamic v) =>
       (v == null || v.toString().isEmpty) ? '' : v.toString();
@@ -36,6 +74,14 @@ class TopProjectDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: Center(child: CircularProgressIndicator(color: _gold)),
+      );
+    }
+
+    final project = _project ?? {};
     final name = _val(project['project_name']);
     final coverImage = _val(project['cover_image']);
     final description = _val(project['description']);
@@ -415,13 +461,13 @@ class TopProjectDetailScreen extends StatelessWidget {
                       final uri = Uri.parse('tel:$phone');
                       launchUrl(uri);
                     },
-                    icon: const Icon(Icons.call, color: Colors.black),
+                    icon: const Icon(Icons.call, color: Colors.white),
                     label: Text(
                       'Contact Builder',
                       style: GoogleFonts.outfit(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -587,7 +633,7 @@ class TopProjectDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: _gold.withOpacity(0.15),
+                color: const Color(0xFF7B3AEC).withOpacity(0.25),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
@@ -597,8 +643,8 @@ class TopProjectDetailScreen extends StatelessWidget {
                 unitType,
                 style: GoogleFonts.outfit(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: _gold,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -616,7 +662,7 @@ class TopProjectDetailScreen extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(row.icon, size: 18, color: _gold),
+                            Icon(row.icon, size: 18, color: const Color(0xFFA78BFA)),
                             const SizedBox(width: 10),
                             SizedBox(
                               width: 110,

@@ -261,7 +261,7 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
                         onSelected: (selected) {
                           if (selected) setState(() => _roomType = type);
                         },
-                        selectedColor: const Color(0xFFD4AF37).withOpacity(0.2),
+                        selectedColor: const Color(0xFF7B3AEC).withOpacity(0.2),
                         labelStyle: TextStyle(
                           color: isSelected ? const Color(0xFFB8860B) : Colors.black87,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -284,7 +284,7 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
                         onSelected: (selected) {
                           if (selected) setState(() => _furnishedType = type);
                         },
-                        selectedColor: const Color(0xFFD4AF37).withOpacity(0.2),
+                        selectedColor: const Color(0xFF7B3AEC).withOpacity(0.2),
                         labelStyle: TextStyle(
                           color: isSelected ? const Color(0xFFB8860B) : Colors.black87,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -308,7 +308,7 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
                     child: ElevatedButton(
                       onPressed: _submitPost,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD4AF37),
+                        backgroundColor: const Color(0xFF7B3AEC),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 2,
@@ -349,7 +349,7 @@ class _AddRequirementScreenState extends State<AddRequirementScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 2),
+          borderSide: const BorderSide(color: Color(0xFF7B3AEC), width: 2),
         ),
         filled: true,
         fillColor: Colors.grey.shade50,

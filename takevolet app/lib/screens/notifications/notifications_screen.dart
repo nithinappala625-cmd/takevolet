@@ -23,17 +23,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _fetchNotifications() async {
     try {
       final user = _supabase.auth.currentUser;
-      if (user == null) {
-        setState(() => _isLoading = false);
-        return;
+      var query = _supabase.from('notifications').select();
+      if (user != null) {
+        query = query.or('profile_id.eq.${user.id},profile_id.is.null');
+      } else {
+        query = query.isFilter('profile_id', null);
       }
 
-      final response = await _supabase
-          .from('notifications')
-          .select()
-          .eq('profile_id', user.id)
-          .order('created_at', ascending: false)
-          .limit(100);
+      final response = await query.order('created_at', ascending: false).limit(100);
 
       if (mounted) {
         setState(() {
@@ -43,11 +40,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       }
 
       // Mark all as read
-      await _supabase
-          .from('notifications')
-          .update({'is_read': true})
-          .eq('profile_id', user.id)
-          .eq('is_read', false);
+      if (user != null) {
+        await _supabase
+            .from('notifications')
+            .update({'is_read': true})
+            .eq('profile_id', user.id)
+            .eq('is_read', false);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -94,7 +93,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'cook': case 'chef': case 'food_listing': return Colors.green;
       case 'flat': case 'sale': case 'property_listing': return Colors.purple;
       case 'payment': return Colors.teal;
-      case 'admin_broadcast': return const Color(0xFFD4AF37);
+      case 'admin_broadcast': return const Color(0xFF7B3AEC);
       case 'top_project': return Colors.amber;
       case 'legal_partner': return Colors.indigo;
       case 'contact_unlock': return Colors.cyan;

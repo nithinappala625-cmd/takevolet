@@ -97,7 +97,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [const Color(0xFFFFFDF5), const Color(0xFFFFF8DC), Colors.white],
+                colors: [const Color(0xFFFFFFFF), const Color(0xFFFFF8DC), Colors.white],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

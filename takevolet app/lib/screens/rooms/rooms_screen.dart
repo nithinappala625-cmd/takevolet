@@ -5,7 +5,9 @@ import 'package:shimmer/shimmer.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/smart_image.dart';
+import '../../data/locations.dart';
 
 class RoomsScreen extends StatefulWidget {
   final String? city;
@@ -27,7 +29,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
   int _maxMembersFilter = 0;
   bool _filtersApplied = false;
 
-  final List<String> _cities = ['Hyderabad', 'Bangalore'];
+  final List<String> _cities = AVAILABLE_CITIES;
   final List<String> _genderOptions = ['Any', 'Male', 'Female', 'Family'];
   final List<String> _furnishingOptions = ['Any', 'Furnished', 'Semi-Furnished', 'Unfurnished'];
 
@@ -40,7 +42,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchRooms() async {
-    var query = supabase.from('rooms').select().eq('is_available', true).eq('city', _selectedCity);
+    var query = supabase.from('rooms').select().eq('is_available', true).neq('tenant_type', 'pg').neq('tenant_type', 'day_wise').eq('city', _selectedCity);
 
     if (_searchQuery.isNotEmpty) {
       query = query.ilike('location', '%$_searchQuery%');
@@ -99,7 +101,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                           tempFurnishing = 'Any'; tempBike = false; tempCar = false; tempMembers = 0;
                         });
                       },
-                      child: const Text('Reset All', style: TextStyle(color: Color(0xFFD4AF37))),
+                      child: const Text('Reset All', style: TextStyle(color: Color(0xFF7B3AEC))),
                     ),
                   ],
                 ),
@@ -112,13 +114,13 @@ class _RoomsScreenState extends State<RoomsScreen> {
                     const Text('Monthly Budget', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     const SizedBox(height: 4),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('₹${tempMin.toInt()}', style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.w600)),
-                      Text('₹${tempMax.toInt()}', style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.w600)),
+                      Text('₹${tempMin.toInt()}', style: const TextStyle(color: Color(0xFF7B3AEC), fontWeight: FontWeight.w600)),
+                      Text('₹${tempMax.toInt()}', style: const TextStyle(color: Color(0xFF7B3AEC), fontWeight: FontWeight.w600)),
                     ]),
                     RangeSlider(
                       values: RangeValues(tempMin, tempMax),
                       min: 0, max: 50000, divisions: 50,
-                      activeColor: const Color(0xFFD4AF37),
+                      activeColor: const Color(0xFF7B3AEC),
                       labels: RangeLabels('₹${tempMin.toInt()}', '₹${tempMax.toInt()}'),
                       onChanged: (v) => setModalState(() { tempMin = v.start; tempMax = v.end; }),
                     ),
@@ -132,10 +134,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
                       children: _genderOptions.map((g) => ChoiceChip(
                         label: Text(g),
                         selected: tempGender == g,
-                        selectedColor: const Color(0xFFD4AF37).withOpacity(0.2),
-                        labelStyle: TextStyle(color: tempGender == g ? const Color(0xFFD4AF37) : Colors.black87, fontWeight: FontWeight.w600),
+                        selectedColor: const Color(0xFF7B3AEC).withOpacity(0.2),
+                        labelStyle: TextStyle(color: tempGender == g ? const Color(0xFF7B3AEC) : Colors.black87, fontWeight: FontWeight.w600),
                         onSelected: (_) => setModalState(() => tempGender = g),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: tempGender == g ? const Color(0xFFD4AF37) : Colors.grey[300]!)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: tempGender == g ? const Color(0xFF7B3AEC) : Colors.grey[300]!)),
                       )).toList(),
                     ),
                     const SizedBox(height: 16),
@@ -148,10 +150,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
                       children: _furnishingOptions.map((f) => ChoiceChip(
                         label: Text(f),
                         selected: tempFurnishing == f,
-                        selectedColor: const Color(0xFFD4AF37).withOpacity(0.2),
-                        labelStyle: TextStyle(color: tempFurnishing == f ? const Color(0xFFD4AF37) : Colors.black87, fontWeight: FontWeight.w600),
+                        selectedColor: const Color(0xFF7B3AEC).withOpacity(0.2),
+                        labelStyle: TextStyle(color: tempFurnishing == f ? const Color(0xFF7B3AEC) : Colors.black87, fontWeight: FontWeight.w600),
                         onSelected: (_) => setModalState(() => tempFurnishing = f),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: tempFurnishing == f ? const Color(0xFFD4AF37) : Colors.grey[300]!)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: tempFurnishing == f ? const Color(0xFF7B3AEC) : Colors.grey[300]!)),
                       )).toList(),
                     ),
                     const SizedBox(height: 16),
@@ -164,10 +166,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
                       children: [0, 1, 2, 3, 4, 5].map((m) => ChoiceChip(
                         label: Text(m == 0 ? 'Any' : '$m'),
                         selected: tempMembers == m,
-                        selectedColor: const Color(0xFFD4AF37).withOpacity(0.2),
-                        labelStyle: TextStyle(color: tempMembers == m ? const Color(0xFFD4AF37) : Colors.black87, fontWeight: FontWeight.w600),
+                        selectedColor: const Color(0xFF7B3AEC).withOpacity(0.2),
+                        labelStyle: TextStyle(color: tempMembers == m ? const Color(0xFF7B3AEC) : Colors.black87, fontWeight: FontWeight.w600),
                         onSelected: (_) => setModalState(() => tempMembers = m),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: tempMembers == m ? const Color(0xFFD4AF37) : Colors.grey[300]!)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: tempMembers == m ? const Color(0xFF7B3AEC) : Colors.grey[300]!)),
                       )).toList(),
                     ),
                     const SizedBox(height: 16),
@@ -182,14 +184,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: tempBike ? const Color(0xFFD4AF37).withOpacity(0.1) : Colors.grey[50],
+                            color: tempBike ? const Color(0xFF7B3AEC).withOpacity(0.1) : Colors.grey[50],
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: tempBike ? const Color(0xFFD4AF37) : Colors.grey[300]!),
+                            border: Border.all(color: tempBike ? const Color(0xFF7B3AEC) : Colors.grey[300]!),
                           ),
                           child: Column(children: [
-                            Icon(Icons.two_wheeler, color: tempBike ? const Color(0xFFD4AF37) : Colors.grey),
+                            Icon(Icons.two_wheeler, color: tempBike ? const Color(0xFF7B3AEC) : Colors.grey),
                             const SizedBox(height: 4),
-                            Text('Bike Parking', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tempBike ? const Color(0xFFD4AF37) : Colors.grey[600])),
+                            Text('Bike Parking', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tempBike ? const Color(0xFF7B3AEC) : Colors.grey[600])),
                           ]),
                         ),
                       )),
@@ -200,14 +202,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: tempCar ? const Color(0xFFD4AF37).withOpacity(0.1) : Colors.grey[50],
+                            color: tempCar ? const Color(0xFF7B3AEC).withOpacity(0.1) : Colors.grey[50],
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: tempCar ? const Color(0xFFD4AF37) : Colors.grey[300]!),
+                            border: Border.all(color: tempCar ? const Color(0xFF7B3AEC) : Colors.grey[300]!),
                           ),
                           child: Column(children: [
-                            Icon(Icons.directions_car, color: tempCar ? const Color(0xFFD4AF37) : Colors.grey),
+                            Icon(Icons.directions_car, color: tempCar ? const Color(0xFF7B3AEC) : Colors.grey),
                             const SizedBox(height: 4),
-                            Text('Car Parking', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tempCar ? const Color(0xFFD4AF37) : Colors.grey[600])),
+                            Text('Car Parking', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tempCar ? const Color(0xFF7B3AEC) : Colors.grey[600])),
                           ]),
                         ),
                       )),
@@ -233,7 +235,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                       Navigator.pop(ctx);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
+                      backgroundColor: const Color(0xFF7B3AEC),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -265,20 +267,76 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  Widget _buildTag(BuildContext context, IconData icon, String text) {
+  Widget _buildTag(BuildContext context, IconData defaultIcon, String text) {
+    final lower = text.toLowerCase();
+    Color bg;
+    Color border;
+    Color textColor;
+    Color iconColor;
+    IconData icon = defaultIcon;
+
+    if (lower.contains('semi')) {
+      // Semi-Furnished: warm amber/orange badge
+      bg = const Color(0xFFFFF7ED);
+      border = const Color(0xFFFED7AA);
+      textColor = const Color(0xFFC2410C);
+      iconColor = const Color(0xFFEA580C);
+      icon = Icons.chair_rounded;
+    } else if (lower.contains('fully') || lower == 'furnished') {
+      // Fully Furnished: rich royal blue badge
+      bg = const Color(0xFFEFF6FF);
+      border = const Color(0xFFBFDBFE);
+      textColor = const Color(0xFF1D4ED8);
+      iconColor = const Color(0xFF2563EB);
+      icon = Icons.weekend_rounded;
+    } else if (lower.contains('unfurnished')) {
+      // Unfurnished: clean modern slate
+      bg = const Color(0xFFF8FAFC);
+      border = const Color(0xFFCBD5E1);
+      textColor = const Color(0xFF475569);
+      iconColor = const Color(0xFF64748B);
+      icon = Icons.chair_outlined;
+    } else if (lower.contains('parking')) {
+      // Parking: vibrant emerald green badge
+      bg = const Color(0xFFF0FDF4);
+      border = const Color(0xFFBBF7D0);
+      textColor = const Color(0xFF15803D);
+      iconColor = const Color(0xFF16A34A);
+    } else if (lower.contains('gender') || lower.contains('male') || lower.contains('female') || lower.contains('any')) {
+      // Gender preference: rich purple/violet badge
+      bg = const Color(0xFFFAF5FF);
+      border = const Color(0xFFE9D5FF);
+      textColor = const Color(0xFF7E22CE);
+      iconColor = const Color(0xFF9333EA);
+    } else {
+      // Default / other amenities: luxury gold badge
+      bg = const Color(0xFFF5F3FF);
+      border = const Color(0xFFDDD6FE);
+      textColor = const Color(0xFF6D28D9);
+      iconColor = const Color(0xFF7B3AEC);
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey[200]!),
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: border, width: 1.1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: const Color(0xFFD4AF37)),
-          const SizedBox(width: 4),
-          Text(text, style: TextStyle(color: Colors.grey[700], fontSize: 12, fontWeight: FontWeight.w500)),
+          Icon(icon, size: 13.5, color: iconColor),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: GoogleFonts.outfit(
+              color: textColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
         ],
       ),
     );
@@ -303,35 +361,37 @@ class _RoomsScreenState extends State<RoomsScreen> {
       body: Column(
         children: [
           // City Selector
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: _cities.map((city) {
+          SizedBox(
+            height: 50,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: _cities.length,
+              itemBuilder: (context, index) {
+                final city = _cities[index];
                 final selected = _selectedCity == city;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedCity = city),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: selected ? const Color(0xFFD4AF37) : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: selected ? const Color(0xFFD4AF37) : Colors.grey[300]!),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.location_city, size: 16, color: selected ? Colors.white : Colors.grey[600]),
-                          const SizedBox(width: 6),
-                          Text(city, style: TextStyle(fontWeight: FontWeight.bold, color: selected ? Colors.white : Colors.grey[700], fontSize: 14)),
-                        ],
-                      ),
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedCity = city),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: selected ? const Color(0xFF7B3AEC) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: selected ? const Color(0xFF7B3AEC) : Colors.grey[400]!, width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.location_city, size: 16, color: selected ? Colors.white : Colors.black54),
+                        const SizedBox(width: 6),
+                        Text(city, style: TextStyle(fontWeight: FontWeight.bold, color: selected ? Colors.white : Colors.black87, fontSize: 14)),
+                      ],
                     ),
                   ),
                 );
-              }).toList(),
+              },
             ),
           ),
 
@@ -355,7 +415,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                         ),
-                        child: const Center(child: Text('Rooms', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)))),
+                        child: const Center(child: Text('Rooms', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF7B3AEC), fontSize: 13))),
                       ),
                     ),
                   ),
@@ -368,11 +428,24 @@ class _RoomsScreenState extends State<RoomsScreen> {
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Center(child: Text('Flats / Flatmates', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600]))),
+                        child: Center(child: Text('Flatmates', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 13))),
                       ),
                     ),
                   ),
-                ],
+                  Expanded(
+                      child: GestureDetector(
+                        onTap: () => context.go('/day-wise', extra: _selectedCity),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(child: Text('Day Wise', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 13))),
+                        ),
+                      ),
+                    ),
+                  ],
               ),
             ),
           ),
@@ -402,9 +475,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _filtersApplied ? const Color(0xFFD4AF37) : Colors.grey[100],
+                        color: _filtersApplied ? const Color(0xFF7B3AEC) : Colors.grey[100],
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _filtersApplied ? const Color(0xFFD4AF37) : Colors.grey[300]!),
+                        border: Border.all(color: _filtersApplied ? const Color(0xFF7B3AEC) : Colors.grey[300]!),
                       ),
                       child: Stack(children: [
                         Icon(Icons.tune, color: _filtersApplied ? Colors.white : Colors.grey[700]),
@@ -419,9 +492,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 child: Row(children: [
-                  const Icon(Icons.filter_list, size: 14, color: Color(0xFFD4AF37)),
+                  const Icon(Icons.filter_list, size: 14, color: Color(0xFF7B3AEC)),
                   const SizedBox(width: 4),
-                  const Text('Filters active', style: TextStyle(fontSize: 12, color: Color(0xFFD4AF37), fontWeight: FontWeight.w600)),
+                  const Text('Filters active', style: TextStyle(fontSize: 12, color: Color(0xFF7B3AEC), fontWeight: FontWeight.w600)),
                   const Spacer(),
                   GestureDetector(
                     onTap: () => setState(() {
@@ -462,7 +535,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                           if (ad['image_url'] != null && ad['image_url'].toString().isNotEmpty)
                             SmartImage(imageUrl: ad['image_url'], fit: BoxFit.cover)
                           else
-                            Container(color: const Color(0xFFD4AF37).withOpacity(0.1)),
+                            Container(color: const Color(0xFF7B3AEC).withOpacity(0.1)),
                           Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
@@ -511,13 +584,29 @@ class _RoomsScreenState extends State<RoomsScreen> {
                         final room = data[index];
                         final thumbnailUrl = ImageUtils.getThumbnail(room);
 
+                        final locParts = [room['colony'], room['locality'], room['location'], room['city']]
+                            .where((e) => e != null && e.toString().trim().isNotEmpty)
+                            .map((e) => e.toString().trim().replaceAll(RegExp(r'^,\s*'), ''))
+                            .where((e) => e.isNotEmpty)
+                            .toList();
+                        final locStr = locParts.isNotEmpty ? locParts.take(2).join(', ') : 'Prime Location';
+
+                        final images = ImageUtils.parseImages(room['images']);
+                        final photoCount = images.length;
+
                         return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
+                          margin: const EdgeInsets.only(bottom: 18),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.black12, width: 1),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F172A).withOpacity(0.06),
+                                blurRadius: 14,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -525,44 +614,175 @@ class _RoomsScreenState extends State<RoomsScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SizedBox(
-                                  height: 200,
-                                  width: double.infinity,
-                                  child: thumbnailUrl != null
-                                      ? CachedNetworkImage(imageUrl: thumbnailUrl, fit: BoxFit.cover,
-                                          placeholder: (c, u) => Container(color: Colors.grey[200]),
-                                          errorWidget: (c, u, e) => Container(color: const Color(0xFFF5EFD0), child: const Icon(Icons.home_work_rounded, size: 56, color: Color(0xFFD4AF37))))
-                                      : Container(color: const Color(0xFFF5EFD0), child: const Icon(Icons.home_work_rounded, size: 56, color: Color(0xFFD4AF37))),
+                                Stack(
+                                  children: [
+                                    SizedBox(
+                                      height: 205,
+                                      width: double.infinity,
+                                      child: thumbnailUrl != null
+                                          ? CachedNetworkImage(
+                                              imageUrl: thumbnailUrl,
+                                              fit: BoxFit.cover,
+                                              placeholder: (c, u) => Container(color: const Color(0xFFF1F5F9)),
+                                              errorWidget: (c, u, e) => Container(
+                                                color: const Color(0xFFF1F5F9),
+                                                child: const Icon(Icons.home_work_rounded, size: 56, color: Color(0xFF94A3B8)),
+                                              ),
+                                            )
+                                          : Container(
+                                              color: const Color(0xFFF1F5F9),
+                                              child: const Icon(Icons.home_work_rounded, size: 56, color: Color(0xFF94A3B8)),
+                                            ),
+                                    ),
+                                    Positioned(
+                                      top: 12,
+                                      left: 12,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF0F172A).withOpacity(0.85),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.meeting_room_rounded, size: 12, color: Color(0xFF7B3AEC)),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              'ROOM RENTAL',
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.white,
+                                                letterSpacing: 0.6,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    if (photoCount > 1)
+                                      Positioned(
+                                        top: 12,
+                                        right: 12,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black54,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.photo_library, size: 12, color: Colors.white),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '$photoCount',
+                                                style: GoogleFonts.outfit(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.all(14),
+                                  padding: const EdgeInsets.all(16),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      Text(
+                                        room['title'] ?? 'Premium Room',
+                                        style: GoogleFonts.outfit(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 17,
+                                          color: const Color(0xFF0F172A),
+                                          height: 1.25,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 6),
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Expanded(child: Text(room['title'] ?? 'Premium Room', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 2, overflow: TextOverflow.ellipsis)),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                            decoration: BoxDecoration(color: const Color(0xFFD4AF37), borderRadius: BorderRadius.circular(20)),
-                                            child: Text('₹${room['rent']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                          const Icon(Icons.location_on, color: Color(0xFFE11D48), size: 15),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              locStr,
+                                              style: GoogleFonts.outfit(
+                                                color: const Color(0xFF475569),
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 6),
-                                      Row(children: [
-                                        const Icon(Icons.location_on, color: Colors.grey, size: 14),
-                                        const SizedBox(width: 4),
-                                        Expanded(child: Text('${room['colony'] ?? ''}, ${room['location'] ?? ''}', style: const TextStyle(color: Colors.grey, fontSize: 13), overflow: TextOverflow.ellipsis)),
-                                      ]),
-                                      const SizedBox(height: 10),
-                                      Wrap(spacing: 8, runSpacing: 6, children: [
-                                        _buildTag(context, Icons.wc, room['gender_preference'] ?? 'Any Gender'),
-                                        _buildTag(context, Icons.chair, room['furnishing'] ?? 'Furnished'),
-                                        if (room['bike_parking'] == true) _buildTag(context, Icons.two_wheeler, 'Bike Parking'),
-                                        if (room['car_parking'] == true) _buildTag(context, Icons.directions_car, 'Car Parking'),
-                                      ]),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF5F3FF),
+                                              borderRadius: BorderRadius.circular(10),
+                                              border: Border.all(color: const Color(0xFFDDD6FE), width: 1.2),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  '₹${room['rent']}',
+                                                  style: GoogleFonts.outfit(
+                                                    color: const Color(0xFF6D28D9),
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: 19,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  ' / month',
+                                                  style: GoogleFonts.outfit(
+                                                    color: const Color(0xFF92400E),
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF0FDF4),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFFBBF7D0)),
+                                            ),
+                                            child: Text(
+                                              '0 Brokerage',
+                                              style: GoogleFonts.outfit(
+                                                color: const Color(0xFF16A34A),
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: [
+                                          _buildTag(context, Icons.wc, room['gender_preference'] ?? 'Any Gender'),
+                                          _buildTag(context, Icons.chair, room['furnishing'] ?? 'Furnished'),
+                                          if (room['bike_parking'] == true) _buildTag(context, Icons.two_wheeler, 'Bike Parking'),
+                                          if (room['car_parking'] == true) _buildTag(context, Icons.directions_car, 'Car Parking'),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -581,3 +801,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 }
+
+
+
+
+
+
+

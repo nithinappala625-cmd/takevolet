@@ -118,7 +118,41 @@ export const HYDERABAD_AREAS = [
 ];
 
 // ─── For dropdowns (profile complete + post room forms) ───────────────────────
-export const CITIES = ["Hyderabad", "Bangalore"];
+export const CITIES = ["Hyderabad", "Bangalore", "Pune", "Mumbai", "Delhi", "Chennai"];
+
+export const PUNE_AREAS = [
+  "Koregaon Park", "Kalyani Nagar", "Viman Nagar", "Hinjewadi", "Magarpatta",
+  "Hadapsar", "Baner", "Aundh", "Kothrud", "Wakad", "Pimple Saudagar",
+  "Kharadi", "Wagholi", "Bavdhan", "Shivajinagar", "Deccan Gymkhana", "Camp",
+  "Fatima Nagar", "Kondhwa", "Wanowrie", "NIBM Road", "Mundhwa", "Balewadi",
+  "Pashan", "Vishrantwadi"
+];
+
+export const MUMBAI_AREAS = [
+  "Andheri West", "Andheri East", "Bandra West", "Bandra East", "Juhu",
+  "Powai", "Goregaon East", "Goregaon West", "Malad West", "Malad East",
+  "Kandivali", "Borivali", "Vile Parle", "Santacruz", "Khar", "Colaba",
+  "Cuffe Parade", "Nariman Point", "Marine Drive", "Malabar Hill",
+  "Lower Parel", "Worli", "Prabhadevi", "Dadar", "Mahim", "Matunga",
+  "Sion", "Chembur", "Ghatkopar", "Vikhroli", "Kanjurmarg", "Mulund", "Kurla"
+];
+
+export const DELHI_AREAS = [
+  "Connaught Place", "Hauz Khas", "Saket", "Vasant Kunj", "South Extension",
+  "Lajpat Nagar", "Greater Kailash", "Green Park", "Defence Colony",
+  "Karol Bagh", "Rajouri Garden", "Punjabi Bagh", "Pitampura", "Rohini",
+  "Dwarka", "Janakpuri", "Mayur Vihar", "Laxmi Nagar", "Preet Vihar",
+  "Chandni Chowk", "Chanakyapuri", "Vasant Vihar", "RK Puram", "Munirka",
+  "Malviya Nagar", "Kalkaji"
+];
+
+export const CHENNAI_AREAS = [
+  "T Nagar", "Nungambakkam", "Alwarpet", "Mylapore", "Adyar", "Besant Nagar",
+  "Thiruvanmiyur", "Velachery", "OMR", "Sholinganallur", "Perungudi",
+  "Thoraipakkam", "Anna Nagar", "Kilpauk", "Chetpet", "Egmore",
+  "Purusaiwakkam", "Vadapalani", "Ashok Nagar", "KK Nagar", "Guindy",
+  "Saidapet", "Tambaram", "Chromepet", "Pallavaram", "Porur", "Poonamallee"
+];
 
 export const BANGALORE_AREAS = [
   "Koramangala",
@@ -169,9 +203,11 @@ export const LOCATIONS: { value: string; label: string }[] = [...new Set(HYDERAB
   }));
 
 export function getAreas(city: string): string[] {
-  if (city === "Bangalore") {
-    return [...new Set(BANGALORE_AREAS)].sort((a, b) => a.localeCompare(b));
-  }
+  if (city === "Bangalore") return [...new Set(BANGALORE_AREAS)].sort((a, b) => a.localeCompare(b));
+  if (city === "Pune") return [...new Set(PUNE_AREAS)].sort((a, b) => a.localeCompare(b));
+  if (city === "Mumbai") return [...new Set(MUMBAI_AREAS)].sort((a, b) => a.localeCompare(b));
+  if (city === "Delhi") return [...new Set(DELHI_AREAS)].sort((a, b) => a.localeCompare(b));
+  if (city === "Chennai") return [...new Set(CHENNAI_AREAS)].sort((a, b) => a.localeCompare(b));
   return [...new Set(HYDERABAD_AREAS)].sort((a, b) => a.localeCompare(b));
 }
 

@@ -7,7 +7,9 @@ import '../../main.dart';
 import '../../services/onesignal_service.dart';
 import '../../services/r2_storage_service.dart';
 import '../../services/watermark_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../data/locations.dart';
+import '../../widgets/video_picker_preview.dart';
 
 class AddRoomScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -78,12 +80,13 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
       _furnishing = metadata['furnishing']?.toString() ?? data['furnishing']?.toString() ?? 'Semi-Furnished';
       _parking = metadata['parking']?.toString() ?? data['parking']?.toString() ?? 'Bike Parking';
       
-      if (data['city'] == 'Bangalore') {
-        _selectedCity = 'Bangalore';
-        if (BANGALORE_AREAS.contains(data['location'])) {
+      if (AVAILABLE_CITIES.contains(data['city'])) {
+        _selectedCity = data['city'];
+        List<String> cityAreas = getAreasForCity(_selectedCity);
+        if (cityAreas.contains(data['location'])) {
           _location = data['location'];
         } else {
-          _location = BANGALORE_AREAS.first;
+          _location = cityAreas.first;
         }
       } else {
         _selectedCity = 'Hyderabad';
@@ -96,16 +99,145 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
   }
 
   Future<ImageSource?> _showImageSourceDialog() async {
-    return showDialog<ImageSource>(
+    return showModalBottomSheet<ImageSource>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Select Image Source'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(leading: const Icon(Icons.camera_alt), title: const Text('Camera'), onTap: () => Navigator.pop(ctx, ImageSource.camera)),
-            ListTile(leading: const Icon(Icons.photo_library), title: const Text('Gallery'), onTap: () => Navigator.pop(ctx, ImageSource.gallery)),
-          ],
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Upload Photos',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Select an option to add photos to your listing',
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F3FF),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFDDD6FE), width: 1.2),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFF7B3AEC), Color(0xFF6D28D9)],
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Camera',
+                              style: GoogleFonts.outfit(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Take a picture',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Gallery',
+                              style: GoogleFonts.outfit(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Choose from album',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
         ),
       ),
     );
@@ -216,12 +348,11 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
         }
 
         try {
-          await supabase.from('notifications').insert({
-            'user_id': user.id,
-            'title': 'New Room Available',
-            'body': 'A new room is available in $_location, $_selectedCity for ₹${roomData['rent']}/mo.',
-            'type': 'room',
-          });
+          await OneSignalService.broadcastInAppNotification(
+            title: 'New Room Available',
+            body: 'A new room is available in $_location, $_selectedCity for ₹${roomData['rent']}/mo.',
+            type: 'room',
+          );
         } catch (e) {
           debugPrint('In-App Notification DB error: $e');
         }
@@ -250,7 +381,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final colonies = getColonies(_location, city: _selectedCity);
-    final areas = _selectedCity == 'Bangalore' ? BANGALORE_AREAS : HYDERABAD_AREAS;
+    final areas = getAreasForCity(_selectedCity);
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.initialData != null ? 'Edit Room' : 'Post a Room')),
@@ -335,10 +466,10 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                           value: _selectedCity,
                           decoration: _inputDeco('City *', Icons.location_city),
                           isExpanded: true,
-                          items: ['Hyderabad', 'Bangalore'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                          items: AVAILABLE_CITIES.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                           onChanged: (v) => setState(() { 
                             _selectedCity = v!; 
-                            _location = _selectedCity == 'Bangalore' ? BANGALORE_AREAS.first : HYDERABAD_AREAS.first;
+                            _location = getAreasForCity(_selectedCity).first;
                             _colony = null; 
                           }),
                         ),
@@ -371,61 +502,77 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                     content: Column(
                       children: [
                         const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: _pickImages,
-                                child: Container(
-                                  height: 120,
-                                  decoration: BoxDecoration(border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2), borderRadius: BorderRadius.circular(12)),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.add_a_photo, size: 40, color: Theme.of(context).colorScheme.primary),
-                                      const SizedBox(height: 8),
-                                      Text('Select Images\n(up to 6)', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                        InkWell(
+                          onTap: _pickImages,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: InkWell(
-                                onTap: _pickVideo,
-                                child: Container(
-                                  height: 120,
-                                  decoration: BoxDecoration(border: Border.all(color: Colors.purple, width: 2), borderRadius: BorderRadius.circular(12)),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.videocam, size: 40, color: Colors.purple),
-                                      const SizedBox(height: 8),
-                                      Text(_selectedVideo != null ? 'Video Selected' : 'Add Video\n(max 50MB)', textAlign: TextAlign.center, style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12)),
-                                    ],
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF7B3AEC).withValues(alpha: 0.12),
+                                    shape: BoxShape.circle,
                                   ),
+                                  child: const Icon(Icons.add_photo_alternate_rounded, size: 28, color: Color(0xFF7B3AEC)),
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+                                const Text('Add Listing Photos', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 13)),
+                                const SizedBox(height: 2),
+                                const Text('Upload up to 6 high-quality photos', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        if (_selectedImages.isNotEmpty) 
+                        if (_selectedImages.isNotEmpty) ...[
+                          const SizedBox(height: 14),
                           SizedBox(
                             height: 100,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               itemCount: _selectedImages.length,
-                              itemBuilder: (context, index) => Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(_selectedImages[index], width: 100, height: 100, fit: BoxFit.cover),
-                                ),
+                              itemBuilder: (context, index) => Stack(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 10.0),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.file(_selectedImages[index], width: 100, height: 100, fit: BoxFit.cover),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 14,
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _selectedImages.removeAt(index)),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          )
+                          ),
+                        ],
+                        const SizedBox(height: 18),
+                        VideoPickerPreview(
+                          videoFile: _selectedVideo,
+                          videoUrl: widget.initialData != null ? widget.initialData!['video_url'] : null,
+                          onPick: _pickVideo,
+                          onRemove: () => setState(() => _selectedVideo = null),
+                          primaryColor: const Color(0xFF7B3AEC),
+                        ),
                       ],
                     ),
                   ),

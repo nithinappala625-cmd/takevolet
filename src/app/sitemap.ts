@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
-import { HYDERABAD_AREAS, BANGALORE_AREAS } from "@/data/locations";
+import { HYDERABAD_AREAS, BANGALORE_AREAS, PUNE_AREAS, MUMBAI_AREAS, DELHI_AREAS, CHENNAI_AREAS } from "@/data/locations";
 import { ARTICLES } from "@/data/articles";
 
 const supabase = createClient(
@@ -45,6 +45,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── Area Landing Pages (Bangalore) ─────────────────────────────────────────
   const bangaloreAreaPages: MetadataRoute.Sitemap = BANGALORE_AREAS.map(area => ({
+    url: `${BASE_URL}/rooms/in/${area.toLowerCase().replace(/\s+/g, "-").replace(/[.]/g, "")}`,
+    lastModified: new Date(),
+    changeFrequency: "daily" as const,
+    priority: 0.75,
+  }));
+
+  const puneAreaPages: MetadataRoute.Sitemap = PUNE_AREAS.map(area => ({
+    url: `${BASE_URL}/rooms/in/${area.toLowerCase().replace(/\s+/g, "-").replace(/[.]/g, "")}`,
+    lastModified: new Date(),
+    changeFrequency: "daily" as const,
+    priority: 0.75,
+  }));
+
+  const mumbaiAreaPages: MetadataRoute.Sitemap = MUMBAI_AREAS.map(area => ({
+    url: `${BASE_URL}/rooms/in/${area.toLowerCase().replace(/\s+/g, "-").replace(/[.]/g, "")}`,
+    lastModified: new Date(),
+    changeFrequency: "daily" as const,
+    priority: 0.75,
+  }));
+
+  const delhiAreaPages: MetadataRoute.Sitemap = DELHI_AREAS.map(area => ({
+    url: `${BASE_URL}/rooms/in/${area.toLowerCase().replace(/\s+/g, "-").replace(/[.]/g, "")}`,
+    lastModified: new Date(),
+    changeFrequency: "daily" as const,
+    priority: 0.75,
+  }));
+
+  const chennaiAreaPages: MetadataRoute.Sitemap = CHENNAI_AREAS.map(area => ({
     url: `${BASE_URL}/rooms/in/${area.toLowerCase().replace(/\s+/g, "-").replace(/[.]/g, "")}`,
     lastModified: new Date(),
     changeFrequency: "daily" as const,
@@ -146,6 +174,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...staticPages,
     ...hyderabadAreaPages,
     ...bangaloreAreaPages,
+    ...puneAreaPages,
+    ...mumbaiAreaPages,
+    ...delhiAreaPages,
+    ...chennaiAreaPages,
     ...articlePages,
     ...roomPages,
     ...flatmatePages,

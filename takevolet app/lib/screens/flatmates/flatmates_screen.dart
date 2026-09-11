@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../main.dart';
 import '../../utils/image_utils.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../data/locations.dart';
 
 class FlatmatesScreen extends StatefulWidget {
   final String? city;
@@ -26,7 +28,7 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
   String _selectedCity = 'Hyderabad';
 
   final List<String> filters = ['All', 'Male', 'Female', 'Co-ed'];
-  final List<String> _cities = ['Hyderabad', 'Bangalore'];
+  final List<String> _cities = AVAILABLE_CITIES;
 
   @override
   void initState() {
@@ -106,7 +108,7 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                   children: [
                     const Text('Filters', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                     TextButton(onPressed: () => setModalState(() { tempMin = 0; tempMax = 30000; tempVacancy = 0; }),
-                        child: const Text('Reset', style: TextStyle(color: Color(0xFFD4AF37)))),
+                        child: const Text('Reset', style: TextStyle(color: Color(0xFF7B3AEC)))),
                   ],
                 ),
               ),
@@ -116,13 +118,13 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                   children: [
                     const Text('Monthly Budget (per share)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('₹${tempMin.toInt()}', style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.w600)),
-                      Text('₹${tempMax.toInt()}', style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.w600)),
+                      Text('₹${tempMin.toInt()}', style: const TextStyle(color: Color(0xFF7B3AEC), fontWeight: FontWeight.w600)),
+                      Text('₹${tempMax.toInt()}', style: const TextStyle(color: Color(0xFF7B3AEC), fontWeight: FontWeight.w600)),
                     ]),
                     RangeSlider(
                       values: RangeValues(tempMin, tempMax),
                       min: 0, max: 30000, divisions: 30,
-                      activeColor: const Color(0xFFD4AF37),
+                      activeColor: const Color(0xFF7B3AEC),
                       onChanged: (v) => setModalState(() { tempMin = v.start; tempMax = v.end; }),
                     ),
                     const SizedBox(height: 16),
@@ -131,10 +133,10 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                     Wrap(spacing: 8, children: [0, 1, 2, 3].map((v) => ChoiceChip(
                       label: Text(v == 0 ? 'Any' : '$v+'),
                       selected: tempVacancy == v,
-                      selectedColor: const Color(0xFFD4AF37).withOpacity(0.2),
-                      labelStyle: TextStyle(color: tempVacancy == v ? const Color(0xFFD4AF37) : Colors.black87, fontWeight: FontWeight.w600),
+                      selectedColor: const Color(0xFF7B3AEC).withOpacity(0.2),
+                      labelStyle: TextStyle(color: tempVacancy == v ? const Color(0xFF7B3AEC) : Colors.black87, fontWeight: FontWeight.w600),
                       onSelected: (_) => setModalState(() => tempVacancy = v),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: tempVacancy == v ? const Color(0xFFD4AF37) : Colors.grey[300]!)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: tempVacancy == v ? const Color(0xFF7B3AEC) : Colors.grey[300]!)),
                     )).toList()),
                   ],
                 ),
@@ -150,7 +152,7 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                     _applyFilters();
                     Navigator.pop(ctx);
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: Colors.white,
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7B3AEC), foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                   child: const Text('Apply Filters', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 )),
@@ -177,38 +179,40 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
       body: Column(
         children: [
           // City Selector
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: _cities.map((city) {
+          SizedBox(
+            height: 50,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: _cities.length,
+              itemBuilder: (context, index) {
+                final city = _cities[index];
                 final selected = _selectedCity == city;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedCity = city);
-                      _fetchFlatmates();
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: selected ? const Color(0xFFD4AF37) : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: selected ? const Color(0xFFD4AF37) : Colors.grey[300]!),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.location_city, size: 16, color: selected ? Colors.white : Colors.grey[600]),
-                          const SizedBox(width: 6),
-                          Text(city, style: TextStyle(fontWeight: FontWeight.bold, color: selected ? Colors.white : Colors.grey[700], fontSize: 14)),
-                        ],
-                      ),
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedCity = city);
+                    _fetchFlatmates();
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: selected ? const Color(0xFF7B3AEC) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: selected ? const Color(0xFF7B3AEC) : Colors.grey[400]!, width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.location_city, size: 16, color: selected ? Colors.white : Colors.black54),
+                        const SizedBox(width: 6),
+                        Text(city, style: TextStyle(fontWeight: FontWeight.bold, color: selected ? Colors.white : Colors.black87, fontSize: 14)),
+                      ],
                     ),
                   ),
                 );
-              }).toList(),
+              },
             ),
           ),
           // Rooms vs Flats Toggle
@@ -230,7 +234,7 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Center(child: Text('Rooms', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600]))),
+                        child: Center(child: Text('Rooms', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 13))),
                       ),
                     ),
                   ),
@@ -244,11 +248,24 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                         ),
-                        child: const Center(child: Text('Flats / Flatmates', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)))),
+                        child: const Center(child: Text('Flatmates', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF7B3AEC), fontSize: 13))),
                       ),
                     ),
                   ),
-                ],
+                  Expanded(
+                      child: GestureDetector(
+                        onTap: () => context.go('/day-wise', extra: _selectedCity),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(child: Text('Day Wise', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 13))),
+                        ),
+                      ),
+                    ),
+                  ],
               ),
             ),
           ),
@@ -276,9 +293,9 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _filtersApplied ? const Color(0xFFD4AF37) : Colors.grey[100],
+                      color: _filtersApplied ? const Color(0xFF7B3AEC) : Colors.grey[100],
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _filtersApplied ? const Color(0xFFD4AF37) : Colors.grey[300]!),
+                      border: Border.all(color: _filtersApplied ? const Color(0xFF7B3AEC) : Colors.grey[300]!),
                     ),
                     child: Icon(Icons.tune, color: _filtersApplied ? Colors.white : Colors.grey[700]),
                   ),
@@ -309,11 +326,11 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                       selectedFilter = filter;
                       _applyFilters();
                     },
-                    selectedColor: const Color(0xFFD4AF37),
+                    selectedColor: const Color(0xFF7B3AEC),
                     backgroundColor: Colors.grey[100],
                     checkmarkColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    side: BorderSide(color: isSelected ? const Color(0xFFD4AF37) : Colors.grey[300]!),
+                    side: BorderSide(color: isSelected ? const Color(0xFF7B3AEC) : Colors.grey[300]!),
                   ),
                 );
               },
@@ -359,6 +376,7 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
     );
   }
 
+
   Widget _buildFlatmateCard(Map<String, dynamic> flatmate) {
     final images = ImageUtils.parseImages(flatmate['images']);
     final hasImage = images.isNotEmpty;
@@ -383,7 +401,6 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
             SizedBox(
               height: 200,
               width: double.infinity,
@@ -393,24 +410,23 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                       fit: BoxFit.cover,
                       placeholder: (_, __) => Container(color: Colors.grey[200], child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
                       errorWidget: (_, __, ___) => Container(
-                        color: Colors.grey[100],
+                        color: const Color(0xFFEFF6FF),
                         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          Icon(Icons.people, size: 48, color: Colors.grey[400]),
+                          Icon(Icons.people_alt_rounded, size: 48, color: Colors.blue[300]),
                           const SizedBox(height: 8),
-                          Text('No Photo', style: TextStyle(color: Colors.grey[500])),
+                          Text('No Photo', style: TextStyle(color: Colors.blueGrey[400], fontWeight: FontWeight.w500)),
                         ]),
                       ),
                     )
                   : Container(
-                      color: const Color(0xFFF5EFD0),
+                      color: const Color(0xFFEFF6FF),
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Icon(Icons.people_alt_rounded, size: 56, color: const Color(0xFFD4AF37).withOpacity(0.6)),
+                        Icon(Icons.people_alt_rounded, size: 52, color: const Color(0xFF3B82F6).withOpacity(0.7)),
                         const SizedBox(height: 8),
-                        Text('Looking for Flatmate', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                        Text('Looking for Flatmate', style: TextStyle(color: Colors.blueGrey[600], fontWeight: FontWeight.w600)),
                       ]),
                     ),
             ),
-            // Content
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -419,20 +435,31 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD4AF37),
-                          borderRadius: BorderRadius.circular(20),
+                          color: const Color(0xFFF5F3FF),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFDDD6FE), width: 1.2),
                         ),
-                        child: Text('₹$rentShare', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                        child: Text(
+                          '₹$rentShare/mo',
+                          style: GoogleFonts.outfit(color: const Color(0xFF6D28D9), fontWeight: FontWeight.w800, fontSize: 15),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Row(children: [
-                    const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                    const Icon(Icons.location_on, size: 14, color: Color(0xFFE11D48)),
                     const SizedBox(width: 4),
                     Expanded(child: Text(location, style: const TextStyle(color: Colors.grey, fontSize: 13), overflow: TextOverflow.ellipsis)),
                   ]),
@@ -460,7 +487,7 @@ class _FlatmatesScreenState extends State<FlatmatesScreen> {
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 14, color: const Color(0xFFD4AF37)),
+        Icon(icon, size: 14, color: const Color(0xFF7B3AEC)),
         const SizedBox(width: 4),
         Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w500)),
       ]),

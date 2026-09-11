@@ -56,7 +56,7 @@ class PaymentService {
         'email': email,
       },
       'theme': {
-        'color': '#D4AF37'
+        'color': '#7B3AEC'
       }
     };
 
@@ -85,7 +85,7 @@ class PaymentService {
         'email': email,
       },
       'theme': {
-        'color': '#D4AF37' // Gold color to match the app
+        'color': '#7B3AEC' // Electric Purple to match the app
       }
     };
 

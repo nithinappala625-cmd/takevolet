@@ -113,6 +113,61 @@ const Map<String, List<String>> BANGALORE_COLONIES_MAP = {
   ],
 };
 
+const List<String> AVAILABLE_CITIES = ['Hyderabad', 'Bangalore', 'Pune', 'Mumbai', 'Delhi', 'Chennai'];
+
+const List<String> PUNE_AREAS = [
+  'Koregaon Park', 'Kalyani Nagar', 'Viman Nagar', 'Hinjewadi', 'Magarpatta',
+  'Hadapsar', 'Baner', 'Aundh', 'Kothrud', 'Wakad', 'Pimple Saudagar',
+  'Kharadi', 'Wagholi', 'Bavdhan', 'Shivajinagar', 'Deccan Gymkhana', 'Camp',
+  'Fatima Nagar', 'Kondhwa', 'Wanowrie', 'NIBM Road', 'Mundhwa', 'Balewadi',
+  'Pashan', 'Vishrantwadi',
+];
+
+const List<String> MUMBAI_AREAS = [
+  'Andheri West', 'Andheri East', 'Bandra West', 'Bandra East', 'Juhu',
+  'Powai', 'Goregaon East', 'Goregaon West', 'Malad West', 'Malad East',
+  'Kandivali', 'Borivali', 'Vile Parle', 'Santacruz', 'Khar', 'Colaba',
+  'Cuffe Parade', 'Nariman Point', 'Marine Drive', 'Malabar Hill',
+  'Lower Parel', 'Worli', 'Prabhadevi', 'Dadar', 'Mahim', 'Matunga',
+  'Sion', 'Chembur', 'Ghatkopar', 'Vikhroli', 'Kanjurmarg', 'Mulund', 'Kurla',
+];
+
+const List<String> DELHI_AREAS = [
+  'Connaught Place', 'Hauz Khas', 'Saket', 'Vasant Kunj', 'South Extension',
+  'Lajpat Nagar', 'Greater Kailash', 'Green Park', 'Defence Colony',
+  'Karol Bagh', 'Rajouri Garden', 'Punjabi Bagh', 'Pitampura', 'Rohini',
+  'Dwarka', 'Janakpuri', 'Mayur Vihar', 'Laxmi Nagar', 'Preet Vihar',
+  'Chandni Chowk', 'Chanakyapuri', 'Vasant Vihar', 'RK Puram', 'Munirka',
+  'Malviya Nagar', 'Kalkaji',
+];
+
+const List<String> CHENNAI_AREAS = [
+  'T Nagar', 'Nungambakkam', 'Alwarpet', 'Mylapore', 'Adyar', 'Besant Nagar',
+  'Thiruvanmiyur', 'Velachery', 'OMR', 'Sholinganallur', 'Perungudi',
+  'Thoraipakkam', 'Anna Nagar', 'Kilpauk', 'Chetpet', 'Egmore',
+  'Purusaiwakkam', 'Vadapalani', 'Ashok Nagar', 'KK Nagar', 'Guindy',
+  'Saidapet', 'Tambaram', 'Chromepet', 'Pallavaram', 'Porur', 'Poonamallee',
+];
+
+List<String> getAreasForCity(String city) {
+  switch (city) {
+    case 'Bangalore':
+      return BANGALORE_AREAS;
+    case 'Pune':
+      return PUNE_AREAS;
+    case 'Mumbai':
+      return MUMBAI_AREAS;
+    case 'Delhi':
+      return DELHI_AREAS;
+    case 'Chennai':
+      return CHENNAI_AREAS;
+    case 'Hyderabad':
+    default:
+      return HYDERABAD_AREAS;
+  }
+}
+
+
 List<String> getColonies(String location, {String city = 'Hyderabad'}) {
   if (city == 'Bangalore') {
     if (BANGALORE_COLONIES_MAP.containsKey(location)) {

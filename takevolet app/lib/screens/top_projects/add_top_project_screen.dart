@@ -19,7 +19,7 @@ class AddTopProjectScreen extends StatefulWidget {
 }
 
 class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
-  static const _gold = Color(0xFFD4AF37);
+  static const _gold = Color(0xFF7B3AEC);
 
   int _currentStep = 0;
   bool _isSubmitting = false;

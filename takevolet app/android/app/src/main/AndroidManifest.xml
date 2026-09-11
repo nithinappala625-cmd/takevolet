@@ -80,6 +80,14 @@
                     android:host="login-callback" />
             </intent-filter>
 
+            <!-- Deep linking for Takevolet Custom Scheme -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="takevolet" />
+            </intent-filter>
+
             <!-- Android App Links for takevolet.online -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
