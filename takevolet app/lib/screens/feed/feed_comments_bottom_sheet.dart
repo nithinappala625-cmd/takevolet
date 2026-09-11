@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../../services/onesignal_service.dart';
 
 class FeedCommentsBottomSheet extends StatefulWidget {
   final String postId;
@@ -17,6 +18,7 @@ class _FeedCommentsBottomSheetState extends State<FeedCommentsBottomSheet> {
   bool isLoading = true;
   final TextEditingController _commentController = TextEditingController();
   bool isPosting = false;
+  Map<String, dynamic>? _replyTarget;
 
   @override
   void initState() {
@@ -46,14 +48,48 @@ class _FeedCommentsBottomSheetState extends State<FeedCommentsBottomSheet> {
     if (widget.currentUserId == null) return;
     
     setState(() => isPosting = true);
+    final commentText = _commentController.text.trim();
+    final replyTargetSnap = _replyTarget;
+
     try {
       await Supabase.instance.client.from('social_comments').insert({
         'post_id': widget.postId,
         'user_id': widget.currentUserId!,
-        'comment_text': _commentController.text.trim(),
+        'comment_text': commentText,
       });
       
-      // Trigger In-App Notification to Post Owner
+      // Get commenter's profile name
+      String commenterName = 'Someone';
+      try {
+        final profileData = await Supabase.instance.client
+            .from('profiles')
+            .select('full_name')
+            .eq('id', widget.currentUserId!)
+            .maybeSingle();
+        if (profileData?['full_name'] != null && profileData!['full_name'].toString().isNotEmpty) {
+          commenterName = profileData['full_name'];
+        }
+      } catch (_) {}
+
+      // 1. If replying to another comment, send push notification to that comment's author
+      if (replyTargetSnap != null) {
+        final replyTargetUserId = replyTargetSnap['user_id']?.toString();
+        if (replyTargetUserId != null && replyTargetUserId != widget.currentUserId) {
+          try {
+            await OneSignalService.sendNotificationToUser(
+              userId: replyTargetUserId,
+              title: 'New Reply 💬',
+              message: '$commenterName replied to your comment: "$commentText"',
+              type: 'feed_reply',
+              data: {'type': 'feed', 'post_id': widget.postId},
+            );
+          } catch (e) {
+            debugPrint('Error sending reply push notification: $e');
+          }
+        }
+      }
+
+      // 2. Trigger In-App + External Push Notification to Post Owner
       try {
         final postData = await Supabase.instance.client
             .from('social_posts')
@@ -61,24 +97,24 @@ class _FeedCommentsBottomSheetState extends State<FeedCommentsBottomSheet> {
             .eq('id', widget.postId)
             .maybeSingle();
             
-        if (postData != null && postData['user_id'] != widget.currentUserId) {
-           final profileData = await Supabase.instance.client
-              .from('profiles')
-              .select('full_name')
-              .eq('id', widget.currentUserId!)
-              .maybeSingle();
-           final commenterName = profileData?['full_name'] ?? 'Someone';
-           
-           await Supabase.instance.client.from('notifications').insert({
-              'profile_id': postData['user_id'],
-              'title': 'New Comment',
-              'body': '$commenterName commented on your post.',
-              'type': 'feed',
-           });
+        final postOwnerId = postData?['user_id']?.toString();
+        if (postOwnerId != null && 
+            postOwnerId != widget.currentUserId && 
+            postOwnerId != replyTargetSnap?['user_id']) {
+          await OneSignalService.sendNotificationToUser(
+            userId: postOwnerId,
+            title: 'New Comment 💬',
+            message: '$commenterName commented on your post: "$commentText"',
+            type: 'feed_comment',
+            data: {'type': 'feed', 'post_id': widget.postId},
+          );
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Error sending comment push notification: $e');
+      }
 
       _commentController.clear();
+      setState(() => _replyTarget = null);
       await _fetchComments();
     } catch (e) {
       debugPrint('Error posting comment: $e');
@@ -178,8 +214,21 @@ class _FeedCommentsBottomSheetState extends State<FeedCommentsBottomSheet> {
                                         child: Row(
                                           children: [
                                             Text(timeAgo, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                                            const SizedBox(width: 14),
+                                            GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  _replyTarget = c;
+                                                  _commentController.text = '@$name ';
+                                                  _commentController.selection = TextSelection.fromPosition(
+                                                    TextPosition(offset: _commentController.text.length),
+                                                  );
+                                                });
+                                              },
+                                              child: const Text('Reply', style: TextStyle(color: Color(0xFF7B3AEC), fontSize: 11, fontWeight: FontWeight.bold)),
+                                            ),
                                             if (canDelete) ...[
-                                              const SizedBox(width: 16),
+                                              const SizedBox(width: 14),
                                               GestureDetector(
                                                 onTap: () => _deleteComment(c['id']),
                                                 child: Text('Delete', style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.bold)),
@@ -198,6 +247,33 @@ class _FeedCommentsBottomSheetState extends State<FeedCommentsBottomSheet> {
                       ),
           ),
           
+          // Reply indicator bar
+          if (_replyTarget != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: const Color(0xFF7B3AEC).withOpacity(0.08),
+              child: Row(
+                children: [
+                  const Icon(Icons.reply, size: 16, color: Color(0xFF7B3AEC)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Replying to ${_replyTarget!['profiles']?['full_name'] ?? 'User'}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF7B3AEC)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _replyTarget = null;
+                      _commentController.clear();
+                    }),
+                    child: const Icon(Icons.close, size: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+
           // Comment input
           Container(
             padding: EdgeInsets.only(left: 16, right: 16, top: 12, bottom: MediaQuery.of(context).viewInsets.bottom + 12),

@@ -72,13 +72,7 @@ class OneSignalService {
     OneSignal.logout();
   }
 
-  /// Sends a push notification to all users using the OneSignal REST API.
-  static Future<void> sendPushNotification({required String title, required String message}) async {
-    // Automatically ensure in-app notification is also broadcasted!
-    try {
-      await broadcastInAppNotification(title: title, body: message, type: 'general');
-    } catch (_) {}
-
+  static Future<String> _getRestApiKey() async {
     String restApiKey = const String.fromEnvironment('ONESIGNAL_REST_API_KEY', defaultValue: ''); 
     if (restApiKey.isEmpty) {
       try {
@@ -104,7 +98,17 @@ class OneSignalService {
         restApiKey = utf8.decode(base64.decode('b3NfdjJfYXBwX3dhNnptNGp5ZmpjNzdsNDJmM3FidnlmZjR6cW4yaWFoNGRlZTd6dWpjYmFsaHNyNXN1aGZoZGlicjd1YmhzbHRrbGptYng1bDd2bmFhZnlwdGt1cDV4bHdhYW5henZsN3VmNmN3cmE='));
       } catch (_) {}
     }
+    return restApiKey.trim();
+  }
 
+  /// Sends a push notification to all users using the OneSignal REST API.
+  static Future<void> sendPushNotification({required String title, required String message}) async {
+    // Automatically ensure in-app notification is also broadcasted!
+    try {
+      await broadcastInAppNotification(title: title, body: message, type: 'general');
+    } catch (_) {}
+
+    final restApiKey = await _getRestApiKey();
     if (restApiKey.isEmpty) {
       debugPrint('[OneSignalService] Push REST key not configured in environment or app_settings, skipping direct REST call');
       return;
@@ -152,6 +156,72 @@ class OneSignalService {
       }
     } catch (e) {
       debugPrint('[OneSignalService] Error sending push notification: $e');
+    }
+  }
+
+  /// Sends a targeted push notification to a specific user outside the app and registers in-app notification
+  static Future<void> sendNotificationToUser({
+    required String userId,
+    required String title,
+    required String message,
+    String type = 'activity',
+    Map<String, dynamic>? data,
+  }) async {
+    if (userId.trim().isEmpty) return;
+
+    // 1. In-App Notification insertion into Supabase
+    try {
+      await Supabase.instance.client.from('notifications').insert({
+        'profile_id': userId,
+        'title': title,
+        'body': message,
+        'type': type,
+        'is_read': false,
+      });
+    } catch (e) {
+      debugPrint('[OneSignalService] DB user notification insert error: $e');
+    }
+
+    // 2. Targeted Push Notification via OneSignal REST API outside app
+    final restApiKey = await _getRestApiKey();
+    if (restApiKey.isEmpty) {
+      debugPrint('[OneSignalService] REST key missing, skipping targeted push');
+      return;
+    }
+
+    try {
+      final authHeader = restApiKey.startsWith('os_v2_') ? 'Key $restApiKey' : 'Basic $restApiKey';
+      final payload = {
+        'app_id': _appId,
+        'include_aliases': {
+          'external_id': [userId]
+        },
+        'include_external_user_ids': [userId],
+        'target_channel': 'push',
+        'headings': {'en': title},
+        'contents': {'en': message},
+        'large_icon': 'https://pub-6e2dfd0939c946adb7029c6cdae04896.r2.dev/tvl_logo.png',
+        'small_icon': 'ic_stat_onesignal_default',
+        'priority': 10,
+        if (data != null) 'data': data,
+      };
+
+      final response = await http.post(
+        Uri.parse('https://onesignal.com/api/v1/notifications'),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': authHeader,
+        },
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('[OneSignalService] Targeted push sent to $userId: ${response.body}');
+      } else {
+        debugPrint('[OneSignalService] Targeted push failed ($userId): ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('[OneSignalService] Error dispatching targeted push to $userId: $e');
     }
   }
 

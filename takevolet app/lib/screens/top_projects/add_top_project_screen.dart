@@ -12,7 +12,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class AddTopProjectScreen extends StatefulWidget {
-  const AddTopProjectScreen({super.key});
+  final Map<String, dynamic>? initialData;
+  const AddTopProjectScreen({super.key, this.initialData});
 
   @override
   State<AddTopProjectScreen> createState() => _AddTopProjectScreenState();
@@ -118,6 +119,86 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
   final _marketingVideoController = TextEditingController();
 
   final _imagePicker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null) {
+      final d = widget.initialData!;
+      _projectNameController.text = d['project_name']?.toString() ?? '';
+      _developerNameController.text = d['developer_name']?.toString() ?? '';
+      _devContactController.text = d['dev_contact_person']?.toString() ?? '';
+      _reraNumberController.text = d['developer_rera']?.toString() ?? '';
+      if (['Apartment', 'Gated Community', 'Villa Community', 'Mixed Development'].contains(d['project_type'])) {
+        _projectType = d['project_type'].toString();
+      }
+      if (['Pre-Launch', 'New Launch', 'Under Construction', 'Ready to Move'].contains(d['project_status'])) {
+        _projectStatus = d['project_status'].toString();
+      }
+      _possessionDateController.text = d['possession_date']?.toString() ?? '';
+      _descriptionController.text = d['description']?.toString() ?? '';
+      if (['RERA Approved', 'DTCP Approved', 'HMDA Approved', 'Both RERA & HMDA', 'Approval Pending', 'Not Applicable'].contains(d['approval_status'])) {
+        _approvalStatus = d['approval_status'].toString();
+      }
+      _approvalNumberController.text = d['approval_number']?.toString() ?? '';
+      _websiteUrlController.text = d['website_url']?.toString() ?? '';
+
+      _stateController.text = d['state']?.toString() ?? '';
+      _cityController.text = d['city']?.toString() ?? '';
+      _localityController.text = d['locality']?.toString() ?? '';
+      _fullAddressController.text = d['complete_address']?.toString() ?? '';
+      _landmarkController.text = d['landmark']?.toString() ?? '';
+      _googleMapsLinkController.text = d['google_maps_link']?.toString() ?? '';
+      _distanceOrrController.text = d['distance_orr']?.toString() ?? '';
+      _distanceMetroController.text = d['distance_metro']?.toString() ?? '';
+      _distanceAirportController.text = d['distance_airport']?.toString() ?? '';
+      _nearbySchoolsController.text = d['nearby_schools']?.toString() ?? '';
+      _nearbyHospitalsController.text = d['nearby_hospitals']?.toString() ?? '';
+      _nearbyItHubsController.text = d['nearby_it_hubs']?.toString() ?? '';
+
+      _totalAreaController.text = d['total_area_acres']?.toString() ?? '';
+      _numTowersController.text = d['num_towers']?.toString() ?? '';
+      _numBlocksController.text = d['num_blocks']?.toString() ?? '';
+      _numFloorsController.text = d['num_floors']?.toString() ?? '';
+      _totalUnitsController.text = d['total_units']?.toString() ?? '';
+      _unitsPerFloorController.text = d['units_per_floor']?.toString() ?? '';
+      _numBasementsController.text = d['num_basements']?.toString() ?? '';
+      _openSpacePctController.text = d['open_space_pct']?.toString() ?? '';
+      if (['Mivan', 'RCC', 'Precast', 'Other'].contains(d['construction_tech'])) {
+        _constructionTech = d['construction_tech'].toString();
+      }
+
+      if (d['amenities'] != null) {
+        if (d['amenities'] is List) {
+          _selectedAmenities.clear();
+          _selectedAmenities.addAll(List<String>.from(d['amenities']));
+        } else if (d['amenities'] is String) {
+          try {
+            final decoded = jsonDecode(d['amenities']);
+            if (decoded is List) {
+              _selectedAmenities.clear();
+              _selectedAmenities.addAll(List<String>.from(decoded));
+            }
+          } catch (_) {}
+        }
+      }
+      if (d['unit_configurations'] != null) {
+        if (d['unit_configurations'] is List) {
+          _unitConfigurations.clear();
+          _unitConfigurations.addAll(List<Map<String, dynamic>>.from(d['unit_configurations']));
+        } else if (d['unit_configurations'] is String) {
+          try {
+            final decoded = jsonDecode(d['unit_configurations']);
+            if (decoded is List) {
+              _unitConfigurations.clear();
+              _unitConfigurations.addAll(List<Map<String, dynamic>>.from(decoded));
+            }
+          } catch (_) {}
+        }
+      }
+      _marketingVideoController.text = d['marketing_video_link']?.toString() ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -290,6 +371,10 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
       _showError('Please fill all mandatory fields');
       return;
     }
+    if (widget.initialData != null) {
+      await _uploadAndInsert('edit_bypass');
+      return;
+    }
     final user = Supabase.instance.client.auth.currentUser;
     final currentUserEmail = user?.email?.toLowerCase() ?? '';
     if (currentUserEmail == 'nithinappala625@gmail.com' ||
@@ -424,25 +509,36 @@ class _AddTopProjectScreenState extends State<AddTopProjectScreen> {
             value == '' || value == null || (value is List && value.isEmpty),
       );
 
-      // ── Insert into Supabase ──
-      await Supabase.instance.client.from('top_projects').insert(payload);
+      // ── Insert / Update into Supabase ──
+      if (widget.initialData != null) {
+        await Supabase.instance.client
+            .from('top_projects')
+            .update(payload)
+            .eq('id', widget.initialData!['id']);
 
-      // ── Notifications ──
-      await OneSignalService.sendPushNotification(
-        title: 'New Top Project: ${_projectNameController.text.trim()}',
-        message:
-            'A new premium project in ${_localityController.text.trim()}, ${_cityController.text.trim()}!',
-      );
-      await OneSignalService.broadcastInAppNotification(
-        title: 'New Top Project: ${_projectNameController.text.trim()}',
-        body:
-            'A new premium project in ${_localityController.text.trim()}, ${_cityController.text.trim()}!',
-        type: 'top_project',
-      );
+        if (!mounted) return;
+        _showSuccess('Top Project updated successfully!');
+        if (context.canPop()) context.pop();
+      } else {
+        await Supabase.instance.client.from('top_projects').insert(payload);
 
-      if (!mounted) return;
-      _showSuccess('Top Project posted successfully!');
-      if (context.canPop()) context.pop();
+        // ── Notifications ──
+        await OneSignalService.sendPushNotification(
+          title: 'New Top Project: ${_projectNameController.text.trim()}',
+          message:
+              'A new premium project in ${_localityController.text.trim()}, ${_cityController.text.trim()}!',
+        );
+        await OneSignalService.broadcastInAppNotification(
+          title: 'New Top Project: ${_projectNameController.text.trim()}',
+          body:
+              'A new premium project in ${_localityController.text.trim()}, ${_cityController.text.trim()}!',
+          type: 'top_project',
+        );
+
+        if (!mounted) return;
+        _showSuccess('Top Project posted successfully!');
+        if (context.canPop()) context.pop();
+      }
     } catch (e) {
       _showError('Error: $e');
     } finally {

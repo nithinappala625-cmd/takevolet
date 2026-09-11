@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../services/onesignal_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -24,6 +25,17 @@ class _SplashScreenState extends State<SplashScreen> {
 
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null) {
+      try {
+        final user = session.user;
+        OneSignalService.login(user.id);
+        if (user.email != null && user.email!.isNotEmpty) {
+          await Supabase.instance.client.from('profiles').update({
+            'email': user.email,
+          }).eq('id', user.id);
+        }
+      } catch (e) {
+        debugPrint('[SplashScreen] Profile email sync error: $e');
+      }
       context.go('/home');
     } else {
       context.go('/login');

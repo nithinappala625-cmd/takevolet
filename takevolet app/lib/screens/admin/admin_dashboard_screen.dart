@@ -2,17 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:convert';
+import 'dart:io';
 import '../../main.dart';
 import '../add_room/add_room_screen.dart';
+import '../pgs/add_pg_screen.dart';
+import '../rooms/add_day_wise_screen.dart';
 import '../add_flatmate/add_flatmate_screen.dart';
 import '../add_sale/add_property_sale_screen.dart';
+import '../add_item/add_item_screen.dart';
+import '../top_projects/add_top_project_screen.dart';
+import '../top_projects/top_project_detail_screen.dart';
 import '../rooms/room_detail_screen.dart';
 import '../flatmates/flatmate_detail_screen.dart';
 import '../flats/flat_detail_screen.dart';
 import '../build/add_build_listing_screen.dart';
 import '../../utils/image_utils.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import '../../services/r2_storage_service.dart';
 
 import 'admin_json_editor_screen.dart';
@@ -30,7 +36,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   late SupabaseClient supabaseAdmin;
 
   // Stats
-  int totalUsers = 0, totalRooms = 0, totalFlatmates = 0, totalUnlocks = 0;
+  int totalUsers = 0, totalRooms = 0, totalPgs = 0, totalDayWise = 0, totalFlatmates = 0, totalFlats = 0, totalTopProjects = 0, totalItems = 0, totalUnlocks = 0;
   int totalRevenue = 0, pendingPayouts = 0;
 
   // Data lists
@@ -38,8 +44,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   List<Map<String, dynamic>> unlocks = [];
   List<Map<String, dynamic>> users = [];
   List<Map<String, dynamic>> rooms = [];
+  List<Map<String, dynamic>> pgs = [];
+  List<Map<String, dynamic>> dayWise = [];
   List<Map<String, dynamic>> flatmates = [];
   List<Map<String, dynamic>> flats = [];
+  List<Map<String, dynamic>> topProjects = [];
+  List<Map<String, dynamic>> marketplaceItems = [];
   List<Map<String, dynamic>> buildListings = [];
   List<Map<String, dynamic>> buildBookings = [];
   List<Map<String, dynamic>> carousels = [];
@@ -52,7 +62,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 16, vsync: this);
+    _tabController = TabController(length: 20, vsync: this);
     supabaseAdmin = Supabase.instance.client;
     _loadData();
   }
@@ -67,37 +77,73 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     try {
       List<Map<String, dynamic>> usersListRaw = [];
       try {
-        usersListRaw = List<Map<String, dynamic>>.from(await supabaseAdmin.from('profiles').select());
+        usersListRaw = List<Map<String, dynamic>>.from(await supabaseAdmin.from('profiles').select().order('created_at', ascending: false));
       } catch (e) {
         debugPrint('Admin users load error: $e');
       }
 
-      List<Map<String, dynamic>> roomsList = [];
+      List<Map<String, dynamic>> allRoomsList = [];
       try {
-        roomsList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('rooms').select());
+        allRoomsList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('rooms').select().order('created_at', ascending: false));
       } catch (e) {
         debugPrint('Admin rooms load error: $e');
       }
 
+      // Split into Standard Rooms, PGs, and Day-Wise
+      final pureRoomsList = allRoomsList.where((r) {
+        final tt = (r['tenant_type'] ?? '').toString().toLowerCase();
+        final meta = r['metadata'] is Map ? r['metadata'] as Map : {};
+        final lt = (meta['listing_type'] ?? '').toString().toLowerCase();
+        return tt != 'pg' && tt != 'day_wise' && lt != 'pg' && lt != 'day_wise';
+      }).toList();
+
+      final pgsList = allRoomsList.where((r) {
+        final tt = (r['tenant_type'] ?? '').toString().toLowerCase();
+        final meta = r['metadata'] is Map ? r['metadata'] as Map : {};
+        final lt = (meta['listing_type'] ?? '').toString().toLowerCase();
+        return tt == 'pg' || lt == 'pg';
+      }).toList();
+
+      final dayWiseList = allRoomsList.where((r) {
+        final tt = (r['tenant_type'] ?? '').toString().toLowerCase();
+        final meta = r['metadata'] is Map ? r['metadata'] as Map : {};
+        final lt = (meta['listing_type'] ?? '').toString().toLowerCase();
+        return tt == 'day_wise' || lt == 'day_wise';
+      }).toList();
+
       List<Map<String, dynamic>> flatmatesList = [];
       try {
-        flatmatesList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('flatmates').select());
+        flatmatesList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('flatmates').select().order('created_at', ascending: false));
       } catch (e) {
         debugPrint('Admin flatmates load error: $e');
       }
 
       List<Map<String, dynamic>> unlocksList = [];
       try {
-        unlocksList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('contact_unlocks').select());
+        unlocksList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('contact_unlocks').select().order('created_at', ascending: false));
       } catch (e) {
         debugPrint('Admin unlocks load error: $e');
       }
 
       List<Map<String, dynamic>> flatsList = [];
       try {
-        flatsList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('property_sales').select());
+        flatsList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('property_sales').select().order('created_at', ascending: false));
       } catch (e) {
         debugPrint('Admin flats load error: $e');
+      }
+
+      List<Map<String, dynamic>> topProjectsList = [];
+      try {
+        topProjectsList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('top_projects').select().order('created_at', ascending: false));
+      } catch (e) {
+        debugPrint('Admin top_projects load error: $e');
+      }
+
+      List<Map<String, dynamic>> itemsList = [];
+      try {
+        itemsList = List<Map<String, dynamic>>.from(await supabaseAdmin.from('items').select().order('created_at', ascending: false));
+      } catch (e) {
+        debugPrint('Admin items load error: $e');
       }
 
       List<Map<String, dynamic>> buildListingsRaw = [];
@@ -141,9 +187,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
       setState(() {
         users = usersListRaw;
-        rooms = roomsList;
+        rooms = pureRoomsList;
+        pgs = pgsList;
+        dayWise = dayWiseList;
         flatmates = flatmatesList;
         flats = flatsList;
+        topProjects = topProjectsList;
+        marketplaceItems = itemsList;
         buildListings = buildListingsRaw;
         buildBookings = buildBookingsRaw;
         unlocks = unlocksList;
@@ -157,7 +207,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
         totalUsers = users.length;
         totalRooms = rooms.length;
+        totalPgs = pgs.length;
+        totalDayWise = dayWise.length;
         totalFlatmates = flatmates.length;
+        totalFlats = flats.length;
+        totalTopProjects = topProjects.length;
+        totalItems = marketplaceItems.length;
         totalUnlocks = unlocks.length;
         totalRevenue = payments.fold(0, (sum, p) => sum + ((p['amount'] ?? 0) as int));
         pendingPayouts = payouts.where((p) => p['status'] == 'pending').length;
@@ -285,14 +340,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           tabs: const [
             Tab(icon: Icon(Icons.dashboard, size: 18), text: 'Overview'),
-            Tab(icon: Icon(Icons.payments, size: 18), text: 'Payouts'),
-            Tab(icon: Icon(Icons.lock_open, size: 18), text: 'Unlocks'),
             Tab(icon: Icon(Icons.people, size: 18), text: 'Users'),
             Tab(icon: Icon(Icons.home_work, size: 18), text: 'Rooms'),
+            Tab(icon: Icon(Icons.hotel, size: 18), text: 'PGs'),
+            Tab(icon: Icon(Icons.bed, size: 18), text: 'Day-Wise'),
             Tab(icon: Icon(Icons.group, size: 18), text: 'Flatmates'),
             Tab(icon: Icon(Icons.apartment, size: 18), text: 'Properties'),
+            Tab(icon: Icon(Icons.domain_add, size: 18), text: 'Top Projects'),
+            Tab(icon: Icon(Icons.shopping_bag, size: 18), text: 'Marketplace'),
             Tab(icon: Icon(Icons.construction, size: 18), text: 'Build Listings'),
             Tab(icon: Icon(Icons.handshake, size: 18), text: 'Build Bookings'),
+            Tab(icon: Icon(Icons.lock_open, size: 18), text: 'Unlocks'),
+            Tab(icon: Icon(Icons.payments, size: 18), text: 'Payouts'),
             Tab(icon: Icon(Icons.verified_user, size: 18), text: 'KYC'),
             Tab(icon: Icon(Icons.view_carousel, size: 18), text: 'Carousels'),
             Tab(icon: Icon(Icons.settings, size: 18), text: 'Pricing'),
@@ -309,14 +368,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               controller: _tabController,
               children: [
                 _buildOverviewTab(),
-                _buildPayoutsTab(),
-                _buildUnlocksTab(),
                 _buildUsersTab(),
                 _buildRoomsTab(),
+                _buildPgsTab(),
+                _buildDayWiseTab(),
                 _buildFlatmatesTab(),
                 _buildFlatsTab(),
+                _buildTopProjectsTab(),
+                _buildMarketplaceTab(),
                 _buildBuildListingsTab(),
                 _buildBuildBookingsTab(),
+                _buildUnlocksTab(),
+                _buildPayoutsTab(),
                 _buildKycTab(),
                 _buildCarouselsTab(),
                 _buildPricingTab(),
@@ -366,9 +429,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           ]),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: _statCard('$totalRooms', 'Rooms Listed', Icons.home, Colors.teal)),
+            Expanded(child: _statCard('$totalRooms', 'Rooms', Icons.home, Colors.teal)),
             const SizedBox(width: 12),
-            Expanded(child: _statCard('$totalFlatmates', 'Flatmates Listed', Icons.group, Colors.indigo)),
+            Expanded(child: _statCard('$totalPgs', 'PGs & Hostels', Icons.hotel, Colors.deepPurple)),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _statCard('$totalDayWise', 'Day-Wise Stays', Icons.bed, Colors.cyan)),
+            const SizedBox(width: 12),
+            Expanded(child: _statCard('$totalFlatmates', 'Flatmates', Icons.group, Colors.indigo)),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _statCard('$totalFlats', 'Properties (Sale)', Icons.apartment, Colors.deepOrange)),
+            const SizedBox(width: 12),
+            Expanded(child: _statCard('$totalTopProjects', 'Top Projects', Icons.domain_add, Colors.amber.shade900)),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _statCard('$totalItems', 'Marketplace', Icons.shopping_bag, Colors.pink)),
+            const SizedBox(width: 12),
+            Expanded(child: _statCard('${buildListings.length}', 'Build Listings', Icons.construction, Colors.blueGrey)),
           ]),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -522,14 +603,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       itemCount: users.length,
       itemBuilder: (ctx, i) {
         final u = users[i];
-        final email = u['email'] ?? '';
-        final phone = u['phone'] ?? '';
-        String name = u['full_name'] ?? '';
-        if (name.trim().isEmpty) {
-          name = email.isNotEmpty ? email.split('@').first : (phone.isNotEmpty ? phone : 'Unknown User');
+        final email = (u['email'] ?? '').toString().trim();
+        final phone = (u['phone'] ?? '').toString().trim();
+        String name = (u['full_name'] ?? '').toString().trim();
+        if (name.isEmpty) {
+          name = email.isNotEmpty ? email.split('@').first : (phone.isNotEmpty ? phone : 'User #${u['id']?.toString().substring(0, 6) ?? ''}');
         }
         final avatar = u['avatar_url'];
-        final joinDate = u['created_at']?.toString().substring(0, 10) ?? '';
+        final joinDate = (u['created_at'] != null && u['created_at'].toString().length >= 10)
+            ? u['created_at'].toString().substring(0, 10)
+            : '';
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -537,84 +620,111 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))],
-            border: Border.all(color: Colors.grey.shade100),
+            border: Border.all(color: Colors.grey.shade200),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Avatar
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFF7B3AEC), width: 2),
                   ),
                   child: ClipOval(
-                    child: avatar != null
+                    child: (avatar != null && avatar.toString().startsWith('http'))
                         ? Image.network(avatar, fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               color: const Color(0xFF7B3AEC).withOpacity(0.15),
-                              child: Center(child: Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFF7B3AEC)))),
+                              child: Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'U', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF7B3AEC)))),
                             ))
                         : Container(
                             color: const Color(0xFF7B3AEC).withOpacity(0.15),
-                            child: Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'U', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFF7B3AEC)))),
+                            child: Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'U', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF7B3AEC)))),
                           ),
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 // Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       const SizedBox(height: 4),
-                      if (email.isNotEmpty) Row(children: [
-                        Icon(Icons.email_outlined, size: 13, color: Colors.grey[500]),
-                        const SizedBox(width: 4),
-                        Expanded(child: Text(email, style: TextStyle(color: Colors.grey[600], fontSize: 12), overflow: TextOverflow.ellipsis)),
-                      ]),
-                      if (phone.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Row(children: [
-                          Icon(Icons.phone_outlined, size: 13, color: Colors.grey[500]),
-                          const SizedBox(width: 4),
-                          Text(phone, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                        ]),
-                      ],
+                      // Prominent Email Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: email.isNotEmpty ? Colors.indigo.withOpacity(0.08) : Colors.grey.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: email.isNotEmpty ? Colors.indigo.withOpacity(0.25) : Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.email_rounded, size: 13, color: email.isNotEmpty ? Colors.indigo.shade700 : Colors.grey),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                email.isNotEmpty ? email : 'No Email Synced',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: email.isNotEmpty ? Colors.indigo.shade900 : Colors.grey.shade600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (phone.isNotEmpty)
+                        Row(
+                          children: [
+                            Icon(Icons.phone_outlined, size: 12, color: Colors.grey[600]),
+                            const SizedBox(width: 4),
+                            Text(phone, style: TextStyle(color: Colors.grey[700], fontSize: 12, fontWeight: FontWeight.w500)),
+                          ],
+                        ),
                       if ((u['upi_id'] ?? '').toString().isNotEmpty) ...[
                         const SizedBox(height: 2),
-                        Row(children: [
-                          Icon(Icons.account_balance_wallet, size: 13, color: Colors.green[600]),
-                          const SizedBox(width: 4),
-                          Text('UPI: ${u['upi_id']}', style: TextStyle(color: Colors.green[700], fontSize: 12, fontWeight: FontWeight.w600)),
-                        ]),
+                        Row(
+                          children: [
+                            Icon(Icons.account_balance_wallet, size: 12, color: Colors.green[600]),
+                            const SizedBox(width: 4),
+                            Text('UPI: ${u['upi_id']}', style: TextStyle(color: Colors.green[700], fontSize: 11, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
                       ],
                     ],
                   ),
                 ),
-                // Date badge
+                // Date badge & Edit
                 Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFF7B3AEC).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text('Joined', style: TextStyle(color: Colors.grey[600], fontSize: 10, fontWeight: FontWeight.w600)),
+                      child: Text(joinDate, style: TextStyle(color: Colors.grey[700], fontSize: 10, fontWeight: FontWeight.w600)),
                     ),
-                    const SizedBox(height: 4),
-                    Text(joinDate, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                      tooltip: 'Edit User',
+                      onPressed: () => _editUserDialog(u),
+                    ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => _editUserDialog(u),
-                )
               ],
             ),
           ),
@@ -625,6 +735,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
   void _editUserDialog(Map<String, dynamic> u) {
     final TextEditingController nameCtrl = TextEditingController(text: u['full_name']);
+    final TextEditingController emailCtrl = TextEditingController(text: u['email']);
     final TextEditingController phoneCtrl = TextEditingController(text: u['phone']);
     final TextEditingController balanceCtrl = TextEditingController(text: u['contact_balance']?.toString() ?? '0');
     final TextEditingController locCtrl = TextEditingController(text: u['location']);
@@ -640,7 +751,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name')),
-              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone')),
+              TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email Address', prefixIcon: Icon(Icons.email))),
+              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone))),
               TextField(controller: balanceCtrl, decoration: const InputDecoration(labelText: 'Contact Balance')),
               TextField(controller: locCtrl, decoration: const InputDecoration(labelText: 'Location')),
               TextField(controller: colCtrl, decoration: const InputDecoration(labelText: 'Colony')),
@@ -655,12 +767,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               Navigator.pop(ctx);
               try {
                 await supabaseAdmin.from('profiles').update({
-                  'full_name': nameCtrl.text,
-                  'phone': phoneCtrl.text,
+                  'full_name': nameCtrl.text.trim(),
+                  'email': emailCtrl.text.trim().isNotEmpty ? emailCtrl.text.trim() : null,
+                  'phone': phoneCtrl.text.trim(),
                   'contact_balance': int.tryParse(balanceCtrl.text) ?? 0,
-                  'location': locCtrl.text,
-                  'colony': colCtrl.text,
-                  'profession': profCtrl.text,
+                  'location': locCtrl.text.trim(),
+                  'colony': colCtrl.text.trim(),
+                  'profession': profCtrl.text.trim(),
                 }).eq('id', u['id']);
                 _loadData();
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User updated successfully')));
@@ -675,12 +788,199 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
+  // ─── UNIVERSAL LISTING IMAGE EXTRACTOR & VIEWER ─────────────────
+  List<String> _extractImages(Map<String, dynamic> item) {
+    List<String> list = [];
+
+    // Check images
+    if (item['images'] != null) {
+      if (item['images'] is List) {
+        list.addAll((item['images'] as List).map((e) => e.toString()).where((e) => e.startsWith('http')));
+      } else if (item['images'] is String && item['images'].toString().startsWith('http')) {
+        list.add(item['images'].toString());
+      }
+    }
+    // Check flat_images
+    if (item['flat_images'] != null && item['flat_images'] is List) {
+      list.addAll((item['flat_images'] as List).map((e) => e.toString()).where((e) => e.startsWith('http')));
+    }
+    // Check cover_image
+    if (item['cover_image'] != null && item['cover_image'].toString().startsWith('http')) {
+      if (!list.contains(item['cover_image'].toString())) {
+        list.insert(0, item['cover_image'].toString());
+      }
+    }
+    // Check media_urls
+    if (item['media_urls'] != null && item['media_urls'] is List) {
+      list.addAll((item['media_urls'] as List).map((e) => e.toString()).where((e) => e.startsWith('http')));
+    }
+    // Check additional_photos
+    if (item['additional_photos'] != null) {
+      if (item['additional_photos'] is List) {
+        list.addAll((item['additional_photos'] as List).map((e) => e.toString()).where((e) => e.startsWith('http')));
+      } else if (item['additional_photos'] is String) {
+        try {
+          final decoded = jsonDecode(item['additional_photos']);
+          if (decoded is List) {
+            list.addAll(decoded.map((e) => e.toString()).where((e) => e.startsWith('http')));
+          }
+        } catch (_) {}
+      }
+    }
+    // Check single image fields
+    for (final key in ['image', 'image_url', 'project_logo', 'avatar_url', 'thumbnail']) {
+      if (item[key] != null && item[key].toString().startsWith('http')) {
+        if (!list.contains(item[key].toString())) {
+          list.add(item[key].toString());
+        }
+      }
+    }
+    // Check metadata
+    if (item['metadata'] != null && item['metadata'] is Map) {
+      final meta = item['metadata'] as Map;
+      if (meta['images'] != null && meta['images'] is List) {
+        list.addAll((meta['images'] as List).map((e) => e.toString()).where((e) => e.startsWith('http')));
+      }
+    }
+
+    return list.toSet().toList();
+  }
+
+  void _openPhotoGallery(List<String> images, {int initialIndex = 0}) {
+    if (images.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            PageView.builder(
+              controller: PageController(initialPage: initialIndex),
+              itemCount: images.length,
+              itemBuilder: (ctx, idx) {
+                return InteractiveViewer(
+                  child: Center(
+                    child: CachedNetworkImage(
+                      imageUrl: images[idx],
+                      fit: BoxFit.contain,
+                      placeholder: (_, __) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+                      errorWidget: (_, __, ___) => const Center(child: Icon(Icons.broken_image, color: Colors.white, size: 48)),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ),
+            Positioned(
+              bottom: 30,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '${images.length} photos (tap or pinch to zoom)',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListingThumbnail(Map<String, dynamic> item, {IconData fallbackIcon = Icons.home}) {
+    final images = _extractImages(item);
+    final hasImages = images.isNotEmpty;
+
+    return GestureDetector(
+      onTap: hasImages ? () => _openPhotoGallery(images) : null,
+      child: Stack(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300, width: 1.2),
+              color: Colors.grey.shade100,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: hasImages
+                ? CachedNetworkImage(
+                    imageUrl: images.first,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      color: Colors.grey.shade200,
+                      child: const Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+                    ),
+                    errorWidget: (_, __, ___) => Container(
+                      color: Colors.grey.shade200,
+                      child: Icon(fallbackIcon, color: Colors.grey.shade400, size: 28),
+                    ),
+                  )
+                : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(fallbackIcon, color: Colors.grey.shade400, size: 22),
+                        const SizedBox(height: 2),
+                        Text('No Photo', style: TextStyle(color: Colors.grey.shade500, fontSize: 8)),
+                      ],
+                    ),
+                  ),
+          ),
+          if (images.length > 1)
+            Positioned(
+              bottom: 2,
+              right: 2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '+${images.length}',
+                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _editItem(BuildContext context, String table, Map<String, dynamic> item) async {
     Widget? targetScreen;
-    if (table == 'rooms') targetScreen = AddRoomScreen(initialData: item);
-    else if (table == 'flatmates') targetScreen = AddFlatmateScreen(initialData: item);
-    else if (table == 'property_sales') targetScreen = AddPropertySaleScreen(initialData: item);
-    else if (table == 'build_listings') targetScreen = AddBuildListingScreen(initialData: item);
+    if (table == 'rooms') {
+      targetScreen = AddRoomScreen(initialData: item);
+    } else if (table == 'pgs') {
+      targetScreen = AddPgScreen(initialData: item);
+    } else if (table == 'day_wise') {
+      targetScreen = AddDayWiseScreen(initialData: item);
+    } else if (table == 'flatmates') {
+      targetScreen = AddFlatmateScreen(initialData: item);
+    } else if (table == 'property_sales') {
+      targetScreen = AddPropertySaleScreen(initialData: item);
+    } else if (table == 'build_listings') {
+      targetScreen = AddBuildListingScreen(initialData: item);
+    } else if (table == 'items') {
+      targetScreen = AddItemScreen(initialData: item);
+    } else if (table == 'top_projects') {
+      targetScreen = AddTopProjectScreen(initialData: item);
+    }
 
     if (targetScreen != null) {
       await Navigator.push(context, MaterialPageRoute(builder: (_) => targetScreen!));
@@ -793,7 +1093,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRoundedRect(images: images),
+                    _buildListingThumbnail(r, fallbackIcon: Icons.home),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -924,8 +1224,378 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
+  // ─── PGS & HOSTELS TAB ─────────────────────────────────────────
+  Widget _buildPgsTab() {
+    if (pgs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.hotel_outlined, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text('No PGs or Hostels listed yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: pgs.length,
+      itemBuilder: (ctx, i) {
+        final r = pgs[i];
+        final String? customContact = r['custom_contact']?.toString();
+        final String posterId = r['user_id']?.toString() ?? '';
+        final poster = users.firstWhere((u) => u['id'] == posterId, orElse: () => <String, dynamic>{});
+        final String posterPhone = poster['phone']?.toString() ?? '';
+        final String posterName = poster['full_name']?.toString() ?? '';
+        final String posterEmail = poster['email']?.toString() ?? '';
+
+        final bool hasUploadedOwnerNumber = customContact != null && customContact.trim().isNotEmpty;
+        final String ownerNumber = hasUploadedOwnerNumber
+            ? customContact.trim()
+            : (posterPhone.trim().isNotEmpty ? posterPhone.trim() : 'No Number Added');
+
+        final String createdDate = (r['created_at'] != null && r['created_at'].toString().length >= 10)
+            ? r['created_at'].toString().substring(0, 10)
+            : '';
+
+        final meta = r['metadata'] is Map ? r['metadata'] as Map : {};
+        final pgType = meta['pg_type'] ?? 'PG / Hostel';
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildListingThumbnail(r, fallbackIcon: Icons.hotel),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(pgType.toString(), style: const TextStyle(color: Color(0xFF7B3AEC), fontSize: 10, fontWeight: FontWeight.w800)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(r['title'] ?? 'Untitled PG', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 3),
+                          Text('₹${r['rent']}/mo • ${r['location'] ?? ''}', style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w600)),
+                          if (createdDate.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('Uploaded: $createdDate', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: r['is_available'] ?? true,
+                      onChanged: (val) async {
+                        await supabaseAdmin.from('rooms').update({'is_available': val}).eq('id', r['id']);
+                        _loadData();
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Highlighted Owner Number
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: hasUploadedOwnerNumber ? const Color(0xFF10B981).withOpacity(0.12) : Colors.amber.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: hasUploadedOwnerNumber ? const Color(0xFF10B981) : Colors.amber.shade700,
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        hasUploadedOwnerNumber ? Icons.phone_android : Icons.phone_outlined,
+                        size: 18,
+                        color: hasUploadedOwnerNumber ? const Color(0xFF059669) : Colors.amber.shade900,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'OWNER / PG CONTACT:',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: hasUploadedOwnerNumber ? const Color(0xFF047857) : Colors.amber.shade900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            SelectableText(
+                              ownerNumber,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: hasUploadedOwnerNumber ? const Color(0xFF065F46) : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Edit Owner Number',
+                        icon: const Icon(Icons.edit_note, color: Colors.blueAccent, size: 22),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _quickEditRoomOwnerNumber(r),
+                      ),
+                    ],
+                  ),
+                ),
+                if (posterName.isNotEmpty || posterEmail.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Uploader: ${posterName.isNotEmpty ? posterName : 'User'} ${posterEmail.isNotEmpty ? '($posterEmail)' : ''}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.data_object, color: Colors.purple, size: 20),
+                      tooltip: 'Edit Dynamic Fields',
+                      onPressed: () => _dynamicEditItem(context, 'rooms', r),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                      tooltip: 'Full Edit',
+                      onPressed: () => _editItem(context, 'pgs', r),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      tooltip: 'Delete',
+                      onPressed: () => _confirmDelete('rooms', r['id'], r['title'] ?? 'this PG'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── DAY-WISE STAYS TAB ────────────────────────────────────────
+  Widget _buildDayWiseTab() {
+    if (dayWise.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.bed_outlined, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text('No Day-Wise stays listed yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: dayWise.length,
+      itemBuilder: (ctx, i) {
+        final r = dayWise[i];
+        final String? customContact = r['custom_contact']?.toString();
+        final String posterId = r['user_id']?.toString() ?? '';
+        final poster = users.firstWhere((u) => u['id'] == posterId, orElse: () => <String, dynamic>{});
+        final String posterPhone = poster['phone']?.toString() ?? '';
+        final String posterName = poster['full_name']?.toString() ?? '';
+        final String posterEmail = poster['email']?.toString() ?? '';
+
+        final bool hasUploadedOwnerNumber = customContact != null && customContact.trim().isNotEmpty;
+        final String ownerNumber = hasUploadedOwnerNumber
+            ? customContact.trim()
+            : (posterPhone.trim().isNotEmpty ? posterPhone.trim() : 'No Number Added');
+
+        final String createdDate = (r['created_at'] != null && r['created_at'].toString().length >= 10)
+            ? r['created_at'].toString().substring(0, 10)
+            : '';
+
+        final meta = r['metadata'] is Map ? r['metadata'] as Map : {};
+        final duration = meta['duration'] ?? 'Day-Wise';
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildListingThumbnail(r, fallbackIcon: Icons.bed),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.teal.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(duration.toString(), style: const TextStyle(color: Colors.teal, fontSize: 10, fontWeight: FontWeight.w800)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(r['title'] ?? 'Untitled Day-Wise', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 3),
+                          Text('₹${r['rent']} • ${r['location'] ?? ''}', style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w600)),
+                          if (createdDate.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('Uploaded: $createdDate', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: r['is_available'] ?? true,
+                      onChanged: (val) async {
+                        await supabaseAdmin.from('rooms').update({'is_available': val}).eq('id', r['id']);
+                        _loadData();
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Highlighted Owner Number
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: hasUploadedOwnerNumber ? const Color(0xFF10B981).withOpacity(0.12) : Colors.amber.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: hasUploadedOwnerNumber ? const Color(0xFF10B981) : Colors.amber.shade700,
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        hasUploadedOwnerNumber ? Icons.phone_android : Icons.phone_outlined,
+                        size: 18,
+                        color: hasUploadedOwnerNumber ? const Color(0xFF059669) : Colors.amber.shade900,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'OWNER / HOST CONTACT:',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: hasUploadedOwnerNumber ? const Color(0xFF047857) : Colors.amber.shade900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            SelectableText(
+                              ownerNumber,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: hasUploadedOwnerNumber ? const Color(0xFF065F46) : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Edit Contact Number',
+                        icon: const Icon(Icons.edit_note, color: Colors.blueAccent, size: 22),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _quickEditRoomOwnerNumber(r),
+                      ),
+                    ],
+                  ),
+                ),
+                if (posterName.isNotEmpty || posterEmail.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Uploader: ${posterName.isNotEmpty ? posterName : 'User'} ${posterEmail.isNotEmpty ? '($posterEmail)' : ''}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.data_object, color: Colors.purple, size: 20),
+                      tooltip: 'Edit Dynamic Fields',
+                      onPressed: () => _dynamicEditItem(context, 'rooms', r),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                      tooltip: 'Full Edit',
+                      onPressed: () => _editItem(context, 'day_wise', r),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      tooltip: 'Delete',
+                      onPressed: () => _confirmDelete('rooms', r['id'], r['title'] ?? 'this Day-Wise Stay'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // ─── FLATMATES TAB ─────────────────────────────────────────────
   Widget _buildFlatmatesTab() {
+    if (flatmates.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.group_outlined, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text('No Flatmates listed yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+          ],
+        ),
+      );
+    }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: flatmates.length,
@@ -948,11 +1618,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.indigo.withOpacity(0.1),
-                      child: const Icon(Icons.group, color: Colors.indigo, size: 20),
-                    ),
+                    _buildListingThumbnail(f, fallbackIcon: Icons.group),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -1018,54 +1686,117 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
-  // ─── FLATS TAB ─────────────────────────────────────────────────
+  // ─── PROPERTIES TAB ────────────────────────────────────────────
   Widget _buildFlatsTab() {
+    if (flats.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.apartment_outlined, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text('No Properties listed yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+          ],
+        ),
+      );
+    }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: flats.length,
       itemBuilder: (ctx, i) {
         final f = flats[i];
-        final images = (f['images'] as List<dynamic>?)?.cast<String>() ?? [];
-        final thumbnailUrl = images.isNotEmpty ? images.first : null;
-        
+        final String? customContact = f['custom_contact']?.toString();
+        final String posterId = f['user_id']?.toString() ?? '';
+        final poster = users.firstWhere((u) => u['id'] == posterId, orElse: () => <String, dynamic>{});
+        final String posterPhone = poster['phone']?.toString() ?? '';
+        final String contactNum = (customContact != null && customContact.trim().isNotEmpty)
+            ? customContact.trim()
+            : (posterPhone.trim().isNotEmpty ? posterPhone.trim() : 'No Number');
+
+        final String date = (f['created_at'] != null && f['created_at'].toString().length >= 10)
+            ? f['created_at'].toString().substring(0, 10)
+            : '';
+
         return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: SizedBox(
-              width: 50,
-              height: 50,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: thumbnailUrl != null
-                    ? CachedNetworkImage(imageUrl: thumbnailUrl, fit: BoxFit.cover, errorWidget: (_, __, ___) => const Icon(Icons.apartment))
-                    : const Icon(Icons.apartment, color: Colors.grey),
-              ),
-            ),
-            title: Text(f['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text('${f['property_category'] ?? f['property_type'] ?? ''} • ₹${f['expected_price'] ?? f['price'] ?? 0} • ${f['district'] ?? f['city'] ?? ''}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Switch(
-                  value: f['is_available'] ?? true,
-                  onChanged: (val) async {
-                    await supabaseAdmin.from('property_sales').update({'is_available': val}).eq('id', f['id']);
-                    _loadData();
-                  },
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildListingThumbnail(f, fallbackIcon: Icons.apartment),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(f['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${f['property_category'] ?? f['property_type'] ?? 'Property'} • ₹${f['expected_price'] ?? f['price'] ?? 0}',
+                            style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                          if ((f['district'] ?? f['city'] ?? '').toString().isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('${f['district'] ?? f['city']}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          ],
+                          if (date.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('Uploaded: $date', style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: f['is_available'] ?? true,
+                      onChanged: (val) async {
+                        await supabaseAdmin.from('property_sales').update({'is_available': val}).eq('id', f['id']);
+                        _loadData();
+                      },
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.data_object, color: Colors.purple),
-                  tooltip: 'Edit Dynamic Fields',
-                  onPressed: () => _dynamicEditItem(context, 'property_sales', f),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.phone, size: 16, color: Colors.teal),
+                      const SizedBox(width: 6),
+                      Text('Contact: $contactNum', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal)),
+                    ],
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => _editItem(context, 'property_sales', f),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _confirmDelete('property_sales', f['id'], f['title'] ?? 'this flat'),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.data_object, color: Colors.purple, size: 20),
+                      tooltip: 'Edit Dynamic Fields',
+                      onPressed: () => _dynamicEditItem(context, 'property_sales', f),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                      tooltip: 'Full Edit',
+                      onPressed: () => _editItem(context, 'property_sales', f),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      tooltip: 'Delete',
+                      onPressed: () => _confirmDelete('property_sales', f['id'], f['title'] ?? 'this property'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1075,38 +1806,299 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
-  // ─── COOKS TAB ─────────────────────────────────────────────────
+  // ─── TOP PROJECTS TAB ──────────────────────────────────────────
+  Widget _buildTopProjectsTab() {
+    if (topProjects.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.domain_add, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text('No Top Projects listed yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: topProjects.length,
+      itemBuilder: (ctx, i) {
+        final p = topProjects[i];
+        final name = p['project_name'] ?? 'Untitled Project';
+        final dev = p['developer_name'] ?? '';
+        final status = p['status'] ?? 'published';
+        final pStatus = p['project_status'] ?? '';
+        final location = [p['locality'], p['city']].where((s) => s != null && s.toString().trim().isNotEmpty).join(', ');
+        final date = (p['created_at'] != null && p['created_at'].toString().length >= 10)
+            ? p['created_at'].toString().substring(0, 10)
+            : '';
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildListingThumbnail(p, fallbackIcon: Icons.domain_add),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          if (dev.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('By: $dev', style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w600)),
+                          ],
+                          if (location.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(location, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          ],
+                          if (pStatus.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD4AF37).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(pStatus, style: const TextStyle(color: Color(0xFF996515), fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                          if (date.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('Uploaded: $date', style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: status == 'published',
+                      onChanged: (val) async {
+                        await supabaseAdmin.from('top_projects').update({'status': val ? 'published' : 'draft'}).eq('id', p['id']);
+                        _loadData();
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(Icons.visibility, size: 16),
+                      label: const Text('View', style: TextStyle(fontSize: 12)),
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => TopProjectDetailScreen(project: p)));
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.data_object, color: Colors.purple, size: 20),
+                      tooltip: 'Edit Dynamic Fields',
+                      onPressed: () => _dynamicEditItem(context, 'top_projects', p),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                      tooltip: 'Full Edit',
+                      onPressed: () => _editItem(context, 'top_projects', p),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      tooltip: 'Delete',
+                      onPressed: () => _confirmDelete('top_projects', p['id'], name),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── MARKETPLACE TAB ───────────────────────────────────────────
+  Widget _buildMarketplaceTab() {
+    if (marketplaceItems.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text('No Marketplace items listed yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: marketplaceItems.length,
+      itemBuilder: (ctx, i) {
+        final item = marketplaceItems[i];
+        final title = item['title'] ?? 'Untitled Item';
+        final price = item['price'] ?? 0;
+        final category = item['category'] ?? '';
+        final condition = item['condition'] ?? '';
+        final location = item['location'] ?? '';
+        final isAvailable = item['is_available'] ?? true;
+        final date = (item['created_at'] != null && item['created_at'].toString().length >= 10)
+            ? item['created_at'].toString().substring(0, 10)
+            : '';
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildListingThumbnail(item, fallbackIcon: Icons.shopping_bag),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 3),
+                          Text('₹$price • $category', style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w600)),
+                          if (condition.isNotEmpty || location.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text([condition, location].where((s) => s.isNotEmpty).join(' • '), style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          ],
+                          if (date.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('Uploaded: $date', style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: isAvailable,
+                      onChanged: (val) async {
+                        await supabaseAdmin.from('items').update({'is_available': val}).eq('id', item['id']);
+                        _loadData();
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.data_object, color: Colors.purple, size: 20),
+                      tooltip: 'Edit Dynamic Fields',
+                      onPressed: () => _dynamicEditItem(context, 'items', item),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                      tooltip: 'Full Edit',
+                      onPressed: () => _editItem(context, 'items', item),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      tooltip: 'Delete',
+                      onPressed: () => _confirmDelete('items', item['id'], title),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── BUILD LISTINGS TAB ────────────────────────────────────────
   Widget _buildBuildListingsTab() {
+    if (buildListings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.construction_outlined, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text('No Build & Construction listings yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+          ],
+        ),
+      );
+    }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: buildListings.length,
       itemBuilder: (ctx, i) {
         final c = buildListings[i];
+        final title = c['title'] ?? 'Unknown Listing';
+        final cat = c['main_category'] ?? 'Construction';
+        final price = c['price'] ?? 0;
+        final date = (c['created_at'] != null && c['created_at'].toString().length >= 10)
+            ? c['created_at'].toString().substring(0, 10)
+            : '';
+
         return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.orange.withOpacity(0.1),
-              child: const Icon(Icons.construction, color: Colors.orange, size: 20),
-            ),
-            title: Text(c['title'] ?? 'Unknown Listing', style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text('${c['main_category']} • ₹${c['price'] ?? 0}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.data_object, color: Colors.purple),
-                  tooltip: 'Edit Dynamic Fields',
-                  onPressed: () => _dynamicEditItem(context, 'build_listings', c),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildListingThumbnail(c, fallbackIcon: Icons.construction),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 3),
+                          Text('$cat • ₹$price', style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w600)),
+                          if (date.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('Uploaded: $date', style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => _editItem(context, 'build_listings', c),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _confirmDelete('build_listings', c['id'], c['title'] ?? 'this listing'),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.data_object, color: Colors.purple, size: 20),
+                      tooltip: 'Edit Dynamic Fields',
+                      onPressed: () => _dynamicEditItem(context, 'build_listings', c),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                      tooltip: 'Full Edit',
+                      onPressed: () => _editItem(context, 'build_listings', c),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      tooltip: 'Delete',
+                      onPressed: () => _confirmDelete('build_listings', c['id'], title),
+                    ),
+                  ],
                 ),
               ],
             ),

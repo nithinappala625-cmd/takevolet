@@ -80,7 +80,14 @@ class _AddFlatmateScreenState extends State<AddFlatmateScreen> {
       _vacancyController.text = data['vacancy_count']?.toString() ?? '1';
       _customContactController.text = data['custom_contact']?.toString() ?? '';
 
-      _genderPref = data['gender_pref']?.toString() ?? 'Any';
+      final rawGender = (data['gender_pref']?.toString() ?? 'Any').toLowerCase();
+      if (rawGender.contains('fem') || rawGender.contains('girl') || rawGender.contains('women')) {
+        _genderPref = 'Female';
+      } else if (rawGender.contains('mal') || rawGender.contains('boy') || rawGender.contains('men')) {
+        _genderPref = 'Male';
+      } else {
+        _genderPref = 'Any';
+      }
       if (AVAILABLE_CITIES.contains(data['city'])) {
         _selectedCity = data['city'];
         List<String> cityAreas = getAreasForCity(_selectedCity);

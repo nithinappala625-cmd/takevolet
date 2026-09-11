@@ -501,17 +501,19 @@ class _FeedScreenState extends State<FeedScreen> {
           'user_id': _currentUserId!,
         });
 
-        // Trigger In-App Notification
+        // Trigger In-App + External Push Notification to Post Author
         try {
           final post = posts.firstWhere((p) => p['id'] == postId);
           final postOwnerId = post['user_id'];
-          if (postOwnerId != _currentUserId) {
-            await Supabase.instance.client.from('notifications').insert({
-              'profile_id': postOwnerId,
-              'title': 'New Like',
-              'body': '${_currentUserName ?? "Someone"} liked your post!',
-              'type': 'feed',
-            });
+          if (postOwnerId != null && postOwnerId != _currentUserId) {
+            final likerName = _currentUserName ?? "Someone";
+            await OneSignalService.sendNotificationToUser(
+              userId: postOwnerId,
+              title: 'New Like ❤️',
+              message: '$likerName liked your post!',
+              type: 'feed',
+              data: {'type': 'feed', 'post_id': postId},
+            );
           }
         } catch (_) {}
       }

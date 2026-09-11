@@ -313,6 +313,24 @@ class _TakevoletAppState extends State<TakevoletApp> {
   void initState() {
     super.initState();
     OneSignalService.initialize(rootNavigatorKey);
+
+    // Bind OneSignal user ID and sync user email to profiles on auth changes
+    supabase.auth.onAuthStateChange.listen((data) async {
+      final session = data.session;
+      if (session?.user != null) {
+        final user = session!.user;
+        OneSignalService.login(user.id);
+        if (user.email != null && user.email!.isNotEmpty) {
+          try {
+            await supabase.from('profiles').update({
+              'email': user.email,
+            }).eq('id', user.id);
+          } catch (_) {}
+        }
+      } else {
+        OneSignalService.logout();
+      }
+    });
   }
 
   @override

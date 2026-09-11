@@ -75,10 +75,31 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
       _commissionController.text = metadata['commission']?.toString() ?? data['commission']?.toString() ?? '';
       _membersController.text = metadata['members_allowed']?.toString() ?? data['members_allowed']?.toString() ?? '1';
       
-      _tenantType = metadata['tenant_type']?.toString() ?? data['tenant_type']?.toString() ?? 'bachelor';
-      _genderPref = metadata['gender_preference']?.toString() ?? data['gender_preference']?.toString() ?? 'Any';
-      _furnishing = metadata['furnishing']?.toString() ?? data['furnishing']?.toString() ?? 'Semi-Furnished';
-      _parking = metadata['parking']?.toString() ?? data['parking']?.toString() ?? 'Bike Parking';
+      final rawTenant = (metadata['tenant_type']?.toString() ?? data['tenant_type']?.toString() ?? 'bachelor').toLowerCase();
+      _tenantType = (rawTenant == 'family') ? 'family' : 'bachelor';
+
+      final rawGender = (metadata['gender_preference']?.toString() ?? data['gender_preference']?.toString() ?? 'Any').toLowerCase();
+      if (rawGender.contains('fem') || rawGender.contains('girl') || rawGender.contains('women')) {
+        _genderPref = 'Female';
+      } else if (rawGender.contains('mal') || rawGender.contains('boy') || rawGender.contains('men')) {
+        _genderPref = 'Male';
+      } else {
+        _genderPref = 'Any';
+      }
+
+      final rawFurn = metadata['furnishing']?.toString() ?? data['furnishing']?.toString() ?? 'Semi-Furnished';
+      if (['Fully-Furnished', 'Semi-Furnished', 'Unfurnished'].contains(rawFurn)) {
+        _furnishing = rawFurn;
+      } else {
+        _furnishing = 'Semi-Furnished';
+      }
+
+      final rawPark = metadata['parking']?.toString() ?? data['parking']?.toString() ?? 'Bike Parking';
+      if (['Bike Parking', 'Car Parking', 'Both', 'None'].contains(rawPark)) {
+        _parking = rawPark;
+      } else {
+        _parking = 'Bike Parking';
+      }
       
       if (AVAILABLE_CITIES.contains(data['city'])) {
         _selectedCity = data['city'];
