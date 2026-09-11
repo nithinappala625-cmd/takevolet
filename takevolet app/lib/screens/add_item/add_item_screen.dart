@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../main.dart';
 import '../../services/r2_storage_service.dart';
+import '../../services/onesignal_service.dart';
 import '../../data/locations.dart';
 
 class AddItemScreen extends StatefulWidget {
@@ -149,6 +150,19 @@ class _AddItemScreenState extends State<AddItemScreen> {
         await supabase.from('items').update(itemData).eq('id', widget.initialData!['id']);
       } else {
         await supabase.from('items').insert(itemData);
+        try {
+          await OneSignalService.sendPushNotification(
+            title: 'New Marketplace Item',
+            message: '${_titleController.text.trim()} is now available for ₹${itemData['price']} in $_location, $_selectedCity',
+          );
+        } catch (_) {}
+        try {
+          await OneSignalService.broadcastInAppNotification(
+            title: 'New Marketplace Item',
+            body: '${_titleController.text.trim()} is now available for ₹${itemData['price']} in $_location, $_selectedCity',
+            type: 'item',
+          );
+        } catch (_) {}
       }
 
       if (mounted) {

@@ -119,7 +119,6 @@ class OneSignalService {
         'contents': {'en': message},
         'large_icon': 'https://pub-6e2dfd0939c946adb7029c6cdae04896.r2.dev/tvl_logo.png',
         'small_icon': 'ic_stat_onesignal_default',
-        'android_channel_id': 'takevolet_high_importance',
         'priority': 10,
       };
 

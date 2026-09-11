@@ -448,12 +448,12 @@ class _FeedScreenState extends State<FeedScreen> {
       // Trigger notifications for new community post
       try {
         final posterName = _currentUserName ?? 'Someone';
-        OneSignalService.broadcastInAppNotification(
+        await OneSignalService.broadcastInAppNotification(
           title: 'New Community Post',
           body: '$posterName just shared an update!',
           type: 'feed',
         );
-        OneSignalService.sendPushNotification(
+        await OneSignalService.sendPushNotification(
           title: 'New Post by $posterName',
           message: _postController.text.trim().isNotEmpty
               ? _postController.text.trim()
