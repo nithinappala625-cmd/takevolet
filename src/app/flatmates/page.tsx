@@ -157,6 +157,33 @@ export default function FlatmatesPage() {
   return (
     <div className="pt-36 pb-20 min-h-screen">
       <div className="container mx-auto px-6 md:px-12">
+        {/* Navigation Category Switcher */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-secondary/60 p-1.5 rounded-full inline-flex border border-border backdrop-blur-sm shadow-sm gap-1 flex-wrap justify-center">
+            <Link
+              href="/rooms"
+              className="px-4 py-2 rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground transition-all"
+            >
+              Rooms &amp; Flats
+            </Link>
+            <Link
+              href="/pgs"
+              className="px-4 py-2 rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground transition-all"
+            >
+              PGs &amp; Hostels
+            </Link>
+            <Link
+              href="/day-wise"
+              className="px-4 py-2 rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground transition-all"
+            >
+              Day-Wise Stays
+            </Link>
+            <span className="px-4 py-2 rounded-full text-xs font-bold bg-primary text-white shadow-md">
+              Flatmates
+            </span>
+          </div>
+        </div>
+
         {/* Title Section */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div>

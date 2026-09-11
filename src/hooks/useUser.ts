@@ -29,7 +29,7 @@ function mapSupabaseUser(user: User): AppUser {
     avatar:
       meta.avatar_url ||
       meta.picture ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(meta.full_name || user.email || "U")}&background=D4AF37&color=000000&bold=true`,
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(meta.full_name || user.email || "U")}&background=7B3AEC&color=FFFFFF&bold=true`,
     location: meta.location || "",
     profession: meta.profession || "",
     membersCount: meta.members_count || 1,

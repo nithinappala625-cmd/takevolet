@@ -19,7 +19,7 @@ export default function AppBanner() {
           href="https://play.google.com/store/apps/details?id=com.takevolet.app" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="bg-[#D4AF37] hover:bg-[#B3932F] text-black text-xs md:text-sm font-bold py-1.5 px-4 rounded transition-colors whitespace-nowrap"
+          className="bg-[#7B3AEC] hover:bg-[#6D28D9] text-white text-xs md:text-sm font-bold py-1.5 px-4 rounded transition-colors whitespace-nowrap shadow-sm"
         >
           Download
         </Link>

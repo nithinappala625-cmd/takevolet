@@ -54,12 +54,12 @@ export default function RoomDetailPage() {
 
   // ── Pricing Plans ────────────────────────────────────────────────────────
   const PLANS = [
-    { id: "single",    label: "1 Contact",         contacts: 1,      price: 15,  paise: 1500,  badge: "",            perContact: "₹15" },
-    { id: "starter",   label: "5 Contacts",        contacts: 5,      price: 35,  paise: 3500,  badge: "Popular",     perContact: "₹7" },
-    { id: "growth",    label: "50 Contacts",       contacts: 50,     price: 105, paise: 10500, badge: "",            perContact: "₹2.10" },
-    { id: "unlimited", label: "Unlimited Contacts", contacts: 999999, price: 200, paise: 20000, badge: "🔥 Best Deal",perContact: "₹0" },
+    { id: "single", label: "Single Contact", contacts: 1, price: 50, paise: 5000, badge: "", perContact: "₹50" },
+    { id: "quick", label: "Quick Connect", contacts: 5, price: 100, paise: 10000, badge: "Popular", perContact: "₹20" },
+    { id: "smart", label: "Smart Connect", contacts: 15, price: 200, paise: 20000, badge: "🔥 Best Value", perContact: "₹13.3" },
+    { id: "mega", label: "Mega Connect", contacts: 50, price: 500, paise: 50000, badge: "Max Unlocks", perContact: "₹10" },
   ];
-  const [selectedPlan, setSelectedPlan] = useState(PLANS[1]);
+  const [selectedPlan, setSelectedPlan] = useState(PLANS[2]);
 
   // ── Load room: Supabase first, then MOCK fallback ─────────────────────────
   useEffect(() => {
@@ -213,7 +213,7 @@ export default function RoomDetailPage() {
           roomTitle: room.title,
           packType: "5_contacts_30_days",
         },
-        theme: { color: "#D4AF37" },               // RoomRelay gold primary color
+        theme: { color: "#7B3AEC" },               // RoomRelay gold primary color
         modal: {
           ondismiss: () => {
             setPaying(false);
@@ -314,7 +314,7 @@ export default function RoomDetailPage() {
         name: "Takevolet",
         description: "Address Unlock — I’m Interested",
         order_id: orderData.orderId,
-        theme: { color: "#D4AF37" },
+        theme: { color: "#7B3AEC" },
         modal: { ondismiss: () => { setInterestPaying(false); setFlowError("Payment cancelled."); } },
         handler: async (resp: any) => {
           setInterestPaying(true);
@@ -377,7 +377,7 @@ export default function RoomDetailPage() {
         name: "Takevolet",
         description: "Handover Confirmation — ₹1,000 to Poster",
         order_id: orderData.orderId,
-        theme: { color: "#D4AF37" },
+        theme: { color: "#7B3AEC" },
         modal: { ondismiss: () => { setHandoverPaying(false); setFlowError("Payment cancelled."); } },
         handler: async (resp: any) => {
           setHandoverPaying(true);

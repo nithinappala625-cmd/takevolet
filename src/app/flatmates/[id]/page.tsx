@@ -38,12 +38,12 @@ export default function FlatmateDetailPage() {
   const [visitPassError, setVisitPassError] = useState<string | null>(null);
 
   const PLANS = [
-    { id: "single",    label: "1 Contact",         contacts: 1,      price: 15,  paise: 1500,  badge: "",            perContact: "₹15" },
-    { id: "starter",   label: "5 Contacts",        contacts: 5,      price: 35,  paise: 3500,  badge: "Popular",     perContact: "₹7" },
-    { id: "growth",    label: "50 Contacts",       contacts: 50,     price: 105, paise: 10500, badge: "",            perContact: "₹2.10" },
-    { id: "unlimited", label: "Unlimited Contacts", contacts: 999999, price: 200, paise: 20000, badge: "🔥 Best Deal",perContact: "₹0" },
+    { id: "single", label: "Single Contact", contacts: 1, price: 50, paise: 5000, badge: "", perContact: "₹50" },
+    { id: "quick", label: "Quick Connect", contacts: 5, price: 100, paise: 10000, badge: "Popular", perContact: "₹20" },
+    { id: "smart", label: "Smart Connect", contacts: 15, price: 200, paise: 20000, badge: "🔥 Best Value", perContact: "₹13.3" },
+    { id: "mega", label: "Mega Connect", contacts: 50, price: 500, paise: 50000, badge: "Max Unlocks", perContact: "₹10" },
   ];
-  const [selectedPlan, setSelectedPlan] = useState(PLANS[1]);
+  const [selectedPlan, setSelectedPlan] = useState(PLANS[2]);
 
   const { user } = useUser();
   const userId = user?.id || "guest";
@@ -193,7 +193,7 @@ export default function FlatmateDetailPage() {
           flatmateId: flatmate.id,
           flatmateTitle: flatmate.title,
         },
-        theme: { color: "#D4AF37" },
+        theme: { color: "#7B3AEC" },
         modal: {
           ondismiss: () => {
             setUnlocking(false);
@@ -291,7 +291,7 @@ export default function FlatmateDetailPage() {
           email: user?.email || "",
           contact: user?.phone || "",
         },
-        theme: { color: "#D4AF37" },
+        theme: { color: "#7B3AEC" },
         modal: {
           ondismiss: () => {
             setVisitPassPaying(false);

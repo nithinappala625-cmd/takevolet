@@ -149,15 +149,18 @@ export default function LandingPage() {
               Takevolet connects people <strong className="text-foreground">leaving their rooms</strong> with people <strong className="text-foreground">searching for rooms</strong> — directly, with zero brokerage. Find bachelor rooms, family rooms, flatmates, and used furniture in Hyderabad&apos;s top 90+ areas.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/rooms" className="group bg-foreground text-background px-8 py-4 flex items-center justify-center gap-3 font-semibold uppercase tracking-wider text-sm hover:bg-primary hover:text-primary-foreground transition-all">
+            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+              <Link href="/rooms" className="group bg-primary text-white px-8 py-4 flex items-center justify-center gap-3 font-semibold uppercase tracking-wider text-sm hover:opacity-90 transition-all rounded-xl shadow-md shadow-primary/20">
                 Find a Room <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/rooms/family" className="group border-2 border-primary text-primary px-8 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:bg-primary hover:text-primary-foreground transition-all">
-                Family Rooms
+              <Link href="/pgs" className="border-2 border-primary text-primary px-8 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:bg-primary hover:text-white transition-all rounded-xl">
+                PGs &amp; Hostels
               </Link>
-              <Link href="/list" className="border border-border px-8 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:border-primary hover:text-primary transition-all">
-                I&apos;m Leaving — Post My Room
+              <Link href="/day-wise" className="border border-border px-8 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:border-primary hover:text-primary transition-all rounded-xl">
+                Day-Wise Stays
+              </Link>
+              <Link href="/list" className="border border-border px-6 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:border-primary hover:text-primary transition-all rounded-xl">
+                Post Listing
               </Link>
             </div>
 
@@ -473,11 +476,12 @@ export default function LandingPage() {
               <h4 className="text-[10px] uppercase tracking-widest font-bold mb-3">Platform</h4>
               <div className="flex flex-col gap-2">
                 {[
-                  ["Rooms & PGs", "/rooms"],
-                  ["Family Rooms", "/rooms/family"],
+                  ["Rooms & Flats", "/rooms"],
+                  ["PGs & Hostels", "/pgs"],
+                  ["Day-Wise Stays", "/day-wise"],
+                  ["Find Flatmates", "/flatmates"],
                   ["Properties for Sale", "/properties"],
                   ["Construction Services", "/build"],
-                  ["Find Flatmates", "/flatmates"],
                   ["Pricing & Plans", "/pricing"],
                   ["Marketplace", "/marketplace"],
                   ["Post Your Listing", "/list"],

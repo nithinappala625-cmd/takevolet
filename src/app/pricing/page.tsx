@@ -203,7 +203,7 @@ export default function PricingPage() {
           contact: currentUser.phone || "",
         },
         theme: {
-          color: "#0F172A",
+          color: "#7B3AEC",
         },
         modal: {
           ondismiss: () => {
@@ -327,7 +327,7 @@ export default function PricingPage() {
             <motion.div key={plan.id}
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
               className={`border flex flex-col relative rounded-2xl ${plan.highlight
-                ? "border-primary bg-primary/5 shadow-[0_0_40px_rgba(212,175,55,0.12)] scale-[1.02]"
+                ? "border-primary bg-primary/5 shadow-[0_0_40px_rgba(123,58,236,0.25)] scale-[1.02]"
                 : "border-border bg-card/40"}`}>
               {plan.badge && (
                 <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-[9px] uppercase tracking-widest font-bold rounded-full whitespace-nowrap ${

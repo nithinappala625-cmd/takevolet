@@ -1,36 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: #071426;
+  --background: #0F172A;
   --foreground: #f8fafc;
-  --primary: #d4af37;
-  --primary-foreground: #071426;
-  --secondary: #0b1e36;
+  --primary: #7B3AEC;
+  --primary-foreground: #ffffff;
+  --secondary: #1E293B;
   --secondary-foreground: #f8fafc;
-  --muted: #0a192c;
+  --muted: #1E293B;
   --muted-foreground: #94a3b8;
-  --accent: #112845;
+  --accent: #251B42;
   --accent-foreground: #f8fafc;
-  --border: #1a365d;
-  --input: #1a365d;
-  --ring: #d4af37;
+  --border: #334155;
+  --input: #334155;
+  --ring: #7B3AEC;
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: #071426;
+  --background: #0F172A;
   --foreground: #f8fafc;
-  --primary: #d4af37;
-  --primary-foreground: #071426;
-  --secondary: #0b1e36;
+  --primary: #7B3AEC;
+  --primary-foreground: #ffffff;
+  --secondary: #1E293B;
   --secondary-foreground: #f8fafc;
-  --muted: #0a192c;
+  --muted: #1E293B;
   --muted-foreground: #94a3b8;
-  --accent: #112845;
+  --accent: #251B42;
   --accent-foreground: #f8fafc;
-  --border: #1a365d;
-  --input: #1a365d;
-  --ring: #d4af37;
+  --border: #334155;
+  --input: #334155;
+  --ring: #7B3AEC;
 }
 
 @theme inline {
@@ -90,10 +90,10 @@ img[loading="lazy"] {
 
 /* Premium utilities */
 .glass-panel {
-  background: rgba(11, 30, 54, 0.75);
+  background: rgba(30, 41, 59, 0.75);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(123, 58, 236, 0.25);
 }
 
 .text-gradient {
@@ -103,8 +103,9 @@ img[loading="lazy"] {
   background-clip: text;
 }
 
-.gold-gradient {
-  background: linear-gradient(135deg, #d4af37 0%, #aa8529 100%);
+.gold-gradient,
+.purple-gradient {
+  background: linear-gradient(135deg, #7B3AEC 0%, #9333EA 50%, #C084FC 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

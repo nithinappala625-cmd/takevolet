@@ -18,7 +18,7 @@ export default function AppleIcon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0A0A0A",
+          background: "#0F172A",
         }}
       >
         <svg
@@ -29,15 +29,15 @@ export default function AppleIcon() {
           style={{ display: "flex" }}
         >
           <defs>
-            <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#F2D06B" />
-              <stop offset="50%" stopColor="#D4AF37" />
-              <stop offset="100%" stopColor="#997A15" />
+            <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#A855F7" />
+              <stop offset="50%" stopColor="#7B3AEC" />
+              <stop offset="100%" stopColor="#5B21B6" />
             </linearGradient>
           </defs>
           <path
             d="M256 60 L440 220 H380 V420 H290 V290 H222 V420 H132 V220 H72 Z"
-            fill="url(#goldGrad)"
+            fill="url(#purpleGrad)"
           />
         </svg>
       </div>

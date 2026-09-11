@@ -74,10 +74,12 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: "Rooms & PGs", href: "/rooms" },
+    { name: "Rooms", href: "/rooms" },
+    { name: "PGs", href: "/pgs" },
+    { name: "Day-Wise", href: "/day-wise" },
+    { name: "Flatmates", href: "/flatmates" },
     { name: "Properties", href: "/properties" },
     { name: "Construction", href: "/build" },
-    { name: "Flatmates", href: "/flatmates" },
     { name: "Pricing", href: "/pricing" },
   ];
 

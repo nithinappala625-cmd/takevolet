@@ -63,6 +63,7 @@ export default function RoomsPage() {
       const range = BUDGET_RANGES.find(r => r.label === selectedBudget);
       if (range) matchesBudget = room.rent >= range.min && room.rent <= range.max;
     }
+    if (room.tenant_type === "pg" || room.tenant_type === "day_wise") return false;
     const matchesTenantType = (room.tenant_type || 'bachelor') === activeTab;
     return matchesCity && matchesLocation && matchesFurnishing && matchesMembers && matchesBudget && matchesSearch && matchesGender && matchesParking && matchesTenantType;
   });
@@ -82,6 +83,33 @@ export default function RoomsPage() {
   return (
     <div className="pt-36 pb-20 min-h-screen">
       <div className="container mx-auto px-6 md:px-12">
+
+        {/* Navigation Category Switcher */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-secondary/60 p-1.5 rounded-full inline-flex border border-border backdrop-blur-sm shadow-sm gap-1 flex-wrap justify-center">
+            <span className="px-4 py-2 rounded-full text-xs font-bold bg-primary text-white shadow-md">
+              Rooms &amp; Flats
+            </span>
+            <Link
+              href="/pgs"
+              className="px-4 py-2 rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground transition-all"
+            >
+              PGs &amp; Hostels
+            </Link>
+            <Link
+              href="/day-wise"
+              className="px-4 py-2 rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground transition-all"
+            >
+              Day-Wise Stays
+            </Link>
+            <Link
+              href="/flatmates"
+              className="px-4 py-2 rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground transition-all"
+            >
+              Flatmates
+            </Link>
+          </div>
+        </div>
 
         <div className="mb-10 text-center">
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs uppercase tracking-[0.3em] text-primary font-bold mb-4">
@@ -115,10 +143,10 @@ export default function RoomsPage() {
             </div>
           </div>
           
-          <p className="text-muted-foreground font-light max-w-2xl mx-auto">
+          <p className="text-muted-foreground font-light max-w-2xl mx-auto text-sm">
             {activeTab === 'bachelor' 
-              ? "Bachelors leaving their rooms post here. Contact via ₹15/₹55 packs to unlock details." 
-              : "Discover safe, beautiful homes perfect for families. Fully verified listings with transparent pricing."}
+              ? "Bachelors leaving their rooms post here. Direct owner contact unlocks starting at ₹50. Zero brokerage." 
+              : "Discover safe, beautiful homes perfect for families. Fully verified listings with transparent pricing and zero brokerage."}
           </p>
         </div>
 
