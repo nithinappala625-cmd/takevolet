@@ -123,24 +123,26 @@ class OneSignalService {
         'priority': 10,
       };
 
+      final authHeader = restApiKey.startsWith('os_v2_') ? 'Key $restApiKey' : 'Basic $restApiKey';
+
       var response = await http.post(
         Uri.parse('https://onesignal.com/api/v1/notifications'),
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
-          'Authorization': 'Basic $restApiKey',
+          'Authorization': authHeader,
         },
-        body: jsonEncode(payload(['Subscribed Users'])),
+        body: jsonEncode(payload(['Total Subscriptions'])),
       );
 
       if (response.statusCode != 200) {
-        debugPrint('[OneSignalService] Retrying push with Total Subscriptions segment...');
+        debugPrint('[OneSignalService] Retrying push with Subscribed Users segment...');
         response = await http.post(
           Uri.parse('https://onesignal.com/api/v1/notifications'),
           headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            'Authorization': 'Basic $restApiKey',
+            'Authorization': authHeader,
           },
-          body: jsonEncode(payload(['Total Subscriptions'])),
+          body: jsonEncode(payload(['Subscribed Users'])),
         );
       }
 
