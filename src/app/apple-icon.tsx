@@ -18,26 +18,25 @@ export default function AppleIcon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0F172A",
+          background: "linear-gradient(135deg, #7B3AEC 0%, #6366F1 50%, #4F46E5 100%)",
+          borderRadius: "40px",
         }}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 512 512"
-          width="120"
-          height="120"
+          viewBox="0 0 24 24"
+          width="110"
+          height="110"
+          fill="none"
           style={{ display: "flex" }}
         >
-          <defs>
-            <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#A855F7" />
-              <stop offset="50%" stopColor="#7B3AEC" />
-              <stop offset="100%" stopColor="#5B21B6" />
-            </linearGradient>
-          </defs>
           <path
-            d="M256 60 L440 220 H380 V420 H290 V290 H222 V420 H132 V220 H72 Z"
-            fill="url(#purpleGrad)"
+            d="M3 10.5L12 3.5L21 10.5V20C21 20.55 20.55 21 20 21H4C3.45 21 3 20.55 3 20V10.5Z"
+            fill="#FFFFFF"
+          />
+          <path
+            d="M9 21V12.5H15V21H9Z"
+            fill="#7B3AEC"
           />
         </svg>
       </div>

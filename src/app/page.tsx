@@ -1,7 +1,17 @@
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, ShoppingBag, Home, Users, MapPin, ChevronRight, IndianRupee, Wallet, Building2, Hammer, Sparkles, Building } from "lucide-react";
 import { HYDERABAD_AREAS } from "@/data/locations";
-import { HeroAnimations, FeaturedRoomsSection, FeaturedFlatmatesSection, AnimatedStats, AnimatedSection } from "@/components/HomepageHero";
+import {
+  HeroAnimations,
+  HeroVisual,
+  FeaturedRoomsSection,
+  FeaturedFlatmatesSection,
+  FeaturedPropertiesSection,
+  FeaturedPGsSection,
+  DownloadAppSection,
+  AnimatedStats,
+  AnimatedSection,
+} from "@/components/HomepageHero";
 import type { Metadata } from "next";
 
 // ── SEO Metadata (server-side, crawlable) ──────────────────────────────────────
@@ -135,32 +145,56 @@ export default function LandingPage() {
 
         <div className="container mx-auto px-6 md:px-12 grid lg:grid-cols-2 gap-16 items-center">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center space-x-2 border border-border px-4 py-1.5 rounded-full mb-8">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs uppercase tracking-[0.2em] font-medium text-muted-foreground">Built for Bachelors &amp; Families</span>
+            <div className="inline-flex items-center space-x-2 border border-primary/30 bg-primary/5 px-4 py-1.5 rounded-full mb-6">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs uppercase tracking-[0.2em] font-bold text-primary">Zero Brokerage Across Major Indian Metros</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-light tracking-tight mb-6 leading-[1.1]">
-              Rooms for Rent in Hyderabad.<br />
-              <span className="font-bold gold-gradient">Zero Brokerage. Direct Contact.</span>
+              Rentals, Flats &amp; Homes Across India.<br />
+              <span className="font-bold gold-gradient">Zero Brokerage. Direct Owner Contact.</span>
             </h1>
 
-            <p className="text-lg text-muted-foreground mb-10 leading-relaxed font-light max-w-lg">
-              Takevolet connects people <strong className="text-foreground">leaving their rooms</strong> with people <strong className="text-foreground">searching for rooms</strong> — directly, with zero brokerage. Find bachelor rooms, family rooms, flatmates, and used furniture in Hyderabad&apos;s top 90+ areas.
+            <p className="text-base sm:text-lg text-muted-foreground mb-6 leading-relaxed font-light max-w-xl">
+              Takevolet connects room seekers, tenants, flatmates, and property buyers directly with owners across <strong className="text-foreground">Mumbai, Delhi-NCR, Pune, Hyderabad, Chennai, Bangalore &amp; Kolkata</strong> — 100% free of middleman commissions.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
-              <Link href="/rooms" className="group bg-primary text-white px-8 py-4 flex items-center justify-center gap-3 font-semibold uppercase tracking-wider text-sm hover:opacity-90 transition-all rounded-xl shadow-md shadow-primary/20">
-                Find a Room <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            {/* Nationwide City Quick Selector Pills */}
+            <div className="mb-8">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold block mb-2">Select Your City:</span>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { name: "Hyderabad", href: "/rooms?city=Hyderabad" },
+                  { name: "Bangalore", href: "/rooms?city=Bangalore" },
+                  { name: "Mumbai", href: "/rooms?city=Mumbai" },
+                  { name: "Pune", href: "/rooms?city=Pune" },
+                  { name: "Delhi-NCR", href: "/rooms?city=Delhi" },
+                  { name: "Chennai", href: "/rooms?city=Chennai" },
+                  { name: "Kolkata", href: "/rooms?city=Kolkata" },
+                ].map((c) => (
+                  <Link
+                    key={c.name}
+                    href={c.href}
+                    className="inline-flex items-center gap-1 bg-secondary/80 hover:bg-primary hover:text-primary-foreground border border-border px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm"
+                  >
+                    <MapPin size={11} className="text-primary" /> {c.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+              <Link href="/rooms" className="group bg-primary text-primary-foreground px-7 py-3.5 flex items-center justify-center gap-2.5 font-bold uppercase tracking-wider text-xs sm:text-sm hover:opacity-90 transition-all rounded-xl shadow-md shadow-primary/20">
+                Find Rooms &amp; Flats <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/pgs" className="border-2 border-primary text-primary px-8 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:bg-primary hover:text-white transition-all rounded-xl">
+              <Link href="/properties" className="border-2 border-primary text-primary px-7 py-3.5 flex items-center justify-center font-bold uppercase tracking-wider text-xs sm:text-sm hover:bg-primary hover:text-primary-foreground transition-all rounded-xl">
+                Properties For Sale
+              </Link>
+              <Link href="/feed" className="bg-secondary hover:bg-secondary/80 border border-border px-6 py-3.5 flex items-center justify-center font-bold uppercase tracking-wider text-xs sm:text-sm transition-all rounded-xl">
+                Community Feed
+              </Link>
+              <Link href="/pgs" className="border border-border px-6 py-3.5 flex items-center justify-center font-bold uppercase tracking-wider text-xs sm:text-sm hover:border-primary hover:text-primary transition-all rounded-xl">
                 PGs &amp; Hostels
-              </Link>
-              <Link href="/day-wise" className="border border-border px-8 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:border-primary hover:text-primary transition-all rounded-xl">
-                Day-Wise Stays
-              </Link>
-              <Link href="/list" className="border border-border px-6 py-4 flex items-center justify-center font-semibold uppercase tracking-wider text-sm hover:border-primary hover:text-primary transition-all rounded-xl">
-                Post Listing
               </Link>
             </div>
 
@@ -180,9 +214,12 @@ export default function LandingPage() {
           </div>
 
           {/* Hero Visual — Client Component */}
-          <FeaturedRoomsSection />
+          <HeroVisual />
         </div>
       </section>
+
+      {/* ━━━ HORIZONTAL FEATURED ROOMS & HANDOVERS CAROUSEL ━━━ */}
+      <FeaturedRoomsSection />
 
       {/* ━━━ STATS ━━━ */}
       <AnimatedStats stats={stats} />
@@ -242,6 +279,15 @@ export default function LandingPage() {
 
       {/* ━━━ FEATURED FLATMATES — Client Component ━━━ */}
       <FeaturedFlatmatesSection />
+
+      {/* ━━━ FEATURED PROPERTIES FOR SALE ━━━ */}
+      <FeaturedPropertiesSection />
+
+      {/* ━━━ FEATURED PGS & CO-LIVING HOSTELS ━━━ */}
+      <FeaturedPGsSection />
+
+      {/* ━━━ DOWNLOAD OUR APP SECTION ━━━ */}
+      <DownloadAppSection />
 
       {/* ━━━ SELL YOUR ITEMS ━━━ */}
       <section className="py-28 bg-secondary/30 border-y border-border">

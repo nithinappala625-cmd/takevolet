@@ -59,7 +59,9 @@ export default function AdminPage() {
   const [formSchemaSaving, setFormSchemaSaving] = useState(false);
 
   // Link Extraction Engine State
+  const [extractMode, setExtractMode] = useState<"link" | "paste">("link");
   const [extractInput, setExtractInput] = useState("");
+  const [pasteContent, setPasteContent] = useState("");
   const [extractLoading, setExtractLoading] = useState(false);
   const [extractError, setExtractError] = useState("");
   const [extractedData, setExtractedData] = useState<any | null>(null);
@@ -323,25 +325,76 @@ export default function AdminPage() {
   };
 
   const handleExtractListing = async (urlToExtract?: string) => {
+    const isPaste = extractMode === "paste";
     const targetUrl = (urlToExtract || extractInput).trim();
-    if (!targetUrl) {
+    const pasteBody = pasteContent.trim();
+
+    if (isPaste && !pasteBody) {
+      setExtractError("Please paste OLX page HTML source or listing text into the box below.");
+      return;
+    }
+    if (!isPaste && !targetUrl) {
       setExtractError("Please paste an OLX listing link or share text");
       return;
     }
+
     setExtractLoading(true);
     setExtractError("");
     try {
-      const res = await fetch("/api/admin/extract", {
+      let requestPayload: any = {};
+      if (isPaste) {
+        const isHtml = pasteBody.includes("<") && pasteBody.includes(">");
+        requestPayload = isHtml ? { rawHtml: pasteBody } : { rawText: pasteBody };
+      } else {
+        // Auto-detect if user accidentally pasted raw HTML into the URL input
+        if (targetUrl.startsWith("<") || targetUrl.includes("<html") || targetUrl.includes("<div") || (targetUrl.length > 500 && !targetUrl.startsWith("http"))) {
+          requestPayload = { rawHtml: targetUrl };
+        } else {
+          requestPayload = { url: targetUrl };
+        }
+      }
+
+      let res = await fetch("/api/admin/extract", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-admin-password": currentAdminPwd,
         },
-        body: JSON.stringify({ url: targetUrl }),
+        body: JSON.stringify(requestPayload),
       });
-      const json = await res.json();
+      let json = await res.json();
+
+      // Client-side fallback if server-side fetch failed (e.g., OLX blocked Vercel datacenter IP)
+      if ((!res.ok || !json.success) && requestPayload.url) {
+        try {
+          showFeedbackToast("Server fetch blocked. Attempting client browser proxy fallback...");
+          const corsProxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(requestPayload.url)}`;
+          const clientRes = await fetch(corsProxyUrl);
+          if (clientRes.ok) {
+            const clientHtml = await clientRes.text();
+            if (clientHtml && clientHtml.length > 500) {
+              const retryRes = await fetch("/api/admin/extract", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-admin-password": currentAdminPwd,
+                },
+                body: JSON.stringify({ url: requestPayload.url, rawHtml: clientHtml }),
+              });
+              const retryJson = await retryRes.json();
+              if (retryRes.ok && retryJson.success) {
+                res = retryRes;
+                json = retryJson;
+              }
+            }
+          }
+        } catch (clientFallbackErr) {
+          console.warn("Client browser proxy fallback failed:", clientFallbackErr);
+        }
+      }
+
       if (!res.ok || !json.success) {
-        throw new Error(json.error || "Extraction failed");
+        throw new Error(json.error || "Extraction failed. Tip: Switch to 'Direct HTML / Text Paste' tab to bypass network blocks.");
       }
 
       setExtractedData(json.data);
@@ -364,19 +417,20 @@ export default function AdminPage() {
       });
 
       // Save to recent extractions
+      const savedKey = requestPayload.url || json.data.title || "Custom Extraction";
       const updatedRecent = [
         {
-          id: targetUrl,
+          id: savedKey,
           title: json.data.title,
           rent: json.data.rent,
           location: json.data.colony || json.data.location,
           image: allHdUrls[0] || "",
           imagesCount: allHdUrls.length,
-          sourceUrl: targetUrl,
+          sourceUrl: requestPayload.url || "",
           data: json.data,
           extractedAt: "Just now",
         },
-        ...recentExtractions.filter((r: any) => r.sourceUrl !== targetUrl),
+        ...recentExtractions.filter((r: any) => r.sourceUrl !== savedKey),
       ].slice(0, 8);
 
       setRecentExtractions(updatedRecent);
@@ -387,7 +441,7 @@ export default function AdminPage() {
       showFeedbackToast("Listing and clean images extracted successfully!");
     } catch (err: any) {
       console.error(err);
-      setExtractError(err.message || "Failed to extract listing. Please ensure the link is active.");
+      setExtractError(err.message || "Failed to extract listing. Please ensure the link is active or use Direct Paste mode.");
     } finally {
       setExtractLoading(false);
     }
@@ -552,13 +606,13 @@ export default function AdminPage() {
   const fmtDate = (d: string) => new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" });
 
   // ━━━ SECURITY GATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  if (userLoading) return <div className="min-h-screen flex items-center justify-center bg-[#14171C]"><RefreshCw className="animate-spin text-primary" /></div>;
+  if (userLoading) return <div className="min-h-screen flex items-center justify-center bg-white"><RefreshCw className="animate-spin text-primary" /></div>;
   if (!user || user.email?.toLowerCase() !== "nithinappala625@gmail.com") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#14171C] px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
         <Lock size={48} className="text-red-500 mb-4" />
         <h1 className="text-2xl font-black mb-2">Access Denied</h1>
-        <p className="text-gray-400">You do not have permission to view this page.</p>
+        <p className="text-slate-500">You do not have permission to view this page.</p>
       </div>
     );
   }
@@ -566,9 +620,9 @@ export default function AdminPage() {
   // ━━━ LOGIN SCREEN ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if (!authed) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#14171C] px-4">
+      <div className="min-h-screen flex items-center justify-center bg-white px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-sm border border-[#2A2E39] p-8">
+          className="w-full max-w-sm border border-slate-200 p-8">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-primary flex items-center justify-center">
               <Shield size={18} className="text-primary-foreground" />
@@ -581,7 +635,7 @@ export default function AdminPage() {
           <div className="mb-6 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-2.5">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
             <div className="text-xs text-emerald-300">
-              <span className="font-semibold block text-white">Owner Verified</span>
+              <span className="font-semibold block text-emerald-800 font-bold">Owner Verified</span>
               <span className="text-[11px] opacity-80">{user.email}</span>
             </div>
           </div>
@@ -610,16 +664,16 @@ export default function AdminPage() {
                     if (pwdError) setPwdError("");
                   }}
                   placeholder={DEFAULT_ADMIN_PASSWORD}
-                  className="w-full border border-[#2A2E39] px-4 py-3 text-sm bg-[#14171C] focus:border-primary focus:outline-none pr-10 font-mono"
+                  className="w-full border border-slate-200 px-4 py-3 text-sm bg-white focus:border-primary focus:outline-none pr-10 font-mono"
                   autoFocus
                 />
                 <button type="button" onClick={() => setShowPwd(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
                   {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-              <div className="mt-2 text-[11px] text-gray-400 flex items-center justify-between">
-                <span>Default: <code className="text-gray-300 font-mono select-all">Nithin@Takevolet2026</code></span>
+              <div className="mt-2 text-[11px] text-slate-500 flex items-center justify-between">
+                <span>Default: <code className="text-slate-700 font-mono select-all">Nithin@Takevolet2026</code></span>
               </div>
               {pwdError && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><AlertCircle size={11} />{pwdError}</p>}
             </div>
@@ -628,7 +682,7 @@ export default function AdminPage() {
               <Shield size={14} /> Access Dashboard
             </button>
           </form>
-          <p className="text-center text-[10px] text-gray-400 mt-5">
+          <p className="text-center text-[10px] text-slate-500 mt-5">
             Nithin Patel · Founder & CEO · Takevolet Technologies
           </p>
         </motion.div>
@@ -647,18 +701,18 @@ export default function AdminPage() {
   const rooms  = data?.rooms  || [];
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-gray-200 flex font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex font-sans">
       
       {/* ── SIDEBAR ── */}
-      <div className="w-64 bg-[#14171C] border-r border-[#2A2E39] shrink-0 sticky top-0 h-screen overflow-y-auto flex flex-col">
-        <div className="p-6 border-b border-[#2A2E39]">
+      <div className="w-64 bg-white border-r border-slate-200 shrink-0 sticky top-0 h-screen overflow-y-auto flex flex-col">
+        <div className="p-6 border-b border-slate-200">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/20">
               <Shield size={18} className="text-white" />
             </div>
             <div>
-              <span className="font-bold text-base block text-white">Takevolet Admin</span>
-              <span className="text-gray-400 text-xs block mt-0.5">Nithin Patel</span>
+              <span className="font-bold text-base block text-slate-900 font-bold">Takevolet Admin</span>
+              <span className="text-slate-500 text-xs block mt-0.5">Nithin Patel</span>
             </div>
           </div>
         </div>
@@ -693,8 +747,8 @@ export default function AdminPage() {
                 onClick={() => setActiveTab(tab)}
                 className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all flex items-center justify-between ${
                   activeTab === tab 
-                  ? "bg-blue-600/10 text-blue-400 font-semibold border border-blue-500/20 shadow-sm" 
-                  : "text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent"
+                  ? "bg-purple-50 text-[#7B3AEC] font-bold border border-purple-200 shadow-sm" 
+                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent"
                 }`}
               >
                 {labelStr}
@@ -702,8 +756,8 @@ export default function AdminPage() {
             );
           })}
         </div>
-        <div className="p-4 border-t border-[#2A2E39]">
-           <button onClick={handleLogout} className="w-full text-gray-400 hover:text-white transition-colors flex items-center justify-center gap-2 text-sm bg-white/5 hover:bg-white/10 rounded-xl py-3">
+        <div className="p-4 border-t border-slate-200">
+           <button onClick={handleLogout} className="w-full text-slate-500 hover:text-white transition-colors flex items-center justify-center gap-2 text-sm bg-slate-50 hover:bg-slate-100 rounded-xl py-3">
              <LogOut size={16} /> Logout
            </button>
         </div>
@@ -713,8 +767,8 @@ export default function AdminPage() {
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
         
         {/* Top Navbar */}
-        <div className="bg-[#14171C]/80 backdrop-blur-md border-b border-[#2A2E39] px-8 py-4 flex justify-between items-center sticky top-0 z-40">
-          <h2 className="font-semibold text-gray-200 flex items-center gap-2">
+        <div className="bg-white/90 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-40">
+          <h2 className="font-semibold text-slate-900 flex items-center gap-2">
             <span className="text-gray-500">Admin</span> / <span className="text-blue-400 capitalize">{activeTab.replace('_', ' ')}</span>
           </h2>
           <div className="flex items-center gap-4">
@@ -723,7 +777,7 @@ export default function AdminPage() {
                  <AlertCircle size={12}/> {pendingPayouts.length} PENDING
                </span>
              )}
-             <button onClick={fetchData} className="text-gray-400 hover:text-white transition-colors flex items-center gap-1.5 text-sm bg-[#1A1D24] px-4 py-2 rounded-lg border border-[#2A2E39] hover:border-gray-500">
+             <button onClick={fetchData} className="text-slate-500 hover:text-white transition-colors flex items-center gap-1.5 text-sm bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 hover:border-slate-400">
                <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
              </button>
           </div>
@@ -732,16 +786,16 @@ export default function AdminPage() {
         <div className="p-8 max-w-[1400px] mx-auto w-full">
           
           {/* Dashboard Welcome Header */}
-          <div className="bg-gradient-to-r from-[#14171C] to-[#1A1D24] rounded-2xl p-8 mb-8 border border-[#2A2E39] shadow-xl relative overflow-hidden">
+          <div className="bg-gradient-to-r from-white to-slate-50 rounded-2xl p-8 mb-8 border border-slate-200 shadow-xl relative overflow-hidden">
              <div className="absolute top-0 right-0 p-8 opacity-5">
                 <Shield size={120} />
              </div>
              <div className="relative z-10">
-                <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                <h1 className="text-3xl font-black text-slate-900 mb-2 flex items-center gap-3">
                   <Activity size={28} className="text-blue-400" />
                   Admin Dashboard
                 </h1>
-                <p className="text-gray-400 text-sm">Welcome back. Here's what's happening with your platform today.</p>
+                <p className="text-slate-500 text-sm">Welcome back. Here's what's happening with your platform today.</p>
              </div>
           </div>
 
@@ -753,13 +807,13 @@ export default function AdminPage() {
               { label: "Paid Out",         value: fmt(stats.totalPaidOut || 0),        color: "text-orange-400", bg: "bg-orange-400/10", icon: Wallet },
               { label: "Handovers Done",   value: stats.totalHandovers || 0,           color: "text-purple-400", bg: "bg-purple-400/10", icon: CheckCircle2 },
             ].map((s, i) => (
-              <div key={i} className="bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 flex flex-col transition-all hover:border-gray-600">
+              <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col transition-all hover:border-slate-300">
                 <div className="flex justify-between items-start mb-4">
                    <div className={`p-3 rounded-xl ${s.bg}`}>
                      <s.icon size={20} className={s.color} strokeWidth={2} />
                    </div>
                 </div>
-                <p className="text-3xl font-bold text-white mb-1">{s.value}</p>
+                <p className="text-3xl font-black text-slate-900 mb-1">{s.value}</p>
                 <p className="text-[11px] uppercase tracking-widest text-gray-500 font-semibold">{s.label}</p>
               </div>
             ))}
@@ -770,7 +824,7 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="grid md:grid-cols-2 gap-6">
               {/* Commission model */}
-              <div className="bg-[#14171C] border border-[#2A2E39] p-6">
+              <div className="bg-white border border-slate-200 p-6">
                 <p className="text-xs uppercase tracking-widest font-bold mb-4">Commission Structure</p>
                 <div className="space-y-3">
                   {[
@@ -783,12 +837,12 @@ export default function AdminPage() {
                       <span className="font-black text-primary text-lg leading-none">{row.step}</span>
                       <div>
                         <p className="font-semibold text-xs">{row.action}</p>
-                        <p className="text-[10px] text-gray-400">{row.to} <span className="text-primary font-bold">{row.amount}</span></p>
+                        <p className="text-[10px] text-slate-500">{row.to} <span className="text-primary font-bold">{row.amount}</span></p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 border-t border-[#2A2E39] pt-4 grid grid-cols-2 gap-2 text-center">
+                <div className="mt-4 border-t border-slate-200 pt-4 grid grid-cols-2 gap-2 text-center">
                   <div className="bg-green-50 border border-green-200 p-3">
                     <p className="text-lg font-black text-green-700">₹1,000</p>
                     <p className="text-[10px] text-green-600 uppercase tracking-wider">Poster earns</p>
@@ -801,7 +855,7 @@ export default function AdminPage() {
               </div>
 
               {/* Recent payouts needing action */}
-              <div className="bg-[#14171C] border border-[#2A2E39] p-6">
+              <div className="bg-white border border-slate-200 p-6">
                 <p className="text-xs uppercase tracking-widest font-bold mb-4 flex items-center justify-between">
                   Pending Payouts
                   {pendingPayouts.length > 0 && (
@@ -809,7 +863,7 @@ export default function AdminPage() {
                   )}
                 </p>
                 {pendingPayouts.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8 text-slate-500">
                     <CheckCircle2 size={24} className="mx-auto mb-2 text-green-500" />
                     <p className="text-sm font-semibold">All caught up!</p>
                     <p className="text-xs">No pending payout requests.</p>
@@ -820,7 +874,7 @@ export default function AdminPage() {
                       <div key={p.id} className="border border-yellow-200 bg-yellow-50 p-3 flex justify-between items-center gap-3">
                         <div className="min-w-0">
                           <p className="font-bold text-sm">{fmt(p.amount)} via {(p.method || "UPI").toUpperCase()}</p>
-                          <p className="text-xs text-gray-400 truncate">
+                          <p className="text-xs text-slate-500 truncate">
                             {p.userName} · {p.method === "qrcode" ? "QR Code Uploaded" : (p.upiId || `****${p.bankAccount?.slice(-4)}`)}
                           </p>
                         </div>
@@ -857,26 +911,26 @@ export default function AdminPage() {
               <p className="text-sm font-bold uppercase tracking-widest">All Payout Requests ({payouts.length})</p>
             </div>
             {payouts.length === 0 ? (
-              <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
-                <Wallet size={32} className="mx-auto mb-3 text-gray-400" />
-                <p className="font-semibold text-gray-400">No payout requests yet</p>
+              <div className="bg-white border border-dashed border-slate-300 border-slate-200 p-16 text-center">
+                <Wallet size={32} className="mx-auto mb-3 text-slate-500" />
+                <p className="font-semibold text-slate-500">No payout requests yet</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {payouts.map((p: any) => (
-                  <div key={p.id} className="bg-[#14171C] border border-[#2A2E39] overflow-hidden">
+                  <div key={p.id} className="bg-white border border-slate-200 overflow-hidden">
                     <div className="p-4 flex flex-col md:flex-row md:items-center gap-4">
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-1">
                           <p className="font-bold text-base">{fmt(p.amount)}</p>
                           <StatusBadge status={p.status} />
-                          <span className="text-[10px] bg-[#2A2E39] px-2 py-0.5 font-bold uppercase">{p.method || "UPI"}</span>
+                          <span className="text-[10px] bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 font-bold uppercase">{p.method || "UPI"}</span>
                         </div>
-                        <p className="text-sm font-semibold text-gray-400">{p.userName}</p>
-                        <p className="text-xs text-gray-400 font-mono">{p.id}</p>
+                        <p className="text-sm font-semibold text-slate-500">{p.userName}</p>
+                        <p className="text-xs text-slate-500 font-mono">{p.id}</p>
                         <div className="flex flex-col gap-3 mt-1.5">
-                          <div className="flex flex-wrap gap-3 text-xs text-gray-400">
+                          <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                             {p.method === "qrcode" && p.qrCode && (
                               <a href={p.qrCode} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary hover:underline">
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QR" className="w-3 h-3" /> View QR Code
@@ -889,10 +943,10 @@ export default function AdminPage() {
                             {p.processedAt && <span className="text-green-600"><CheckCircle2 size={10} className="inline mr-1" />Processed: {fmtDate(p.processedAt)}</span>}
                           </div>
                           {p.method === "qrcode" && p.qrCode && (
-                            <img src={p.qrCode} alt="Payout QR Code" className="w-24 h-24 object-contain border border-[#2A2E39]" />
+                            <img src={p.qrCode} alt="Payout QR Code" className="w-24 h-24 object-contain border border-slate-200" />
                           )}
                         </div>
-                        {p.notes && <p className="text-xs text-gray-400 italic mt-1">Note: {p.notes}</p>}
+                        {p.notes && <p className="text-xs text-slate-500 italic mt-1">Note: {p.notes}</p>}
                       </div>
 
                       {/* Actions */}
@@ -931,13 +985,13 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <p className="text-sm font-bold uppercase tracking-widest mb-4">Contact Unlocks Records ({data?.contactUnlocks?.length || 0})</p>
             {(!data?.contactUnlocks || data.contactUnlocks.length === 0) ? (
-              <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
-                <Phone size={32} className="mx-auto mb-3 text-gray-400" />
-                <p className="font-semibold text-gray-400">No contact unlocks yet</p>
+              <div className="bg-white border border-dashed border-slate-300 border-slate-200 p-16 text-center">
+                <Phone size={32} className="mx-auto mb-3 text-slate-500" />
+                <p className="font-semibold text-slate-500">No contact unlocks yet</p>
               </div>
             ) : (
-              <div className="bg-[#14171C] border border-[#2A2E39] overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 p-4 border-b border-[#2A2E39] bg-white/5 text-[9px] uppercase tracking-widest font-bold text-gray-400">
+              <div className="bg-white border border-slate-200 overflow-hidden">
+                <div className="grid grid-cols-12 gap-2 p-4 border-b border-slate-200 bg-slate-50 text-[9px] uppercase tracking-widest font-bold text-slate-500">
                   <div className="col-span-3">Seeker (Paid)</div>
                   <div className="col-span-3">Poster (Unlocked)</div>
                   <div className="col-span-3">Listing Info</div>
@@ -945,11 +999,11 @@ export default function AdminPage() {
                   <div className="col-span-2">Date</div>
                 </div>
                 {data.contactUnlocks.map((u: any) => (
-                  <div key={u.id} className="grid grid-cols-12 gap-2 p-4 border-b border-[#2A2E39] last:border-0 items-center hover:bg-white/5">
+                  <div key={u.id} className="grid grid-cols-12 gap-2 p-4 border-b border-slate-200 last:border-0 items-center hover:bg-slate-100">
                     <div className="col-span-3">
                       <p className="text-sm font-bold">{u.seeker_name}</p>
                       <p className="text-xs font-mono mt-0.5">{u.seeker_phone}</p>
-                      <p className="text-[10px] text-gray-400 truncate">{u.seeker_email}</p>
+                      <p className="text-[10px] text-slate-500 truncate">{u.seeker_email}</p>
                     </div>
                     <div className="col-span-3">
                       <p className="text-sm font-bold text-primary">{u.poster_name}</p>
@@ -958,7 +1012,7 @@ export default function AdminPage() {
                     </div>
                     <div className="col-span-3">
                       <p className="text-xs font-semibold">{u.title}</p>
-                      <span className="text-[9px] uppercase tracking-wider bg-[#2A2E39] px-2 py-0.5 mt-1 inline-block">
+                      <span className="text-[9px] uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 mt-1 inline-block">
                         {u.type}
                       </span>
                     </div>
@@ -966,7 +1020,7 @@ export default function AdminPage() {
                       <p className="text-xs font-bold text-green-600">₹15</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs text-gray-400">{fmtDate(u.created_at)}</p>
+                      <p className="text-xs text-slate-500">{fmtDate(u.created_at)}</p>
                     </div>
                   </div>
                 ))}
@@ -980,9 +1034,9 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <p className="text-sm font-bold uppercase tracking-widest mb-4">Visit Passes ({interests.length})</p>
             {interests.length === 0 ? (
-              <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
-                <Eye size={32} className="mx-auto mb-3 text-gray-400" />
-                <p className="font-semibold text-gray-400">No interest records yet</p>
+              <div className="bg-white border border-dashed border-slate-300 border-slate-200 p-16 text-center">
+                <Eye size={32} className="mx-auto mb-3 text-slate-500" />
+                <p className="font-semibold text-slate-500">No interest records yet</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -990,19 +1044,19 @@ export default function AdminPage() {
                   const pId = i.razorpay_payment_id || i.payment_id || i.id;
                   const passNumber = "TV-PASS-" + (pId.slice(-6).toUpperCase());
                   return (
-                    <div key={i.id} className="bg-[#14171C] border border-[#2A2E39] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                    <div key={i.id} className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                       <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                         <ShieldCheck size={80} className="text-primary"/>
                       </div>
                       
                       {/* Header */}
-                      <div className="bg-primary/5 border-b border-[#2A2E39] p-4 flex justify-between items-center relative z-10">
+                      <div className="bg-primary/5 border-b border-slate-200 p-4 flex justify-between items-center relative z-10">
                         <div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Pass Number</p>
+                          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Pass Number</p>
                           <p className="font-mono font-bold text-primary">{passNumber}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Fee Paid</p>
+                          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Fee Paid</p>
                           <p className="text-sm font-black text-green-600">₹{i.platform_fee || i.amount || 500}</p>
                         </div>
                       </div>
@@ -1011,28 +1065,28 @@ export default function AdminPage() {
                       <div className="p-4 space-y-4 relative z-10">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-1">Seeker</p>
+                            <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1">Seeker</p>
                             <p className="text-sm font-semibold truncate">{i.userName || i.seeker_name}</p>
-                            <p className="text-[10px] text-gray-400 truncate">{i.userId || i.seeker_id}</p>
+                            <p className="text-[10px] text-slate-500 truncate">{i.userId || i.seeker_id}</p>
                           </div>
                           <div>
-                            <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-1">Poster</p>
+                            <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1">Poster</p>
                             <p className="text-sm font-semibold truncate">{i.posterName || i.poster_name}</p>
                           </div>
                         </div>
 
-                        <div className="border-t border-[#2A2E39] pt-4">
-                          <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-1">Property</p>
+                        <div className="border-t border-slate-200 pt-4">
+                          <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1">Property</p>
                           <p className="text-sm font-semibold truncate" title={i.roomTitle || i.room_title}>{i.roomTitle || i.room_title}</p>
                         </div>
 
-                        <div className="flex justify-between items-center border-t border-[#2A2E39] pt-4">
+                        <div className="flex justify-between items-center border-t border-slate-200 pt-4">
                           <div>
-                            <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-1">Generated</p>
+                            <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1">Generated</p>
                             <p className="text-xs font-semibold">{fmtDate(i.paidAt || i.paid_at || i.created_at)}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-1">Handover</p>
+                            <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1">Handover</p>
                             <StatusBadge status={i.handoverConfirmed || i.handover_confirmed ? "completed" : "pending"} />
                           </div>
                         </div>
@@ -1050,13 +1104,13 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <p className="text-sm font-bold uppercase tracking-widest mb-4">Confirmed Handovers ({handovers.length}) — ₹1,500 total each</p>
             {handovers.length === 0 ? (
-              <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
-                <Home size={32} className="mx-auto mb-3 text-gray-400" />
-                <p className="font-semibold text-gray-400">No handovers confirmed yet</p>
+              <div className="bg-white border border-dashed border-slate-300 border-slate-200 p-16 text-center">
+                <Home size={32} className="mx-auto mb-3 text-slate-500" />
+                <p className="font-semibold text-slate-500">No handovers confirmed yet</p>
               </div>
             ) : (
-              <div className="bg-[#14171C] border border-[#2A2E39] overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 p-4 border-b border-[#2A2E39] bg-white/5 text-[9px] uppercase tracking-widest font-bold text-gray-400">
+              <div className="bg-white border border-slate-200 overflow-hidden">
+                <div className="grid grid-cols-12 gap-2 p-4 border-b border-slate-200 bg-slate-50 text-[9px] uppercase tracking-widest font-bold text-slate-500">
                   <div className="col-span-3">Seeker</div>
                   <div className="col-span-3">Poster</div>
                   <div className="col-span-2">Poster Gets</div>
@@ -1064,7 +1118,7 @@ export default function AdminPage() {
                   <div className="col-span-2">Date</div>
                 </div>
                 {handovers.map((h: any) => (
-                  <div key={h.id} className="grid grid-cols-12 gap-2 p-4 border-b border-[#2A2E39] last:border-0 items-center hover:bg-white/5">
+                  <div key={h.id} className="grid grid-cols-12 gap-2 p-4 border-b border-slate-200 last:border-0 items-center hover:bg-slate-100">
                     <div className="col-span-3">
                       <p className="text-sm font-semibold">{h.userName}</p>
                     </div>
@@ -1078,13 +1132,13 @@ export default function AdminPage() {
                       <p className="text-sm font-black text-primary">₹500</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs text-gray-400">{fmtDate(h.confirmedAt)}</p>
+                      <p className="text-xs text-slate-500">{fmtDate(h.confirmedAt)}</p>
                     </div>
                   </div>
                 ))}
                 {/* Total */}
-                <div className="grid grid-cols-12 gap-2 p-4 bg-white/5 font-bold text-sm">
-                  <div className="col-span-6 text-right text-gray-400">TOTAL:</div>
+                <div className="grid grid-cols-12 gap-2 p-4 bg-slate-50 font-bold text-sm">
+                  <div className="col-span-6 text-right text-slate-500">TOTAL:</div>
                   <div className="col-span-2 text-green-600">₹{(handovers.length * 1000).toLocaleString("en-IN")}</div>
                   <div className="col-span-2 text-primary">₹{(handovers.length * 500).toLocaleString("en-IN")}</div>
                 </div>
@@ -1098,14 +1152,14 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <p className="text-sm font-bold uppercase tracking-widest mb-4">Registered Users ({users.length})</p>
             {users.length === 0 ? (
-              <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
-                <Users size={32} className="mx-auto mb-3 text-gray-400" />
-                <p className="font-semibold text-gray-400">No users registered yet</p>
+              <div className="bg-white border border-dashed border-slate-300 border-slate-200 p-16 text-center">
+                <Users size={32} className="mx-auto mb-3 text-slate-500" />
+                <p className="font-semibold text-slate-500">No users registered yet</p>
               </div>
             ) : (
-              <div className="bg-[#14171C] border border-[#2A2E39] overflow-x-auto">
+              <div className="bg-white border border-slate-200 overflow-x-auto">
                 <div className="min-w-[1000px]">
-                  <div className="grid grid-cols-[2fr_2fr_1.5fr_1.5fr_1fr_2fr_1fr_0.5fr] gap-2 p-4 border-b border-[#2A2E39] bg-white/5 text-[9px] uppercase tracking-widest font-bold text-gray-400">
+                  <div className="grid grid-cols-[2fr_2fr_1.5fr_1.5fr_1fr_2fr_1fr_0.5fr] gap-2 p-4 border-b border-slate-200 bg-slate-50 text-[9px] uppercase tracking-widest font-bold text-slate-500">
                     <div>Name & Balance</div>
                     <div>Contact</div>
                     <div>Location</div>
@@ -1116,31 +1170,31 @@ export default function AdminPage() {
                     <div className="text-right">Action</div>
                   </div>
                 {users.map((u: any) => (
-                  <div key={u.id} className="border-b border-[#2A2E39] last:border-0 hover:bg-white/5">
+                  <div key={u.id} className="border-b border-slate-200 last:border-0 hover:bg-slate-100">
                     <div className="grid grid-cols-[2fr_2fr_1.5fr_1.5fr_1fr_2fr_1fr_0.5fr] gap-2 p-4 items-center">
                       <div>
                         <p className="text-sm font-semibold truncate">{u.name}</p>
-                        <p className="text-[10px] text-gray-400">Bal: <span className="text-primary font-bold">{u.contact_balance}</span></p>
-                        <p className="text-[10px] text-gray-400">{fmtDate(u.created_at)}</p>
+                        <p className="text-[10px] text-slate-500">Bal: <span className="text-primary font-bold">{u.contact_balance}</span></p>
+                        <p className="text-[10px] text-slate-500">{fmtDate(u.created_at)}</p>
                       </div>
                       <div>
                         <p className="text-xs font-mono">{u.phone}</p>
                         {u.whatsapp && <p className="text-[10px] text-green-600 font-bold mt-0.5">WA: {u.whatsapp}</p>}
-                        <p className="text-[10px] text-gray-400 truncate mt-0.5">{u.email}</p>
+                        <p className="text-[10px] text-slate-500 truncate mt-0.5">{u.email}</p>
                       </div>
                       <div>
                         <p className="text-xs font-semibold">{u.colony}</p>
-                        <p className="text-[10px] text-gray-400 truncate">{u.location}</p>
+                        <p className="text-[10px] text-slate-500 truncate">{u.location}</p>
                       </div>
                       <div>
                         <p className="text-xs font-mono text-primary truncate">{u.house_no}</p>
                         <p className="text-[10px] truncate">{u.owner_name}</p>
-                        <p className="text-[10px] font-mono text-gray-400">{u.owner_phone}</p>
+                        <p className="text-[10px] font-mono text-slate-500">{u.owner_phone}</p>
                       </div>
                       <div>
                         <p className="text-[10px] truncate">{u.gender}</p>
-                        <p className="text-[10px] truncate text-gray-400">{u.profession}</p>
-                        <p className="text-[10px] text-gray-400">{u.members_count} mem</p>
+                        <p className="text-[10px] truncate text-slate-500">{u.profession}</p>
+                        <p className="text-[10px] text-slate-500">{u.members_count} mem</p>
                       </div>
                       <div>
                         {u.payout_method === "upi" && (
@@ -1159,31 +1213,31 @@ export default function AdminPage() {
                         {u.payout_method === "qrcode" && u.payout_qr_code && (
                           <div>
                             <p className="text-[10px] font-bold text-primary uppercase mb-1">QR Code</p>
-                            <a href={u.payout_qr_code} target="_blank" rel="noopener noreferrer" className="block w-10 h-10 border border-[#2A2E39] overflow-hidden hover:opacity-80 transition-opacity" title="View QR">
+                            <a href={u.payout_qr_code} target="_blank" rel="noopener noreferrer" className="block w-10 h-10 border border-slate-200 overflow-hidden hover:opacity-80 transition-opacity" title="View QR">
                               <img src={u.payout_qr_code} alt="QR Code" className="w-full h-full object-cover" />
                             </a>
                           </div>
                         )}
                         {!u.payout_method && (
-                          <p className="text-[10px] text-gray-400 italic">None saved</p>
+                          <p className="text-[10px] text-slate-500 italic">None saved</p>
                         )}
                       </div>
                       <div className="flex gap-1">
                         {u.aadhaar_url ? (
-                          <a href={u.aadhaar_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-[#2A2E39] overflow-hidden hover:opacity-80 transition-opacity" title="View Front">
+                          <a href={u.aadhaar_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-slate-200 overflow-hidden hover:opacity-80 transition-opacity" title="View Front">
                             <img src={u.aadhaar_url} alt="Front" className="w-full h-full object-cover" />
                           </a>
                         ) : (
                           <span className="text-[9px] bg-yellow-100 text-yellow-700 font-bold px-1 py-0.5">Pend</span>
                         )}
                         {u.aadhaar_back_url && (
-                          <a href={u.aadhaar_back_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-[#2A2E39] overflow-hidden hover:opacity-80 transition-opacity" title="View Back">
+                          <a href={u.aadhaar_back_url} target="_blank" rel="noopener noreferrer" className="block w-8 h-10 border border-slate-200 overflow-hidden hover:opacity-80 transition-opacity" title="View Back">
                             <img src={u.aadhaar_back_url} alt="Back" className="w-full h-full object-cover" />
                           </a>
                         )}
                       </div>
                       <div className="text-right flex justify-end">
-                        <button onClick={() => { setEditType("user"); setEditItem(u); }} className="p-2 hover:bg-[#2A2E39] rounded transition-colors text-gray-400 hover:text-primary">
+                        <button onClick={() => { setEditType("user"); setEditItem(u); }} className="p-2 hover:bg-slate-100 rounded transition-colors text-slate-500 hover:text-primary">
                           <Edit2 size={14} />
                         </button>
                       </div>
@@ -1191,58 +1245,58 @@ export default function AdminPage() {
 
                     {/* Expandable Edit Form for Users */}
                     {editType === "user" && editItem?.id === u.id && (
-                      <div className="p-4 bg-[#0A0C10] border-t border-[#2A2E39]">
+                      <div className="p-4 bg-[#F8FAFC] border-t border-slate-200">
                         <form onSubmit={handleSaveEdit} className="grid grid-cols-4 gap-4">
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Name</label>
-                            <input type="text" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.name || ""} onChange={e => setEditItem({...editItem, name: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Name</label>
+                            <input type="text" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.name || ""} onChange={e => setEditItem({...editItem, name: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Phone</label>
-                            <input type="text" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.phone || ""} onChange={e => setEditItem({...editItem, phone: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Phone</label>
+                            <input type="text" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.phone || ""} onChange={e => setEditItem({...editItem, phone: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">WhatsApp</label>
-                            <input type="text" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.whatsapp || ""} onChange={e => setEditItem({...editItem, whatsapp: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">WhatsApp</label>
+                            <input type="text" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.whatsapp || ""} onChange={e => setEditItem({...editItem, whatsapp: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Email</label>
-                            <input type="text" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.email || ""} onChange={e => setEditItem({...editItem, email: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Email</label>
+                            <input type="text" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.email || ""} onChange={e => setEditItem({...editItem, email: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Contact Balance</label>
-                            <input type="number" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.contact_balance || 0} onChange={e => setEditItem({...editItem, contact_balance: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Contact Balance</label>
+                            <input type="number" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.contact_balance || 0} onChange={e => setEditItem({...editItem, contact_balance: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Location</label>
-                            <input type="text" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.location || ""} onChange={e => setEditItem({...editItem, location: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Location</label>
+                            <input type="text" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.location || ""} onChange={e => setEditItem({...editItem, location: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Colony</label>
-                            <input type="text" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.colony || ""} onChange={e => setEditItem({...editItem, colony: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Colony</label>
+                            <input type="text" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.colony || ""} onChange={e => setEditItem({...editItem, colony: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">House No</label>
-                            <input type="text" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.house_no || ""} onChange={e => setEditItem({...editItem, house_no: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">House No</label>
+                            <input type="text" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.house_no || ""} onChange={e => setEditItem({...editItem, house_no: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Profession</label>
-                            <input type="text" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.profession || ""} onChange={e => setEditItem({...editItem, profession: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Profession</label>
+                            <input type="text" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.profession || ""} onChange={e => setEditItem({...editItem, profession: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Gender</label>
-                            <input type="text" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.gender || ""} onChange={e => setEditItem({...editItem, gender: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Gender</label>
+                            <input type="text" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.gender || ""} onChange={e => setEditItem({...editItem, gender: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">DOB</label>
-                            <input type="date" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.dob || ""} onChange={e => setEditItem({...editItem, dob: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">DOB</label>
+                            <input type="date" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.dob || ""} onChange={e => setEditItem({...editItem, dob: e.target.value})} />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Members Count</label>
-                            <input type="number" className="w-full p-2 bg-[#14171C] border border-[#2A2E39] text-xs" value={editItem.members_count || 1} onChange={e => setEditItem({...editItem, members_count: e.target.value})} />
+                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Members Count</label>
+                            <input type="number" className="w-full p-2 bg-white border border-slate-200 text-xs" value={editItem.members_count || 1} onChange={e => setEditItem({...editItem, members_count: e.target.value})} />
                           </div>
                           <div className="col-span-4 flex justify-end gap-3 mt-2">
-                            <button type="button" onClick={() => { setEditType(null); setEditItem(null); }} className="px-4 py-2 border border-[#2A2E39] text-xs uppercase font-bold hover:bg-[#2A2E39]">Cancel</button>
+                            <button type="button" onClick={() => { setEditType(null); setEditItem(null); }} className="px-4 py-2 border border-slate-200 text-xs uppercase font-bold hover:bg-slate-100">Cancel</button>
                             <button type="submit" disabled={editLoading} className="px-4 py-2 bg-primary text-primary-foreground text-xs uppercase font-bold hover:opacity-90">{editLoading ? "Saving..." : "Save User"}</button>
                           </div>
                         </form>
@@ -1261,8 +1315,8 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
-                <p className="text-sm font-bold uppercase tracking-widest text-white">Posted Rooms ({localRooms.length})</p>
-                <p className="text-xs text-gray-400 mt-0.5">Manage live room listings or import new rooms from OLX without watermarks.</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-slate-900">Posted Rooms ({localRooms.length})</p>
+                <p className="text-xs text-slate-500 mt-0.5">Manage live room listings or import new rooms from OLX without watermarks.</p>
               </div>
               <button
                 onClick={() => setActiveTab("extractor")}
@@ -1272,40 +1326,40 @@ export default function AdminPage() {
               </button>
             </div>
             {localRooms.length === 0 ? (
-              <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
-                <Home size={32} className="mx-auto mb-3 text-gray-400" />
-                <p className="font-semibold text-gray-400">No rooms posted yet</p>
+              <div className="bg-white border border-dashed border-slate-300 border-slate-200 p-16 text-center">
+                <Home size={32} className="mx-auto mb-3 text-slate-500" />
+                <p className="font-semibold text-slate-500">No rooms posted yet</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-4">
                 {localRooms.map((r: any) => (
-                  <div key={r.id} className="bg-[#14171C] border border-[#2A2E39] p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
+                  <div key={r.id} className="bg-white border border-slate-200 p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
                     <div className="flex gap-4">
                       {r.images?.[0] ? (
-                        <div className="w-20 h-20 shrink-0 border border-[#2A2E39] overflow-hidden bg-black/95 flex items-center justify-center relative">
+                        <div className="w-20 h-20 shrink-0 border border-slate-200 overflow-hidden bg-slate-100 flex items-center justify-center relative">
                           <img src={r.images[0]} alt="" className="max-w-full max-h-full object-contain" />
                           {r.images.length > 1 && (
                             <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[8px] px-1 font-bold">+{r.images.length - 1}</span>
                           )}
                         </div>
                       ) : (
-                        <div className="w-20 h-20 bg-[#2A2E39] flex items-center justify-center shrink-0 border border-[#2A2E39]">
-                          <Home size={24} className="text-gray-400" />
+                        <div className="w-20 h-20 bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                          <Home size={24} className="text-slate-400" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate hover:text-primary transition-colors">{r.title}</p>
-                        <p className="text-xs text-gray-400">{r.colony}, {r.location}</p>
-                        <p className="text-xs text-primary font-bold mt-1">₹{r.rent?.toLocaleString("en-IN")}/mo <span className="text-[10px] text-gray-400 font-normal">· Advance: ₹{r.advance?.toLocaleString("en-IN")}</span></p>
-                        {r.description && <p className="text-[11px] text-gray-400 mt-2 line-clamp-2 italic font-light">"{r.description}"</p>}
+                        <p className="text-xs text-slate-500">{r.colony}, {r.location}</p>
+                        <p className="text-xs text-primary font-bold mt-1">₹{r.rent?.toLocaleString("en-IN")}/mo <span className="text-[10px] text-slate-500 font-normal">· Advance: ₹{r.advance?.toLocaleString("en-IN")}</span></p>
+                        {r.description && <p className="text-[11px] text-slate-500 mt-2 line-clamp-2 italic font-light">"{r.description}"</p>}
                         <div className="mt-2 p-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded flex items-center justify-between">
-                          <div className="text-[11px] font-bold text-emerald-400">
-                            📞 Owner: <span className="text-white font-mono">{r.custom_contact || r.phone || "Not provided"}</span>
+                          <div className="text-[11px] font-bold text-emerald-600">
+                            📞 Owner: <span className="text-slate-900 font-bold font-mono">{r.custom_contact || r.phone || "Not provided"}</span>
                           </div>
-                          {r.custom_contact && <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-1 py-0.5 rounded font-bold uppercase">Uploaded</span>}
+                          {r.custom_contact && <span className="text-[8px] bg-emerald-500/20 text-emerald-700 px-1 py-0.5 rounded font-bold uppercase">Uploaded</span>}
                         </div>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          <span className="text-[9px] bg-[#2A2E39] px-1.5 py-0.5 font-bold uppercase text-gray-400">
+                          <span className="text-[9px] bg-slate-100 border border-slate-200 px-1.5 py-0.5 font-bold uppercase text-slate-700">
                             🖼️ {r.images?.length || 0} images
                           </span>
                           {(r.videos?.length || 0) > 0 && (
@@ -1317,8 +1371,8 @@ export default function AdminPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between border-t border-[#2A2E39] mt-4 pt-3">
-                      <div className="text-[10px] text-gray-400">
+                    <div className="flex items-center justify-between border-t border-slate-200 mt-4 pt-3">
+                      <div className="text-[10px] text-slate-500">
                         Posted: {fmtDate(r.created_at || new Date().toISOString())}
                       </div>
                       <div className="flex gap-2">
@@ -1348,7 +1402,7 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
             
             {/* Header Hero Banner */}
-            <div className="bg-gradient-to-r from-[#14171C] via-[#1A1F2C] to-[#14171C] border border-blue-500/30 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-50/70 via-indigo-50/50 to-white border border-blue-500/30 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                 <Sparkles size={160} className="text-blue-400" />
               </div>
@@ -1357,21 +1411,21 @@ export default function AdminPage() {
                   <Sparkles size={13} className="text-blue-400 animate-pulse" />
                   Takevolet Extraction Engine
                 </div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-2">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-2">
                   OLX Clean Image & Room Data Extractor
                 </h1>
-                <p className="text-gray-300 text-xs md:text-sm leading-relaxed mb-4">
+                <p className="text-slate-700 text-xs md:text-sm leading-relaxed mb-4">
                   Bypass screenshots, mobile status bars, and OLX watermark overlays. Paste any OLX listing link or shared text to extract <strong>100% clean, original full-resolution photos directly from OLX Apollo CDN</strong>, alongside title, rent, location, and description.
                 </p>
-                <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-gray-400">
-                  <span className="bg-[#2A2E39]/80 border border-gray-700 px-2.5 py-1 rounded-lg text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Zero OLX Watermark
+                <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-slate-600">
+                  <span className="bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg text-emerald-800 flex items-center gap-1.5 shadow-sm">
+                    <CheckCircle2 size={13} className="text-emerald-600" /> Zero Watermark Original Photos
                   </span>
-                  <span className="bg-[#2A2E39]/80 border border-gray-700 px-2.5 py-1 rounded-lg text-blue-400 flex items-center gap-1">
-                    <CheckCircle2 size={12} /> High-Res 1080p Originals
+                  <span className="bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg text-blue-800 flex items-center gap-1.5 shadow-sm">
+                    <CheckCircle2 size={13} className="text-blue-600" /> High-Res 1080p Originals
                   </span>
-                  <span className="bg-[#2A2E39]/80 border border-gray-700 px-2.5 py-1 rounded-lg text-amber-400 flex items-center gap-1">
-                    <CheckCircle2 size={12} /> 1-Click Publish to Takevolet
+                  <span className="bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg text-amber-800 flex items-center gap-1.5 shadow-sm">
+                    <CheckCircle2 size={13} className="text-amber-600" /> 1-Click Publish to Takevolet
                   </span>
                 </div>
               </div>
@@ -1381,37 +1435,37 @@ export default function AdminPage() {
             <AnimatePresence>
               {copyFeedback && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between shadow-lg">
-                  <span className="flex items-center gap-2"><CheckCircle2 size={14} /> {copyFeedback}</span>
-                  <button onClick={() => setCopyFeedback(null)} className="text-emerald-400 hover:text-white"><X size={13} /></button>
+                  className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between shadow-sm">
+                  <span className="flex items-center gap-2"><CheckCircle2 size={15} className="text-emerald-600" /> {copyFeedback}</span>
+                  <button onClick={() => setCopyFeedback(null)} className="text-emerald-700 hover:text-emerald-950 p-1"><X size={14} /></button>
                 </motion.div>
               )}
               {extractError && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="bg-red-500/20 border border-red-500/40 text-red-300 px-4 py-3 rounded-xl text-xs font-semibold flex items-start justify-between shadow-lg">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                  className="bg-red-50 border border-red-300 text-red-900 px-4 py-3.5 rounded-xl text-xs font-medium flex items-start justify-between shadow-sm">
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold">Extraction Error</p>
-                      <p className="text-[11px] text-red-200/80 mt-0.5">{extractError}</p>
+                      <p className="font-bold text-red-950">Extraction Notice</p>
+                      <p className="text-xs text-red-800 mt-0.5 leading-relaxed">{extractError}</p>
                     </div>
                   </div>
-                  <button onClick={() => setExtractError("")} className="text-red-400 hover:text-white"><X size={14} /></button>
+                  <button onClick={() => setExtractError("")} className="text-red-600 hover:text-red-900 p-1"><X size={14} /></button>
                 </motion.div>
               )}
               {saveRoomSuccess && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="bg-gradient-to-r from-emerald-600/20 to-green-600/20 border border-emerald-500 text-emerald-300 p-4 rounded-xl flex items-center justify-between shadow-xl">
+                  className="bg-emerald-50 border border-emerald-300 text-emerald-900 p-4 rounded-xl flex items-center justify-between shadow-md">
                   <div className="flex items-center gap-3">
-                    <CheckCircle2 size={20} className="text-emerald-400" />
+                    <CheckCircle2 size={22} className="text-emerald-600" />
                     <div>
-                      <p className="font-bold text-sm">Room Successfully Published!</p>
-                      <p className="text-xs text-gray-300">The listing has been created in Takevolet database with clean photos.</p>
+                      <p className="font-bold text-sm text-emerald-950">Room Successfully Published!</p>
+                      <p className="text-xs text-emerald-800">The listing has been created in Takevolet database with clean photos.</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setActiveTab("rooms")}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-black px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow"
                   >
                     View in Rooms Tab
                   </button>
@@ -1419,88 +1473,152 @@ export default function AdminPage() {
               )}
             </AnimatePresence>
 
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+              <button
+                type="button"
+                onClick={() => { setExtractMode("link"); setExtractError(""); }}
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all ${
+                  extractMode === "link"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                    : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                <Link2 size={14} /> Extract by OLX Link
+              </button>
+              <button
+                type="button"
+                onClick={() => { setExtractMode("paste"); setExtractError(""); }}
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all ${
+                  extractMode === "paste"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                    : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                <Copy size={14} /> Direct Paste HTML / Text (Bypass IP Block)
+              </button>
+            </div>
+
             {/* Input & Extraction Control Panel */}
-            <div className="bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
               <form onSubmit={(e) => { e.preventDefault(); handleExtractListing(); }} className="space-y-4">
-                <div>
-                  <label className="block text-xs uppercase tracking-widest font-bold text-gray-400 mb-2">
-                    Paste OLX Listing URL or App Share Text:
-                  </label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-4 text-gray-400 pointer-events-none">
-                      <Link2 size={18} />
-                    </div>
-                    <input
-                      type="text"
-                      value={extractInput}
-                      onChange={(e) => setExtractInput(e.target.value)}
-                      placeholder="e.g. https://www.olx.in/item/... or pasted WhatsApp/app share text with link"
-                      className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-blue-500 rounded-xl pl-12 pr-32 py-3.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all shadow-inner"
-                    />
-                    <div className="absolute right-3 flex items-center gap-1.5">
-                      {extractInput && (
+                {extractMode === "link" ? (
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest font-bold text-slate-700 mb-2">
+                      Paste OLX Listing URL or App Share Text:
+                    </label>
+                    <div className="relative flex items-center">
+                      <div className="absolute left-4 text-slate-400 pointer-events-none">
+                        <Link2 size={18} />
+                      </div>
+                      <input
+                        type="text"
+                        value={extractInput}
+                        onChange={(e) => setExtractInput(e.target.value)}
+                        placeholder="e.g. https://www.olx.in/item/... or pasted WhatsApp/app share text with link"
+                        className="w-full bg-slate-50 border border-slate-300 focus:border-blue-500 focus:bg-white rounded-xl pl-12 pr-32 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition-all shadow-inner"
+                      />
+                      <div className="absolute right-3 flex items-center gap-1.5">
+                        {extractInput && (
+                          <button
+                            type="button"
+                            onClick={() => { setExtractInput(""); setExtractError(""); }}
+                            className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors"
+                            title="Clear input"
+                          >
+                            <X size={15} />
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => { setExtractInput(""); setExtractError(""); }}
-                          className="text-gray-500 hover:text-gray-300 p-1 rounded-md transition-colors"
-                          title="Clear input"
-                        >
-                          <X size={15} />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            const text = await navigator.clipboard.readText();
-                            if (text) {
-                              setExtractInput(text);
-                              showFeedbackToast("Pasted from clipboard!");
+                          onClick={async () => {
+                            try {
+                              const text = await navigator.clipboard.readText();
+                              if (text) {
+                                setExtractInput(text);
+                                showFeedbackToast("Pasted from clipboard!");
+                              }
+                            } catch {
+                              alert("Clipboard access not permitted. Please paste manually (Ctrl+V).");
                             }
-                          } catch {
-                            alert("Clipboard access not permitted. Please paste manually (Ctrl+V).");
-                          }
-                        }}
-                        className="text-gray-400 hover:text-white bg-[#1A1D24] border border-[#2A2E39] hover:border-gray-500 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
-                        title="Paste from clipboard"
-                      >
-                        <Copy size={12} /> Paste
-                      </button>
+                          }}
+                          className="text-slate-700 hover:text-slate-900 bg-white border border-slate-300 hover:border-slate-400 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shadow-sm"
+                          title="Paste from clipboard"
+                        >
+                          <Copy size={12} /> Paste
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs uppercase tracking-widest font-bold text-slate-700">
+                        Paste Raw OLX Page Source (HTML) or Shared Ad Text:
+                      </label>
+                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 size={12} /> 100% Immune to Cloudflare/Vercel Blocks
+                      </span>
+                    </div>
+                    <textarea
+                      rows={5}
+                      value={pasteContent}
+                      onChange={(e) => setPasteContent(e.target.value)}
+                      placeholder="Open OLX listing in your browser -> Right Click -> 'View Page Source' (Ctrl+U) -> Select All & Paste here. Or copy the full ad text from the mobile app."
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-xs font-mono text-slate-900 placeholder-slate-400 focus:outline-none transition-all shadow-inner"
+                    />
+                    <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500">
+                      <span>{pasteContent ? `${pasteContent.length.toLocaleString()} characters pasted` : "Paste full page HTML or text description"}</span>
+                      {pasteContent && (
+                        <button
+                          type="button"
+                          onClick={() => setPasteContent("")}
+                          className="text-red-500 hover:text-red-700 font-semibold"
+                        >
+                          Clear Text
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-gray-500">Quick Test Samples:</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = "https://www.olx.in/item/2-bhk-furnished-flat-for-rent-thondayad-calicutnv-iid-1853831994";
-                        setExtractInput(url);
-                        handleExtractListing(url);
-                      }}
-                      className="text-[11px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-lg transition-all"
-                    >
-                      Sample 1: 2 BHK Furnished (Calicut)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = "https://www.olx.in/item/apartment-for-rent-at-malapparamba-junction-calicut-iid-1854926647";
-                        setExtractInput(url);
-                        handleExtractListing(url);
-                      }}
-                      className="text-[11px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 px-2.5 py-1 rounded-lg transition-all"
-                    >
-                      Sample 2: Malaparamba Flat (11 Clean Photos)
-                    </button>
-                  </div>
+                  {extractMode === "link" ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-slate-500 font-semibold">Test Samples:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = "https://www.olx.in/item/2-bhk-furnished-flat-for-rent-thondayad-calicutnv-iid-1853831994";
+                          setExtractInput(url);
+                          handleExtractListing(url);
+                        }}
+                        className="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg transition-all font-medium"
+                      >
+                        Sample 1: 2 BHK Furnished
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = "https://www.olx.in/item/apartment-for-rent-at-malapparamba-junction-calicut-iid-1854926647";
+                          setExtractInput(url);
+                          handleExtractListing(url);
+                        }}
+                        className="text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-lg transition-all font-medium"
+                      >
+                        Sample 2: Malaparamba Flat (11 Photos)
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-500">
+                      💡 Tip: Even if OLX blocks Vercel servers, direct HTML extraction works instantaneously without any network requests.
+                    </div>
+                  )}
 
                   <button
                     type="submit"
-                    disabled={extractLoading || !extractInput.trim()}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer"
+                    disabled={extractLoading || (extractMode === "link" ? !extractInput.trim() : !pasteContent.trim())}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer"
                   >
                     {extractLoading ? (
                       <>
@@ -1523,7 +1641,7 @@ export default function AdminPage() {
               <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 
                 {/* Main Listing Header & Actions Bar */}
-                <div className="bg-[#14171C] border border-blue-500/40 rounded-2xl p-6 shadow-2xl relative">
+                <div className="bg-white border border-blue-500/40 rounded-2xl p-6 shadow-2xl relative">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -1545,21 +1663,21 @@ export default function AdminPage() {
                         )}
                       </div>
 
-                      <h2 className="text-xl md:text-2xl font-black text-white truncate hover:text-clip">
+                      <h2 className="text-xl md:text-2xl font-black text-slate-900 truncate hover:text-clip">
                         {extractedData.title}
                       </h2>
 
                       <div className="flex flex-wrap items-baseline gap-4 mt-2">
                         <span className="text-2xl font-black text-primary">
                           ₹{extractedData.rent?.toLocaleString("en-IN") || 0}
-                          <span className="text-xs font-normal text-gray-400 ml-1">/ month</span>
+                          <span className="text-xs font-normal text-slate-500 ml-1">/ month</span>
                         </span>
                         {extractedData.advance > 0 && (
-                          <span className="text-xs text-gray-400">
-                            Advance Deposit: <strong className="text-white font-mono">₹{extractedData.advance?.toLocaleString("en-IN")}</strong>
+                          <span className="text-xs text-slate-500">
+                            Advance Deposit: <strong className="text-slate-900 font-mono">₹{extractedData.advance?.toLocaleString("en-IN")}</strong>
                           </span>
                         )}
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-slate-500">
                           📍 {extractedData.colony ? `${extractedData.colony}, ` : ""}{extractedData.location}, {extractedData.city}
                         </span>
                       </div>
@@ -1577,7 +1695,7 @@ export default function AdminPage() {
 
                       <button
                         onClick={handleCopyAllImageUrls}
-                        className="bg-[#1A1D24] hover:bg-[#222730] border border-[#2A2E39] hover:border-blue-500/50 text-gray-200 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 transition-all"
+                        className="bg-white hover:bg-slate-100 border border-slate-200 hover:border-blue-500/50 text-slate-900 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 transition-all shadow-sm"
                         title="Copy all clean image links"
                       >
                         <Copy size={13} />
@@ -1587,7 +1705,7 @@ export default function AdminPage() {
                       <button
                         onClick={handleDownloadSelectedImages}
                         disabled={selectedImages.length === 0}
-                        className="bg-[#1A1D24] hover:bg-[#222730] border border-[#2A2E39] hover:border-emerald-500/50 disabled:opacity-40 text-gray-200 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 transition-all"
+                        className="bg-white hover:bg-slate-100 border border-slate-200 hover:border-emerald-500/50 disabled:opacity-40 text-slate-900 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 transition-all shadow-sm"
                         title="Download selected clean photos"
                       >
                         <Download size={13} />
@@ -1599,7 +1717,7 @@ export default function AdminPage() {
                           href={extractedData.sourceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-white p-3 rounded-xl border border-[#2A2E39] hover:border-gray-500 bg-[#1A1D24] transition-all"
+                          className="text-slate-500 hover:text-slate-900 p-3 rounded-xl border border-slate-200 hover:border-slate-400 bg-white hover:bg-slate-50 transition-all shadow-sm"
                           title="Open original OLX listing"
                         >
                           <ExternalLink size={15} />
@@ -1610,14 +1728,14 @@ export default function AdminPage() {
                 </div>
 
                 {/* Clean Photos Showcase Grid */}
-                <div className="bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2A2E39] pb-4">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
                     <div>
-                      <h3 className="text-base font-bold text-white flex items-center gap-2">
-                        <ImageIcon size={18} className="text-blue-400" />
+                      <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <ImageIcon size={18} className="text-blue-600" />
                         Clean Original Photos ({extractedData.cleanImages?.length || 0})
                       </h3>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         These photos are fetched directly from the high-res storage source. Zero watermark stamps.
                       </p>
                     </div>
@@ -1626,19 +1744,19 @@ export default function AdminPage() {
                       <button
                         type="button"
                         onClick={handleSelectAllImages}
-                        className="text-xs text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+                        className="text-xs text-blue-600 hover:text-blue-800 font-semibold transition-colors"
                       >
                         Select All
                       </button>
-                      <span className="text-gray-600">|</span>
+                      <span className="text-slate-300">|</span>
                       <button
                         type="button"
                         onClick={handleDeselectAllImages}
-                        className="text-xs text-gray-400 hover:text-white font-semibold transition-colors"
+                        className="text-xs text-slate-500 hover:text-slate-900 font-semibold transition-colors"
                       >
                         Deselect All
                       </button>
-                      <span className="text-xs bg-[#2A2E39] text-gray-300 px-2.5 py-1 rounded-lg font-mono">
+                      <span className="text-xs bg-slate-100 text-slate-900 border border-slate-200 px-2.5 py-1 rounded-lg font-mono font-bold">
                         Selected: {selectedImages.length} / {extractedData.cleanImages?.length || 0}
                       </span>
                     </div>
@@ -1655,7 +1773,7 @@ export default function AdminPage() {
                           className={`group relative rounded-xl overflow-hidden border transition-all duration-200 bg-black/40 flex flex-col ${
                             isSelected
                               ? "border-blue-500 shadow-lg shadow-blue-500/10 ring-1 ring-blue-500"
-                              : "border-[#2A2E39] hover:border-gray-500 opacity-70 hover:opacity-100"
+                              : "border-slate-200 hover:border-slate-400 opacity-70 hover:opacity-100"
                           }`}
                         >
                           {/* Image Thumbnail Container */}
@@ -1675,7 +1793,7 @@ export default function AdminPage() {
                                 className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
                                   isSelected
                                     ? "bg-blue-600 text-white shadow-md shadow-blue-600/40"
-                                    : "bg-black/70 text-gray-400 hover:text-white border border-white/20"
+                                    : "bg-black/70 text-slate-500 hover:text-white border border-white/20"
                                 }`}
                               >
                                 {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
@@ -1694,7 +1812,7 @@ export default function AdminPage() {
                               <button
                                 type="button"
                                 onClick={() => setPreviewImage(activeUrl)}
-                                className="bg-white/10 hover:bg-white/25 text-white p-2.5 rounded-xl transition-all"
+                                className="bg-slate-100 hover:bg-white/25 text-white p-2.5 rounded-xl transition-all"
                                 title="Zoom Fullscreen"
                               >
                                 <Maximize2 size={16} />
@@ -1702,7 +1820,7 @@ export default function AdminPage() {
                               <button
                                 type="button"
                                 onClick={() => handleDownloadSingleImage(activeUrl, idx)}
-                                className="bg-white/10 hover:bg-white/25 text-white p-2.5 rounded-xl transition-all"
+                                className="bg-slate-100 hover:bg-white/25 text-white p-2.5 rounded-xl transition-all"
                                 title="Download Clean JPG"
                               >
                                 <Download size={16} />
@@ -1710,7 +1828,7 @@ export default function AdminPage() {
                               <button
                                 type="button"
                                 onClick={() => handleCopyText(activeUrl, `Image #${idx + 1} URL`)}
-                                className="bg-white/10 hover:bg-white/25 text-white p-2.5 rounded-xl transition-all"
+                                className="bg-slate-100 hover:bg-white/25 text-white p-2.5 rounded-xl transition-all"
                                 title="Copy Clean Image URL"
                               >
                                 <Copy size={16} />
@@ -1719,22 +1837,22 @@ export default function AdminPage() {
                           </div>
 
                           {/* Image Footer Details */}
-                          <div className="p-3 bg-[#171A21] border-t border-[#2A2E39] flex items-center justify-between text-[11px]">
-                            <span className="text-gray-400 font-mono text-[10px]">Photo #{idx + 1}</span>
+                          <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px]">
+                            <span className="text-slate-600 font-mono text-[10px]">Photo #{idx + 1}</span>
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleCopyText(activeUrl, `Photo #${idx + 1} URL`)}
-                                className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1"
+                                className="text-slate-600 hover:text-blue-600 transition-colors flex items-center gap-1 font-medium"
                               >
                                 <Copy size={11} /> Copy Link
                               </button>
-                              <span className="text-gray-600">·</span>
+                              <span className="text-slate-300">·</span>
                               <a
                                 href={activeUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-gray-400 hover:text-white transition-colors"
+                                className="text-slate-600 hover:text-slate-900 transition-colors"
                                 title="Open original CDN image in new tab"
                               >
                                 <ExternalLink size={11} />
@@ -1751,49 +1869,49 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
                   {/* Left 1 Column: Structured Specs */}
-                  <div className="bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl space-y-4">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-white flex items-center gap-2">
-                      <FileText size={16} className="text-blue-400" />
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                      <FileText size={16} className="text-blue-600" />
                       Extracted Specifications
                     </h3>
 
                     <div className="space-y-3 text-xs">
-                      <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
-                        <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Listing Title</span>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Listing Title</span>
                         <div className="flex items-start justify-between gap-2">
-                          <p className="font-semibold text-white">{extractedData.title}</p>
-                          <button onClick={() => handleCopyText(extractedData.title, "Title")} className="text-gray-400 hover:text-white shrink-0"><Copy size={12} /></button>
+                          <p className="font-semibold text-slate-900">{extractedData.title}</p>
+                          <button onClick={() => handleCopyText(extractedData.title, "Title")} className="text-slate-500 hover:text-slate-900 shrink-0"><Copy size={12} /></button>
                         </div>
                       </div>
 
-                      <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
-                        <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Pricing</span>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Pricing</span>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-sm font-bold text-primary">₹{extractedData.rent?.toLocaleString("en-IN")}/mo</span>
-                          <span className="text-gray-400">Advance: ₹{extractedData.advance?.toLocaleString("en-IN")}</span>
-                          <button onClick={() => handleCopyText(`Rent: ₹${extractedData.rent}, Advance: ₹${extractedData.advance}`, "Pricing")} className="text-gray-400 hover:text-white"><Copy size={12} /></button>
+                          <span className="text-slate-500">Advance: ₹{extractedData.advance?.toLocaleString("en-IN")}</span>
+                          <button onClick={() => handleCopyText(`Rent: ₹${extractedData.rent}, Advance: ₹${extractedData.advance}`, "Pricing")} className="text-slate-500 hover:text-slate-900"><Copy size={12} /></button>
                         </div>
                       </div>
 
-                      <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
-                        <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Location Details</span>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Location Details</span>
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="font-semibold text-white">{extractedData.colony}, {extractedData.location}</p>
-                            <p className="text-[11px] text-gray-400">{extractedData.city}</p>
+                            <p className="font-semibold text-slate-900">{extractedData.colony}, {extractedData.location}</p>
+                            <p className="text-[11px] text-slate-500">{extractedData.city}</p>
                           </div>
-                          <button onClick={() => handleCopyText(`${extractedData.colony}, ${extractedData.location}, ${extractedData.city}`, "Location")} className="text-gray-400 hover:text-white"><Copy size={12} /></button>
+                          <button onClick={() => handleCopyText(`${extractedData.colony}, ${extractedData.location}, ${extractedData.city}`, "Location")} className="text-slate-500 hover:text-slate-900"><Copy size={12} /></button>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                           <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Configuration</span>
-                          <p className="font-semibold text-white">{extractedData.bedrooms || "1 BHK"}</p>
+                          <p className="font-semibold text-slate-900">{extractedData.bedrooms || "1 BHK"}</p>
                         </div>
-                        <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                           <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Furnishing</span>
-                          <p className="font-semibold text-white">{extractedData.furnishing || "Semi-Furnished"}</p>
+                          <p className="font-semibold text-slate-900">{extractedData.furnishing || "Semi-Furnished"}</p>
                         </div>
                       </div>
 
@@ -1801,7 +1919,7 @@ export default function AdminPage() {
                         <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
                           <span className="text-[10px] text-emerald-400 uppercase font-bold block mb-1">📞 Contact Phone Detected</span>
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-mono font-bold text-white text-sm">{extractedData.phone}</span>
+                            <span className="font-mono font-bold text-slate-900 text-sm">{extractedData.phone}</span>
                             <div className="flex items-center gap-2">
                               <button onClick={() => handleCopyText(extractedData.phone, "Phone Number")} className="text-emerald-400 hover:text-white"><Copy size={13} /></button>
                               <a href={`https://wa.me/91${extractedData.phone.replace(/[^0-9]/g, "").slice(-10)}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:text-white text-[11px] font-bold underline">WhatsApp</a>
@@ -1813,10 +1931,10 @@ export default function AdminPage() {
                   </div>
 
                   {/* Right 2 Columns: Full Description */}
-                  <div className="lg:col-span-2 bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                  <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between border-b border-[#2A2E39] pb-3 mb-4">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-white">Full Listing Description</h3>
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900">Full Listing Description</h3>
                         <button
                           type="button"
                           onClick={() => handleCopyText(extractedData.description, "Description")}
@@ -1825,15 +1943,15 @@ export default function AdminPage() {
                           <Copy size={12} /> Copy Text
                         </button>
                       </div>
-                      <div className="bg-[#0D0F12] border border-[#2A2E39] rounded-xl p-4 max-h-[360px] overflow-y-auto">
-                        <p className="text-xs text-gray-300 whitespace-pre-line leading-relaxed font-light">
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 max-h-[360px] overflow-y-auto">
+                        <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed font-light">
                           {extractedData.description || "No description provided."}
                         </p>
                       </div>
                     </div>
 
-                    <div className="pt-6 border-t border-[#2A2E39] mt-6 flex flex-wrap items-center justify-between gap-4">
-                      <div className="text-xs text-gray-400">
+                    <div className="pt-6 border-t border-slate-200 mt-6 flex flex-wrap items-center justify-between gap-4">
+                      <div className="text-xs text-slate-500">
                         Ready to make this room live on Takevolet? Clean photos will be saved directly.
                       </div>
                       <button
@@ -1852,9 +1970,9 @@ export default function AdminPage() {
 
             {/* Recent Extractions History */}
             {recentExtractions.length > 0 && (
-              <div className="bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-[#2A2E39] pb-3">
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
                     <Clock size={16} />
                     Recently Extracted Listings ({recentExtractions.length})
                   </h3>
@@ -1894,21 +2012,21 @@ export default function AdminPage() {
                         });
                         showFeedbackToast(`Reloaded "${rec.title}"!`);
                       }}
-                      className="group bg-[#171A21] border border-[#2A2E39] hover:border-blue-500/50 rounded-xl p-3 cursor-pointer transition-all hover:shadow-lg flex items-center gap-3"
+                      className="group bg-white border border-slate-200 hover:border-blue-500/50 rounded-xl p-3 cursor-pointer transition-all hover:shadow-md flex items-center gap-3"
                     >
                       {rec.image ? (
-                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/90 shrink-0 border border-[#2A2E39]">
+                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
                           <img src={rec.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         </div>
                       ) : (
-                        <div className="w-14 h-14 bg-[#2A2E39] rounded-lg flex items-center justify-center shrink-0">
-                          <Home size={18} className="text-gray-400" />
+                        <div className="w-14 h-14 bg-slate-100 rounded-lg flex items-center justify-center shrink-0 border border-slate-200">
+                          <Home size={18} className="text-slate-400" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-white truncate group-hover:text-blue-400 transition-colors">{rec.title}</p>
+                        <p className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">{rec.title}</p>
                         <p className="text-[11px] text-primary font-bold">₹{rec.rent?.toLocaleString("en-IN")}/mo</p>
-                        <p className="text-[10px] text-gray-500 truncate">{rec.location} · {rec.imagesCount} photos</p>
+                        <p className="text-[10px] text-slate-500 truncate">{rec.location} · {rec.imagesCount} photos</p>
                       </div>
                     </div>
                   ))}
@@ -1924,34 +2042,34 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <p className="text-sm font-bold uppercase tracking-widest mb-4">Posted Flatmates ({localFlatmates.length})</p>
             {localFlatmates.length === 0 ? (
-              <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
-                <Users size={32} className="mx-auto mb-3 text-gray-400" />
-                <p className="font-semibold text-gray-400">No flatmate listings yet</p>
+              <div className="bg-white border border-dashed border-slate-300 border-slate-200 p-16 text-center">
+                <Users size={32} className="mx-auto mb-3 text-slate-500" />
+                <p className="font-semibold text-slate-500">No flatmate listings yet</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-4">
                 {localFlatmates.map((f: any) => (
-                  <div key={f.id} className="bg-[#14171C] border border-[#2A2E39] p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
+                  <div key={f.id} className="bg-white border border-slate-200 p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
                     <div className="flex gap-4">
                       {f.images?.[0] ? (
-                        <div className="w-20 h-20 shrink-0 border border-[#2A2E39] overflow-hidden bg-black/95 flex items-center justify-center relative">
+                        <div className="w-20 h-20 shrink-0 border border-slate-200 overflow-hidden bg-slate-100 flex items-center justify-center relative">
                           <img src={f.images[0]} alt="" className="max-w-full max-h-full object-contain" />
                           {f.images.length > 1 && (
                             <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[8px] px-1 font-bold">+{f.images.length - 1}</span>
                           )}
                         </div>
                       ) : (
-                        <div className="w-20 h-20 bg-[#2A2E39] flex items-center justify-center shrink-0 border border-[#2A2E39]">
-                          <Users size={24} className="text-gray-400" />
+                        <div className="w-20 h-20 bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                          <Users size={24} className="text-slate-400" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate hover:text-primary transition-colors">{f.title}</p>
-                        <p className="text-xs text-gray-400">{f.colony}, {f.location}</p>
-                        <p className="text-xs text-primary font-bold mt-1">₹{(f.rentShare || f.rent_share)?.toLocaleString("en-IN")}/mo <span className="text-[10px] text-gray-400 font-normal">· Advance: ₹{(f.advanceShare || f.advance_share)?.toLocaleString("en-IN")}</span></p>
-                        {f.description && <p className="text-[11px] text-gray-400 mt-2 line-clamp-2 italic font-light">"{f.description}"</p>}
+                        <p className="text-xs text-slate-500">{f.colony}, {f.location}</p>
+                        <p className="text-xs text-primary font-bold mt-1">₹{(f.rentShare || f.rent_share)?.toLocaleString("en-IN")}/mo <span className="text-[10px] text-slate-500 font-normal">· Advance: ₹{(f.advanceShare || f.advance_share)?.toLocaleString("en-IN")}</span></p>
+                        {f.description && <p className="text-[11px] text-slate-500 mt-2 line-clamp-2 italic font-light">"{f.description}"</p>}
                         <div className="flex flex-wrap gap-2 mt-2">
-                          <span className="text-[9px] bg-[#2A2E39] px-1.5 py-0.5 font-bold uppercase text-gray-400">
+                          <span className="text-[9px] bg-slate-100 border border-slate-200 px-1.5 py-0.5 font-bold uppercase text-slate-700">
                             🖼️ {f.images?.length || 0} images
                           </span>
                           {(f.videos?.length || 0) > 0 && (
@@ -1963,8 +2081,8 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-[#2A2E39] mt-4 pt-3">
-                      <div className="text-[10px] text-gray-400 flex flex-col gap-0.5">
+                    <div className="flex items-center justify-between border-t border-slate-200 mt-4 pt-3">
+                      <div className="text-[10px] text-slate-500 flex flex-col gap-0.5">
                         <span>Posted: {fmtDate(f.created_at || new Date().toISOString())}</span>
                         <span>Gender Pref: <span className="font-semibold text-primary">{f.genderPref || f.gender_pref || "Any"}</span></span>
                       </div>
@@ -1995,31 +2113,31 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <p className="text-sm font-bold uppercase tracking-widest mb-4">Properties ({localPropertySales.length})</p>
             {localPropertySales.length === 0 ? (
-              <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
-                <ShoppingBag size={32} className="mx-auto mb-3 text-gray-400" />
-                <p className="font-semibold text-gray-400">No properties yet</p>
+              <div className="bg-white border border-dashed border-slate-300 border-slate-200 p-16 text-center">
+                <ShoppingBag size={32} className="mx-auto mb-3 text-slate-500" />
+                <p className="font-semibold text-slate-500">No properties yet</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-4">
                 {localPropertySales.map((m: any) => (
-                  <div key={m.id} className="bg-[#14171C] border border-[#2A2E39] p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
+                  <div key={m.id} className="bg-white border border-slate-200 p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
                     <div className="flex gap-4">
                       {(m.images && m.images.length > 0) ? (
-                        <div className="w-20 h-20 shrink-0 border border-[#2A2E39] overflow-hidden bg-black/95 flex items-center justify-center relative">
+                        <div className="w-20 h-20 shrink-0 border border-slate-200 overflow-hidden bg-slate-100 flex items-center justify-center relative">
                           <img src={m.images[0]} alt="" className="max-w-full max-h-full object-contain" />
                         </div>
                       ) : (
-                        <div className="w-20 h-20 bg-[#2A2E39] flex items-center justify-center shrink-0 border border-[#2A2E39]">
-                          <Home size={24} className="text-gray-400" />
+                        <div className="w-20 h-20 bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                          <Home size={24} className="text-slate-400" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate hover:text-primary transition-colors">{m.title}</p>
-                        <p className="text-xs text-gray-400">{m.location} · <span className="bg-[#2A2E39] px-1.5 py-0.5 text-[9px] font-bold uppercase">{m.property_type || 'Unknown'}</span></p>
+                        <p className="text-xs text-slate-500">{m.location} · <span className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-700">{m.property_type || 'Unknown'}</span></p>
                         <p className="text-xs text-primary font-bold mt-1">Price: ₹{m.price?.toLocaleString("en-IN")}</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between border-t border-[#2A2E39] mt-4 pt-3">
+                    <div className="flex items-center justify-between border-t border-slate-200 mt-4 pt-3">
                       <div className="flex gap-2">
                         <button onClick={() => { setEditItem(m); setEditType("property_sales"); }} className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 text-[10px] font-bold uppercase transition-colors">Edit</button>
                         <button onClick={() => { setDeleteItem(m); setDeleteType("property_sales"); }} className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 text-[10px] font-bold uppercase transition-colors">Delete</button>
@@ -2037,30 +2155,30 @@ export default function AdminPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <p className="text-sm font-bold uppercase tracking-widest mb-4">Build Professionals ({localBuildListings.length})</p>
             {localBuildListings.length === 0 ? (
-              <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
-                <ShoppingBag size={32} className="mx-auto mb-3 text-gray-400" />
-                <p className="font-semibold text-gray-400">No build listings yet</p>
+              <div className="bg-white border border-dashed border-slate-300 border-slate-200 p-16 text-center">
+                <ShoppingBag size={32} className="mx-auto mb-3 text-slate-500" />
+                <p className="font-semibold text-slate-500">No build listings yet</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-4">
                 {localBuildListings.map((m: any) => (
-                  <div key={m.id} className="bg-[#14171C] border border-[#2A2E39] p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
+                  <div key={m.id} className="bg-white border border-slate-200 p-4 flex flex-col justify-between hover:shadow-md transition-all duration-300">
                     <div className="flex gap-4">
                       {(m.images && m.images.length > 0) ? (
-                        <div className="w-20 h-20 shrink-0 border border-[#2A2E39] overflow-hidden bg-black/95 flex items-center justify-center relative">
+                        <div className="w-20 h-20 shrink-0 border border-slate-200 overflow-hidden bg-slate-100 flex items-center justify-center relative">
                           <img src={m.images[0]} alt="" className="max-w-full max-h-full object-contain" />
                         </div>
                       ) : (
-                        <div className="w-20 h-20 bg-[#2A2E39] flex items-center justify-center shrink-0 border border-[#2A2E39]">
-                          <ShoppingBag size={24} className="text-gray-400" />
+                        <div className="w-20 h-20 bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                          <ShoppingBag size={24} className="text-slate-400" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate hover:text-primary transition-colors">{m.title}</p>
-                        <p className="text-xs text-gray-400">{m.location} · <span className="bg-[#2A2E39] px-1.5 py-0.5 text-[9px] font-bold uppercase">{m.category || 'Unknown'}</span></p>
+                        <p className="text-xs text-slate-500">{m.location} · <span className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-700">{m.category || 'Unknown'}</span></p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between border-t border-[#2A2E39] mt-4 pt-3">
+                    <div className="flex items-center justify-between border-t border-slate-200 mt-4 pt-3">
                       <div className="flex gap-2">
                         <button onClick={() => { setEditItem(m); setEditType("build_listings"); }} className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 text-[10px] font-bold uppercase transition-colors">Edit</button>
                         <button onClick={() => { setDeleteItem(m); setDeleteType("build_listings"); }} className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 text-[10px] font-bold uppercase transition-colors">Delete</button>
@@ -2081,30 +2199,30 @@ export default function AdminPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-xl font-bold tracking-tight">Booking CRM</h2>
-                  <p className="text-sm text-gray-400">Manage service and material bookings.</p>
+                  <p className="text-sm text-slate-500">Manage service and material bookings.</p>
                 </div>
               </div>
               
               {localBookings.length === 0 ? (
-                <div className="text-center py-20 border border-dashed border-gray-600 rounded-lg text-gray-400">No bookings found.</div>
+                <div className="text-center py-20 border border-dashed border-slate-300 rounded-lg text-slate-500">No bookings found.</div>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
                   {localBookings.map((bk: any) => (
-                    <div key={bk.id} className="bg-[#14171C] border rounded-lg p-6 shadow-sm flex flex-col md:flex-row justify-between gap-6 hover:border-primary/30 transition-all">
+                    <div key={bk.id} className="bg-white border rounded-lg p-6 shadow-sm flex flex-col md:flex-row justify-between gap-6 hover:border-primary/30 transition-all">
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center gap-3">
                           <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full">{bk.status || 'PENDING'}</span>
-                          <h3 className="font-bold text-lg">{bk.build_listings?.title || 'Unknown Listing'} <span className="text-gray-400 font-normal text-sm">({bk.build_listings?.display_id})</span></h3>
+                          <h3 className="font-bold text-lg">{bk.build_listings?.title || 'Unknown Listing'} <span className="text-slate-500 font-normal text-sm">({bk.build_listings?.display_id})</span></h3>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <p className="text-sm font-semibold text-gray-400 mb-1">Customer Details</p>
-                            <p className="text-sm flex items-center gap-2"><Users className="w-4 h-4 text-gray-400"/> {bk.profiles?.full_name || 'Anonymous'}</p>
-                            <p className="text-sm flex items-center gap-2"><Phone className="w-4 h-4 text-gray-400"/> {bk.profiles?.phone || 'No Phone'}</p>
+                            <p className="text-sm font-semibold text-slate-500 mb-1">Customer Details</p>
+                            <p className="text-sm flex items-center gap-2"><Users className="w-4 h-4 text-slate-500"/> {bk.profiles?.full_name || 'Anonymous'}</p>
+                            <p className="text-sm flex items-center gap-2"><Phone className="w-4 h-4 text-slate-500"/> {bk.profiles?.phone || 'No Phone'}</p>
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-400 mb-1">Booking Info</p>
+                            <p className="text-sm font-semibold text-slate-500 mb-1">Booking Info</p>
                             <p className="text-sm"><strong>Method:</strong> {bk.payment_method}</p>
                             <p className="text-sm"><strong>Date:</strong> {new Date(bk.created_at).toLocaleString()}</p>
                           </div>
@@ -2116,7 +2234,7 @@ export default function AdminPage() {
                             <div className="grid grid-cols-2 gap-2">
                               {Object.entries(bk.booking_data).map(([key, value]) => (
                                 <div key={key} className="text-sm">
-                                  <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span> 
+                                  <span className="text-slate-500 capitalize">{key.replace(/_/g, ' ')}:</span> 
                                   <span className="ml-2 font-medium">{String(value)}</span>
                                 </div>
                               ))}
@@ -2151,18 +2269,18 @@ export default function AdminPage() {
               </h2>
             </div>
             
-            <div className="bg-[#14171C] border border-[#2A2E39] p-6 shadow-sm">
-              <p className="text-sm text-gray-400 mb-4">
+            <div className="bg-white border border-slate-200 p-6 shadow-sm">
+              <p className="text-sm text-slate-500 mb-4">
                 Configure dynamic fields for different categories. These fields will automatically appear on the website and app posting forms.
               </p>
               
               <div className="grid gap-6 md:grid-cols-2">
-                 <div className="border border-[#2A2E39] p-4 h-fit">
-                   <h3 className="font-bold mb-3 uppercase text-xs tracking-wider border-b border-[#2A2E39] pb-2">Select Category</h3>
+                 <div className="border border-slate-200 p-4 h-fit">
+                   <h3 className="font-bold mb-3 uppercase text-xs tracking-wider border-b border-slate-200 pb-2">Select Category</h3>
                    <select 
                      value={selectedFormCategory}
                      onChange={e => setSelectedFormCategory(e.target.value)}
-                     className="w-full p-2 border border-[#2A2E39] text-sm mb-4 bg-[#14171C] focus:border-primary focus:outline-none">
+                     className="w-full p-2 border border-slate-200 text-sm mb-4 bg-white focus:border-primary focus:outline-none">
                      <optgroup label="Build - People & Services">
                        <option value="architect">Architect</option>
                        <option value="civil_engineer">Civil Engineer</option>
@@ -2222,8 +2340,8 @@ export default function AdminPage() {
                    </button>
                  </div>
                  
-                 <div className="border border-[#2A2E39] p-4 bg-white/5">
-                   <div className="flex items-center justify-between border-b border-[#2A2E39] pb-2 mb-4">
+                 <div className="border border-slate-200 p-4 bg-slate-50">
+                   <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-4">
                      <h3 className="font-bold uppercase text-xs tracking-wider">Edit Fields</h3>
                      <button
                         onClick={() => {
@@ -2236,11 +2354,11 @@ export default function AdminPage() {
                    </div>
                    
                    {formSchema.length === 0 ? (
-                     <p className="text-xs text-gray-400 italic text-center py-8">No fields defined for this category. Click "Add Field" to start building.</p>
+                     <p className="text-xs text-slate-500 italic text-center py-8">No fields defined for this category. Click "Add Field" to start building.</p>
                    ) : (
                      <div className="space-y-4 mb-4">
                        {formSchema.map((field, idx) => (
-                         <div key={idx} className="border border-[#2A2E39] bg-[#14171C] p-3 relative group">
+                         <div key={idx} className="border border-slate-200 bg-white p-3 relative group">
                            <button 
                              onClick={() => {
                                const updated = [...formSchema];
@@ -2254,7 +2372,7 @@ export default function AdminPage() {
                            
                            <div className="grid grid-cols-2 gap-3 mb-2 pr-6">
                              <div>
-                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-gray-400">Internal Key (Name)</label>
+                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-slate-500">Internal Key (Name)</label>
                                <input 
                                  type="text" 
                                  value={field.name}
@@ -2264,11 +2382,11 @@ export default function AdminPage() {
                                    setFormSchema(updated);
                                  }}
                                  placeholder="e.g. vehicle_type"
-                                 className="w-full border border-[#2A2E39] px-2 py-1 text-xs bg-white/5 focus:outline-none focus:border-primary font-mono"
+                                 className="w-full border border-slate-200 px-2 py-1 text-xs bg-slate-50 focus:outline-none focus:border-primary font-mono"
                                />
                              </div>
                              <div>
-                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-gray-400">Display Label</label>
+                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-slate-500">Display Label</label>
                                <input 
                                  type="text" 
                                  value={field.label}
@@ -2278,14 +2396,14 @@ export default function AdminPage() {
                                    setFormSchema(updated);
                                  }}
                                  placeholder="e.g. Vehicle Type"
-                                 className="w-full border border-[#2A2E39] px-2 py-1 text-xs bg-[#14171C] focus:outline-none focus:border-primary"
+                                 className="w-full border border-slate-200 px-2 py-1 text-xs bg-white focus:outline-none focus:border-primary"
                                />
                              </div>
                            </div>
                            
                            <div className="grid grid-cols-2 gap-3">
                              <div>
-                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-gray-400">Input Type</label>
+                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-slate-500">Input Type</label>
                                <select 
                                  value={field.type}
                                  onChange={e => {
@@ -2298,7 +2416,7 @@ export default function AdminPage() {
                                    }
                                    setFormSchema(updated);
                                  }}
-                                 className="w-full border border-[#2A2E39] px-2 py-1 text-xs bg-[#14171C] focus:outline-none focus:border-primary"
+                                 className="w-full border border-slate-200 px-2 py-1 text-xs bg-white focus:outline-none focus:border-primary"
                                >
                                  <option value="text">Text (Short)</option>
                                  <option value="textarea">Textarea (Long)</option>
@@ -2324,8 +2442,8 @@ export default function AdminPage() {
                            </div>
                            
                            {(field.type === 'select' || field.type === 'radio') && (
-                             <div className="mt-3 pt-3 border-t border-[#2A2E39]/50">
-                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-gray-400">Options (Comma separated)</label>
+                             <div className="mt-3 pt-3 border-t border-slate-200/50">
+                               <label className="block text-[9px] uppercase tracking-wider font-bold mb-1 text-slate-500">Options (Comma separated)</label>
                                <input 
                                  type="text" 
                                  value={(field.options || []).join(', ')}
@@ -2335,7 +2453,7 @@ export default function AdminPage() {
                                    setFormSchema(updated);
                                  }}
                                  placeholder="e.g. Car, Bike, Truck"
-                                 className="w-full border border-[#2A2E39] px-2 py-1 text-xs bg-[#14171C] focus:outline-none focus:border-primary"
+                                 className="w-full border border-slate-200 px-2 py-1 text-xs bg-white focus:outline-none focus:border-primary"
                                />
                              </div>
                            )}
@@ -2385,7 +2503,7 @@ export default function AdminPage() {
                 <h2 className="text-xl font-black uppercase tracking-wider flex items-center gap-2 text-white">
                   <Users className="text-primary" size={20} /> Social Leads CRM
                 </h2>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   Property buyer and rental leads captured from Instagram & social media via Takevolet Extension
                 </p>
               </div>
@@ -2446,7 +2564,7 @@ export default function AdminPage() {
                     } catch (e) {}
                     setLeadLoading(false);
                   }}
-                  className="bg-white/5 hover:bg-white/10 text-gray-200 px-3 py-2 text-xs font-bold rounded-lg border border-[#2A2E39] flex items-center gap-2 transition-all"
+                  className="bg-slate-50 hover:bg-slate-100 text-slate-900 px-3 py-2 text-xs font-bold rounded-lg border border-slate-200 flex items-center gap-2 transition-all"
                 >
                   <RefreshCw size={14} className={leadLoading ? "animate-spin" : ""} /> Refresh
                 </button>
@@ -2455,23 +2573,23 @@ export default function AdminPage() {
 
             {/* Metric Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl">
-                <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Total Leads</p>
-                <p className="text-2xl font-black text-white mt-1">{localLeads.length}</p>
+              <div className="bg-white border border-slate-200 p-4 rounded-xl">
+                <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Total Leads</p>
+                <p className="text-2xl font-black text-slate-900 mt-1">{localLeads.length}</p>
               </div>
-              <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl">
+              <div className="bg-white border border-slate-200 p-4 rounded-xl">
                 <p className="text-[10px] uppercase tracking-widest text-yellow-400 font-bold">New Inquiries</p>
                 <p className="text-2xl font-black text-yellow-400 mt-1">
                   {localLeads.filter(l => (l.status || 'new') === 'new').length}
                 </p>
               </div>
-              <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl">
+              <div className="bg-white border border-slate-200 p-4 rounded-xl">
                 <p className="text-[10px] uppercase tracking-widest text-blue-400 font-bold">Contacted</p>
                 <p className="text-2xl font-black text-blue-400 mt-1">
                   {localLeads.filter(l => l.status === 'contacted').length}
                 </p>
               </div>
-              <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl">
+              <div className="bg-white border border-slate-200 p-4 rounded-xl">
                 <p className="text-[10px] uppercase tracking-widest text-green-400 font-bold">Qualified / Closed</p>
                 <p className="text-2xl font-black text-green-400 mt-1">
                   {localLeads.filter(l => l.status === 'qualified' || l.status === 'closed').length}
@@ -2480,14 +2598,14 @@ export default function AdminPage() {
             </div>
 
             {/* Filter and Search Bar */}
-            <div className="bg-[#14171C] border border-[#2A2E39] p-4 rounded-xl flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div className="bg-white border border-slate-200 p-4 rounded-xl flex flex-col md:flex-row gap-4 justify-between items-center">
               <div className="flex items-center gap-2 w-full md:w-80">
                 <input
                   type="text"
                   placeholder="Search by name, area, comment..."
                   value={leadSearch}
                   onChange={e => setLeadSearch(e.target.value)}
-                  className="w-full bg-white/5 border border-[#2A2E39] px-3 py-2 text-xs rounded-lg text-white focus:outline-none focus:border-primary"
+                  className="w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs rounded-lg text-white focus:outline-none focus:border-primary"
                 />
               </div>
 
@@ -2499,7 +2617,7 @@ export default function AdminPage() {
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
                       leadFilter === st
                         ? "bg-primary text-black"
-                        : "bg-white/5 text-gray-400 hover:text-white border border-[#2A2E39]"
+                        : "bg-slate-50 text-slate-500 hover:text-white border border-slate-200"
                     }`}
                   >
                     {st}
@@ -2509,10 +2627,10 @@ export default function AdminPage() {
             </div>
 
             {/* Leads Table */}
-            <div className="bg-[#14171C] border border-[#2A2E39] rounded-xl overflow-hidden shadow-xl">
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#0A0C10] text-gray-400 uppercase tracking-wider text-[10px] border-b border-[#2A2E39]">
+                  <thead className="bg-[#F8FAFC] text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-200">
                     <tr>
                       <th className="py-3 px-4 font-bold">Lead / Profile</th>
                       <th className="py-3 px-4 font-bold">Location & Category</th>
@@ -2522,7 +2640,7 @@ export default function AdminPage() {
                       <th className="py-3 px-4 font-bold text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#2A2E39]">
+                  <tbody className="divide-y divide-slate-200">
                     {localLeads
                       .filter(l => {
                         const matchesFilter = leadFilter === "all" || (l.status || "new") === leadFilter;
@@ -2538,9 +2656,9 @@ export default function AdminPage() {
                         const igDmUrl = handle ? `https://ig.me/m/${handle}` : (lead.profile_url || "#");
 
                         return (
-                          <tr key={lead.id || idx} className="hover:bg-white/5 transition-colors">
+                          <tr key={lead.id || idx} className="hover:bg-slate-100 transition-colors">
                             <td className="py-3 px-4">
-                              <div className="font-bold text-white text-sm flex items-center gap-2">
+                              <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
                                 {lead.name}
                               </div>
                               {lead.profile_url && (
@@ -2558,14 +2676,14 @@ export default function AdminPage() {
                               <div className="inline-block bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[10px] font-bold">
                                 {lead.location || "Hyderabad"}
                               </div>
-                              <p className="text-gray-400 text-[11px] mt-1">{lead.category || "Property Buyer"}</p>
+                              <p className="text-slate-500 text-[11px] mt-1">{lead.category || "Property Buyer"}</p>
                             </td>
-                            <td className="py-3 px-4 font-semibold text-gray-200">
+                            <td className="py-3 px-4 font-semibold text-slate-900">
                               {lead.budget || "—"}
                             </td>
                             <td className="py-3 px-4 max-w-xs">
                               {lead.comment_text ? (
-                                <p className="text-gray-300 italic bg-black/30 p-2 rounded border border-[#2A2E39]/60 text-[11px]">
+                                <p className="text-slate-700 italic bg-black/30 p-2 rounded border border-slate-200/60 text-[11px]">
                                   "{lead.comment_text}"
                                 </p>
                               ) : (
@@ -2576,7 +2694,7 @@ export default function AdminPage() {
                                   href={lead.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-[9px] text-gray-400 hover:text-white mt-1 block"
+                                  className="text-[9px] text-slate-500 hover:text-white mt-1 block"
                                 >
                                   Source Reel / Post ↗
                                 </a>
@@ -2618,7 +2736,7 @@ export default function AdminPage() {
                 </table>
 
                 {localLeads.length === 0 && (
-                  <div className="p-8 text-center text-gray-400">
+                  <div className="p-8 text-center text-slate-500">
                     <p className="font-semibold text-sm">No leads captured yet.</p>
                     <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
                       Use the <strong>Takevolet Lead Clipper Extension</strong> on your browser while browsing Instagram property posts to clip leads and send direct messages in 1-click!
@@ -2634,15 +2752,15 @@ export default function AdminPage() {
           {editItem && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-[#14171C] border border-[#2A2E39] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                className="bg-white border border-slate-200 w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                 
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-[#2A2E39] flex items-center justify-between bg-[#0A0C10]">
+                <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-[#F8FAFC]">
                   <div>
                     <h3 className="font-black text-sm uppercase tracking-wider text-primary">Edit Listing</h3>
-                    <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">{editType} · ID: {editItem.id}</p>
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">{editType} · ID: {editItem.id}</p>
                   </div>
-                  <button onClick={() => { setEditItem(null); setEditType(null); }} className="text-gray-400 hover:text-white">
+                  <button onClick={() => { setEditItem(null); setEditType(null); }} className="text-slate-500 hover:text-white">
                     <X size={18} />
                   </button>
                 </div>
@@ -2658,12 +2776,12 @@ export default function AdminPage() {
                           required
                           value={editItem.title || ""}
                           onChange={e => setEditItem({ ...editItem, title: e.target.value })}
-                          className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                          className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                         />
                       </div>
                         <div className="mt-4">
                           <label className="block text-[10px] uppercase tracking-widest font-bold mb-1.5">City</label>
-                          <select value={editItem.city || "Hyderabad"} onChange={e => setEditItem({ ...editItem, city: e.target.value })} className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none">
+                          <select value={editItem.city || "Hyderabad"} onChange={e => setEditItem({ ...editItem, city: e.target.value })} className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none">
                             <option value="Hyderabad">Hyderabad</option>
                             <option value="Bangalore">Bangalore</option>
                             <option value="Pune">Pune</option>
@@ -2680,7 +2798,7 @@ export default function AdminPage() {
                           <select
                             value={editItem.location || ""}
                             onChange={e => setEditItem({ ...editItem, location: e.target.value })}
-                            className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none cursor-pointer"
+                            className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none cursor-pointer"
                           >
                             {HYDERABAD_AREAS.map(area => (
                               <option key={area} value={area}>{area}</option>
@@ -2694,7 +2812,7 @@ export default function AdminPage() {
                             required
                             value={editItem.colony || ""}
                             onChange={e => setEditItem({ ...editItem, colony: e.target.value })}
-                            className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                           />
                         </div>
                       </div>
@@ -2709,7 +2827,7 @@ export default function AdminPage() {
                             required
                             value={editItem.rent || 0}
                             onChange={e => setEditItem({ ...editItem, rent: Number(e.target.value) })}
-                            className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                           />
                         </div>
                         <div>
@@ -2719,7 +2837,7 @@ export default function AdminPage() {
                             required
                             value={editItem.advance || 0}
                             onChange={e => setEditItem({ ...editItem, advance: Number(e.target.value) })}
-                            className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                           />
                         </div>
                       </>
@@ -2734,7 +2852,7 @@ export default function AdminPage() {
                             required
                             value={editItem.rentShare || editItem.rent_share || 0}
                             onChange={e => setEditItem({ ...editItem, rentShare: Number(e.target.value), rent_share: Number(e.target.value) })}
-                            className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                           />
                         </div>
                         <div>
@@ -2744,7 +2862,7 @@ export default function AdminPage() {
                             required
                             value={editItem.advanceShare || editItem.advance_share || 0}
                             onChange={e => setEditItem({ ...editItem, advanceShare: Number(e.target.value), advance_share: Number(e.target.value) })}
-                            className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                           />
                         </div>
                       </>
@@ -2757,7 +2875,7 @@ export default function AdminPage() {
                           <select
                             value={editItem.property_type || "apartment"}
                             onChange={e => setEditItem({ ...editItem, property_type: e.target.value })}
-                            className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                           >
                             <option value="apartment">Apartment</option>
                             <option value="villa">Villa</option>
@@ -2773,7 +2891,7 @@ export default function AdminPage() {
                             required
                             value={editItem.price || 0}
                             onChange={e => setEditItem({ ...editItem, price: Number(e.target.value) })}
-                            className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                           />
                         </div>
                       </>
@@ -2785,7 +2903,7 @@ export default function AdminPage() {
                           <select
                             value={editItem.category || "contractor"}
                             onChange={e => setEditItem({ ...editItem, category: e.target.value })}
-                            className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                           >
                             <option value="contractor">Contractor</option>
                             <option value="architect">Architect</option>
@@ -2804,24 +2922,24 @@ export default function AdminPage() {
                       required
                       value={editItem.description || ""}
                       onChange={e => setEditItem({ ...editItem, description: e.target.value })}
-                      className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none font-light leading-relaxed resize-none"
+                      className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none font-light leading-relaxed resize-none"
                     />
                   </div>
 
                   {/* VISUAL MEDIA CRUD SECTION */}
                   {(editType === "room" || editType === "flatmate" || editType === "property_sales" || editType === "build_listings") && (
-                    <div className="border border-[#2A2E39] p-4 bg-white/5 space-y-4">
+                    <div className="border border-slate-200 p-4 bg-slate-50 space-y-4">
                       <p className="text-xs uppercase tracking-widest font-bold text-primary">🖼️ & 🎥 Media Management</p>
                       
                       {/* Image Grid with Delete */}
                       <div>
-                        <label className="block text-[9px] uppercase tracking-widest font-bold mb-1.5 text-gray-400">Current Images ({editItem.images?.length || 0})</label>
+                        <label className="block text-[9px] uppercase tracking-widest font-bold mb-1.5 text-slate-500">Current Images ({editItem.images?.length || 0})</label>
                         {(!editItem.images || editItem.images.length === 0) ? (
-                          <p className="text-xs text-gray-400 italic">No images present</p>
+                          <p className="text-xs text-slate-500 italic">No images present</p>
                         ) : (
                           <div className="grid grid-cols-5 gap-2 mb-2">
                             {editItem.images.map((img: string, idx: number) => (
-                              <div key={idx} className="relative aspect-square border border-[#2A2E39] bg-black/95 flex items-center justify-center">
+                              <div key={idx} className="relative aspect-square border border-slate-200 bg-black/95 flex items-center justify-center">
                                 <img src={img} alt="" className="max-w-full max-h-full object-contain" />
                                 <button
                                   type="button"
@@ -2846,7 +2964,7 @@ export default function AdminPage() {
                             value={newImgUrl}
                             onChange={e => setNewImgUrl(e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddImage(); } }}
-                            className="flex-1 border border-[#2A2E39] px-2 py-1 text-xs bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="flex-1 border border-slate-200 px-2 py-1 text-xs bg-white focus:border-primary focus:outline-none"
                           />
                           <button
                             type="button"
@@ -2860,14 +2978,14 @@ export default function AdminPage() {
 
                       {/* Video URLs with Delete */}
                       <div>
-                        <label className="block text-[9px] uppercase tracking-widest font-bold mb-1.5 text-gray-400">Current Videos ({editItem.videos?.length || 0})</label>
+                        <label className="block text-[9px] uppercase tracking-widest font-bold mb-1.5 text-slate-500">Current Videos ({editItem.videos?.length || 0})</label>
                         {(!editItem.videos || editItem.videos.length === 0) ? (
-                          <p className="text-xs text-gray-400 italic">No videos present</p>
+                          <p className="text-xs text-slate-500 italic">No videos present</p>
                         ) : (
                           <div className="space-y-1.5 mb-2">
                             {editItem.videos.map((vid: string, idx: number) => (
-                              <div key={idx} className="flex items-center justify-between bg-[#14171C] border border-[#2A2E39] px-2 py-1 text-xs">
-                                <span className="truncate flex-1 font-mono text-[10px] text-gray-400 pr-4">{vid}</span>
+                              <div key={idx} className="flex items-center justify-between bg-white border border-slate-200 px-2 py-1 text-xs">
+                                <span className="truncate flex-1 font-mono text-[10px] text-slate-500 pr-4">{vid}</span>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -2891,7 +3009,7 @@ export default function AdminPage() {
                             value={newVidUrl}
                             onChange={e => setNewVidUrl(e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddVideo(); } }}
-                            className="flex-1 border border-[#2A2E39] px-2 py-1 text-xs bg-[#14171C] focus:border-primary focus:outline-none"
+                            className="flex-1 border border-slate-200 px-2 py-1 text-xs bg-white focus:border-primary focus:outline-none"
                           />
                           <button
                             type="button"
@@ -2913,7 +3031,7 @@ export default function AdminPage() {
                         <select
                           value={editItem.furnishing || "Unfurnished"}
                           onChange={e => setEditItem({ ...editItem, furnishing: e.target.value })}
-                          className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none cursor-pointer"
+                          className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none cursor-pointer"
                         >
                           <option value="Fully Furnished">Fully Furnished</option>
                           <option value="Semi Furnished">Semi Furnished</option>
@@ -2925,7 +3043,7 @@ export default function AdminPage() {
                         <select
                           value={editItem.gender_preference || editItem.genderPreference || "Any Gender"}
                           onChange={e => setEditItem({ ...editItem, gender_preference: e.target.value, genderPreference: e.target.value })}
-                          className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none cursor-pointer"
+                          className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none cursor-pointer"
                         >
                           <option value="Male Bachelors Only">Male Bachelors Only</option>
                           <option value="Female Bachelors Only">Female Bachelors Only</option>
@@ -2942,7 +3060,7 @@ export default function AdminPage() {
                         <select
                           value={editItem.genderPref || editItem.gender_pref || "Any"}
                           onChange={e => setEditItem({ ...editItem, genderPref: e.target.value, gender_pref: e.target.value })}
-                          className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none cursor-pointer"
+                          className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none cursor-pointer"
                         >
                           <option value="Any">Any</option>
                           <option value="Male Bachelors Only">Male Bachelors Only</option>
@@ -2955,7 +3073,7 @@ export default function AdminPage() {
                           type="text"
                           value={editItem.professionPref || ""}
                           onChange={e => setEditItem({ ...editItem, professionPref: e.target.value })}
-                          className="w-full border border-[#2A2E39] px-3 py-2 text-sm bg-[#14171C] focus:border-primary focus:outline-none"
+                          className="w-full border border-slate-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                           placeholder="e.g. Software Professional"
                         />
                       </div>
@@ -2964,7 +3082,7 @@ export default function AdminPage() {
 
                   {/* Dynamic Metadata Section */}
                   {(editType === "room" || editType === "flatmate" || editType === "property_sales" || editType === "build_listings") && (
-                    <div className="border border-[#2A2E39] p-4 bg-primary/5 space-y-4">
+                    <div className="border border-slate-200 p-4 bg-primary/5 space-y-4">
                       <div className="flex items-center justify-between">
                         <p className="text-xs uppercase tracking-widest font-bold text-primary">⚡ Dynamic Fields (Metadata)</p>
                         <button
@@ -2984,7 +3102,7 @@ export default function AdminPage() {
                       </div>
                       
                       {(!editItem.metadata || Object.keys(editItem.metadata).length === 0) ? (
-                        <p className="text-xs text-gray-400 italic">No dynamic fields present. Add fields here to show them in the app instantly without updates.</p>
+                        <p className="text-xs text-slate-500 italic">No dynamic fields present. Add fields here to show them in the app instantly without updates.</p>
                       ) : (
                         <div className="space-y-3">
                           {Object.entries(editItem.metadata).map(([key, val]) => (
@@ -2994,7 +3112,7 @@ export default function AdminPage() {
                                   type="text"
                                   disabled
                                   value={key}
-                                  className="w-full border border-[#2A2E39] px-3 py-2 text-xs bg-black/40 text-gray-400 cursor-not-allowed"
+                                  className="w-full border border-slate-200 px-3 py-2 text-xs bg-black/40 text-slate-500 cursor-not-allowed"
                                 />
                               </div>
                               <div className="flex-1 flex gap-2">
@@ -3005,7 +3123,7 @@ export default function AdminPage() {
                                     const newMeta = { ...editItem.metadata, [key]: e.target.value };
                                     setEditItem({ ...editItem, metadata: newMeta });
                                   }}
-                                  className="flex-1 border border-[#2A2E39] px-3 py-2 text-xs bg-[#14171C] focus:border-primary focus:outline-none"
+                                  className="flex-1 border border-slate-200 px-3 py-2 text-xs bg-white focus:border-primary focus:outline-none"
                                 />
                                 <button
                                   type="button"
@@ -3029,9 +3147,9 @@ export default function AdminPage() {
                     </div>
                   )}
 
-                  <div className="border-t border-[#2A2E39] pt-4 flex gap-3 justify-end">
+                  <div className="border-t border-slate-200 pt-4 flex gap-3 justify-end">
                     <button type="button" onClick={() => { setEditItem(null); setEditType(null); }}
-                      className="px-4 py-2 border border-[#2A2E39] hover:bg-[#2A2E39]/40 text-xs font-bold uppercase transition-colors">
+                      className="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-xs font-bold uppercase transition-colors">
                       Cancel
                     </button>
                     <button type="submit" disabled={editLoading}
@@ -3051,20 +3169,20 @@ export default function AdminPage() {
           {deleteItem && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-[#14171C] border border-red-200 w-full max-w-sm overflow-hidden shadow-2xl p-6 relative">
+                className="bg-white border border-red-200 w-full max-w-sm overflow-hidden shadow-2xl p-6 relative">
                 
                 <div className="flex items-center gap-3 text-red-600 mb-4">
                   <AlertCircle size={24} />
                   <h3 className="font-black text-sm uppercase tracking-wider">Confirm Delete</h3>
                 </div>
 
-                <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                  Are you absolutely sure you want to delete <span className="font-bold text-white">&quot;{deleteItem.title}&quot;</span>? This action is permanent and cannot be undone.
+                <p className="text-xs text-slate-500 leading-relaxed mb-6">
+                  Are you absolutely sure you want to delete <span className="font-bold text-slate-900">&quot;{deleteItem.title}&quot;</span>? This action is permanent and cannot be undone.
                 </p>
 
                 <div className="flex gap-3 justify-end">
                   <button onClick={() => { setDeleteItem(null); setDeleteType(null); }}
-                    className="px-4 py-2 border border-[#2A2E39] hover:bg-[#2A2E39]/40 text-xs font-bold uppercase transition-colors">
+                    className="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-xs font-bold uppercase transition-colors">
                     Cancel
                   </button>
                   <button onClick={handleDeleteConfirm} disabled={deleteLoading}
@@ -3106,7 +3224,7 @@ export default function AdminPage() {
                   </button>
                   <button
                     onClick={() => handleCopyText(previewImage, "Image URL")}
-                    className="bg-[#1A1D24] hover:bg-[#2A2E39] border border-[#2A2E39] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all"
+                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all"
                   >
                     <Copy size={14} /> Copy URL
                   </button>
@@ -3114,7 +3232,7 @@ export default function AdminPage() {
                     href={previewImage}
                     target="_blank"
                     rel="noreferrer"
-                    className="bg-[#1A1D24] hover:bg-[#2A2E39] border border-[#2A2E39] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all"
+                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all"
                   >
                     <ExternalLink size={14} /> Open Full Size
                   </a>
@@ -3129,96 +3247,96 @@ export default function AdminPage() {
           {showSaveModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-[#14171C] border border-primary/40 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 relative rounded-2xl my-8">
-                <div className="flex items-center justify-between border-b border-[#2A2E39] pb-4 mb-6">
+                className="bg-white border border-primary/40 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 relative rounded-2xl my-8">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-6">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
                       <Sparkles size={18} />
                     </div>
                     <div>
                       <h3 className="font-black text-base text-white">Publish Room to Takevolet</h3>
-                      <p className="text-xs text-gray-400">Review and adjust details before creating live listing</p>
+                      <p className="text-xs text-slate-500">Review and adjust details before creating live listing</p>
                     </div>
                   </div>
-                  <button onClick={() => setShowSaveModal(false)} className="text-gray-400 hover:text-white p-1">
+                  <button onClick={() => setShowSaveModal(false)} className="text-slate-500 hover:text-white p-1">
                     <X size={18} />
                   </button>
                 </div>
 
                 <form onSubmit={handleSaveExtractedRoom} className="space-y-4">
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Listing Title *</label>
+                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">Listing Title *</label>
                     <input
                       type="text"
                       required
                       value={saveRoomForm.title}
                       onChange={e => setSaveRoomForm({ ...saveRoomForm, title: e.target.value })}
-                      className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Monthly Rent (₹) *</label>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">Monthly Rent (₹) *</label>
                       <input
                         type="number"
                         required
                         value={saveRoomForm.rent}
                         onChange={e => setSaveRoomForm({ ...saveRoomForm, rent: Number(e.target.value) })}
-                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Advance Deposit (₹)</label>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">Advance Deposit (₹)</label>
                       <input
                         type="number"
                         value={saveRoomForm.advance}
                         onChange={e => setSaveRoomForm({ ...saveRoomForm, advance: Number(e.target.value) })}
-                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Colony / Locality *</label>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">Colony / Locality *</label>
                       <input
                         type="text"
                         required
                         value={saveRoomForm.colony}
                         onChange={e => setSaveRoomForm({ ...saveRoomForm, colony: e.target.value })}
-                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">City / Area *</label>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">City / Area *</label>
                       <input
                         type="text"
                         required
                         value={saveRoomForm.location}
                         onChange={e => setSaveRoomForm({ ...saveRoomForm, location: e.target.value })}
-                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Full Address (Revealed upon unlock)</label>
+                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">Full Address (Revealed upon unlock)</label>
                     <input
                       type="text"
                       value={saveRoomForm.full_address}
                       onChange={e => setSaveRoomForm({ ...saveRoomForm, full_address: e.target.value })}
-                      className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
                     />
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Furnishing</label>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">Furnishing</label>
                       <select
                         value={saveRoomForm.furnishing}
                         onChange={e => setSaveRoomForm({ ...saveRoomForm, furnishing: e.target.value })}
-                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
                       >
                         <option value="Furnished">Furnished</option>
                         <option value="Semi-Furnished">Semi-Furnished</option>
@@ -3227,11 +3345,11 @@ export default function AdminPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Tenant Type</label>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">Tenant Type</label>
                       <select
                         value={saveRoomForm.tenant_type}
                         onChange={e => setSaveRoomForm({ ...saveRoomForm, tenant_type: e.target.value })}
-                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
                       >
                         <option value="bachelor">Bachelor</option>
                         <option value="family">Family</option>
@@ -3240,11 +3358,11 @@ export default function AdminPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Gender Pref</label>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">Gender Pref</label>
                       <select
                         value={saveRoomForm.gender_preference}
                         onChange={e => setSaveRoomForm({ ...saveRoomForm, gender_preference: e.target.value })}
-                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
                       >
                         <option value="Any">Any Gender</option>
                         <option value="Male">Male</option>
@@ -3254,18 +3372,18 @@ export default function AdminPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Description</label>
+                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-slate-500">Description</label>
                     <textarea
                       rows={3}
                       value={saveRoomForm.description}
                       onChange={e => setSaveRoomForm({ ...saveRoomForm, description: e.target.value })}
-                      className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none leading-relaxed"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none leading-relaxed"
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400">
+                      <label className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
                         Selected Clean Photos ({selectedImages.length})
                       </label>
                       <span className="text-[10px] text-emerald-400">✨ Zero Watermarks</span>
@@ -3275,7 +3393,7 @@ export default function AdminPage() {
                     ) : (
                       <div className="flex gap-2 overflow-x-auto pb-2">
                         {selectedImages.map((img, i) => (
-                          <div key={i} className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-[#2A2E39] bg-black">
+                          <div key={i} className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-black">
                             <img src={img} alt="" className="w-full h-full object-cover" />
                             <button
                               type="button"
@@ -3291,11 +3409,11 @@ export default function AdminPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#2A2E39]">
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
                     <button
                       type="button"
                       onClick={() => setShowSaveModal(false)}
-                      className="px-4 py-2.5 rounded-xl border border-[#2A2E39] hover:bg-[#2A2E39]/50 text-xs font-bold uppercase text-gray-300 transition-colors"
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-xs font-bold uppercase text-slate-700 transition-colors"
                     >
                       Cancel
                     </button>

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { verifyAdminRequest } from "@/lib/adminAuth";
 
 function verifyAdmin(request: Request): boolean {
@@ -37,7 +37,14 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const input = (body.url || body.rawText || "").trim();
+    const { rawHtml, rawText } = body;
+    const input = (body.url || rawText || "").trim();
+
+    // Direct HTML/Text mode: bypass network fetch entirely if HTML or apollo links provided
+    if (rawHtml && typeof rawHtml === "string" && rawHtml.length > 50) {
+      const data = parseOlxHtml(rawHtml, input || "https://www.olx.in");
+      return NextResponse.json({ success: true, data });
+    }
 
     if (!input) {
       return NextResponse.json({ error: "Please provide a valid URL or shared text" }, { status: 400 });
@@ -46,6 +53,11 @@ export async function POST(request: Request) {
     // 1. Extract URL from raw text or input
     const extractedUrl = extractUrlFromText(input);
     if (!extractedUrl) {
+      // If raw text has apollo image links directly:
+      if (input.includes("apollo.olx.in")) {
+        const data = parseOlxHtml(input, "https://www.olx.in");
+        return NextResponse.json({ success: true, data });
+      }
       return NextResponse.json({ error: "Could not find a valid web link or listing ID in the provided input" }, { status: 400 });
     }
 
@@ -69,12 +81,10 @@ export async function POST(request: Request) {
 
 // ─── HELPER: Extract URL from raw text ──────────────────────────────────────────
 function extractUrlFromText(text: string): string | null {
-  // If user pasted just numeric ID (like 1854926647)
   if (/^\d{8,12}$/.test(text.trim())) {
     return `https://www.olx.in/item/${text.trim()}`;
   }
 
-  // Regex to find http/https URL
   const match = text.match(/https?:\/\/[^\s"'<>]+/i);
   if (match) {
     let url = match[0];
@@ -82,7 +92,6 @@ function extractUrlFromText(text: string): string | null {
     return url;
   }
 
-  // If starts with olx.in
   if (text.startsWith("olx.in") || text.startsWith("www.olx.in")) {
     return `https://${text}`;
   }
@@ -94,34 +103,89 @@ function isOlxUrl(url: string): boolean {
   return /olx\.(in|com|com\.pk|pl|ro|com\.br|co\.za)/i.test(url);
 }
 
+// ─── Resilient Multi-Tier HTML Fetcher ─────────────────────────────────────────
+async function fetchHtmlWithFallback(targetUrl: string): Promise<string> {
+  let normalizedUrl = targetUrl;
+  if (normalizedUrl.includes("/d/item/")) {
+    normalizedUrl = normalizedUrl.replace("/d/item/", "/item/");
+  }
+
+  const browserHeaders = {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9,te;q=0.8",
+    "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+  };
+
+  // Tier 1: Direct fetch
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+    const response = await fetch(normalizedUrl, {
+      headers: browserHeaders,
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (response.ok) {
+      const html = await response.text();
+      if (html && html.length > 500) {
+        return html;
+      }
+    }
+  } catch (directErr) {
+    console.warn("Direct OLX fetch failed or timed out, trying fallback proxies...", directErr);
+  }
+
+  // Tier 2: Resilient Proxies
+  const fallbackGateways = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(normalizedUrl)}`,
+    `https://corsproxy.io/?url=${encodeURIComponent(normalizedUrl)}`,
+    `https://r.jina.ai/${normalizedUrl}`,
+  ];
+
+  for (const proxyUrl of fallbackGateways) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(proxyUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.length > 500) {
+          return text;
+        }
+      }
+    } catch (_) {}
+  }
+
+  throw new Error("OLX is currently blocking server access from this network. Please switch to the 'Paste Page HTML / Text' tab below to extract immediately!");
+}
+
 // ─── OLX Listing Extractor ───────────────────────────────────────────────────
 async function extractOlxListing(rawUrl: string): Promise<ExtractedListing> {
-  // Normalize OLX URL:
-  // OLX often returns 404 for /d/item/ links if fetched directly with curl/fetch,
-  // whereas /item/ with the ID redirects smoothly to the canonical item.
-  let targetUrl = rawUrl;
-  if (targetUrl.includes("/d/item/")) {
-    targetUrl = targetUrl.replace("/d/item/", "/item/");
-  }
+  const html = await fetchHtmlWithFallback(rawUrl);
+  return parseOlxHtml(html, rawUrl);
+}
 
-  const response = await fetch(targetUrl, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9,te;q=0.8",
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-    redirect: "follow",
-  });
-
-  if (!response.ok) {
-    throw new Error(`OLX responded with status ${response.status} (${response.statusText}). Listing may be inactive.`);
-  }
-
-  const html = await response.text();
-
+// ─── Core OLX HTML & Data Parser ──────────────────────────────────────────────
+function parseOlxHtml(html: string, sourceUrl: string): ExtractedListing {
   // 1. Parse Schema.org application/ld+json scripts
   const ldJsonScripts = [...html.matchAll(/<script\s+[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
   let ldItem: any = null;
@@ -148,15 +212,10 @@ async function extractOlxListing(rawUrl: string): Promise<ExtractedListing> {
           ldItem = parsed;
         }
       }
-    } catch {
-      // ignore invalid json
-    }
+    } catch {}
   }
 
-  // 2. Extract Clean Photos
-  // Real user-uploaded listing photos on OLX Apollo CDN have IDs ending with -IN (or similar country tag)
-  // Clean URL: https://apollo.olx.in/v1/files/<id>/image (Zero watermark, original camera file!)
-  // HD URL:    https://apollo.olx.in/v1/files/<id>/image;s=1080x1920
+  // 2. Extract Clean Photos from Apollo CDN
   const imageIds = new Set<string>();
 
   // Add from LD+JSON if available
@@ -177,7 +236,6 @@ async function extractOlxListing(rawUrl: string): Promise<ExtractedListing> {
   const apolloMatches = [...unescapedHtml.matchAll(/https?:\/\/apollo\.olx\.in(?::\d+)?\/v1\/files\/([a-zA-Z0-9_-]+)\/image/gi)];
   for (const m of apolloMatches) {
     const fileId = m[1];
-    // Filter out UI icons, background banners, logos
     if (
       !fileId.includes("PANAMERA") &&
       !fileId.startsWith("alias-") &&
@@ -250,88 +308,82 @@ async function extractOlxListing(rawUrl: string): Promise<ExtractedListing> {
   if (typeof ldItem?.address === "string") {
     fullAddress = ldItem.address;
   } else if (ldItem?.address && typeof ldItem.address === "object") {
-    fullAddress = [ldItem.address.streetAddress, ldItem.address.addressLocality, ldItem.address.addressRegion]
+    const addrObj = ldItem.address as Record<string, string>;
+    fullAddress = [addrObj.streetAddress, addrObj.addressLocality, addrObj.addressRegion, addrObj.addressCountry]
       .filter(Boolean)
       .join(", ");
+    if (addrObj.addressLocality) colony = addrObj.addressLocality;
+    if (addrObj.addressRegion) location = addrObj.addressRegion;
   }
 
-  if (fullAddress) {
-    const parts = fullAddress.split(",").map((p) => p.trim());
-    if (parts.length >= 1) colony = parts[0];
-    if (parts.length >= 2) location = parts[1];
-    if (parts.length >= 3) city = parts[2];
-  }
-
-  if (!colony && breadcrumbs.length > 0) {
-    const locCrumb = breadcrumbs.find((c) => !c.toLowerCase().includes("apartment") && !c.toLowerCase().includes("rent") && !c.toLowerCase().includes("olx"));
-    if (locCrumb) {
-      colony = locCrumb;
-      location = locCrumb;
+  if (breadcrumbs.length > 1) {
+    const relevantCrumbs = breadcrumbs.filter(
+      (b) => !["Home", "Properties", "For Rent: Houses & Apartments", "Houses & Apartments"].includes(b)
+    );
+    if (relevantCrumbs.length >= 2) {
+      colony = relevantCrumbs[relevantCrumbs.length - 1];
+      location = relevantCrumbs[relevantCrumbs.length - 2];
+    } else if (relevantCrumbs.length === 1) {
+      location = relevantCrumbs[0];
     }
   }
 
-  const fullText = `${title} ${description} ${fullAddress}`.toLowerCase();
-  if (fullText.includes("hyderabad") || fullText.includes("secunderabad") || fullText.includes("telangana")) {
-    city = "Hyderabad";
-  } else if (fullText.includes("bangalore") || fullText.includes("bengaluru")) {
-    city = "Bangalore";
-  } else if (fullText.includes("mumbai") || fullText.includes("pune")) {
-    city = fullText.includes("mumbai") ? "Mumbai" : "Pune";
-  } else if (fullText.includes("calicut") || fullText.includes("kozhikode")) {
-    city = "Calicut";
+  if (!location) {
+    const locMatch = html.match(/"location":\s*\{[^}]*"name":\s*"([^"]+)"/i) ||
+      html.match(/item_location["']\s*:\s*["']([^"']+)["']/i);
+    if (locMatch) {
+      location = locMatch[1];
+    }
   }
 
-  const hyderabadLocalities = [
-    "Madhapur", "Gachibowli", "Kondapur", "Hitec City", "Kukatpally", "Jubilee Hills",
-    "Banjara Hills", "Manikonda", "Ameerpet", "Begumpet", "Miyapur", "KPHB",
-    "Hafeezpet", "Nanakramguda", "Tolichowki", "Mehdipatnam", "Financial District",
-    "Tellapur", "Nallagandla", "Attapur", "Somajiguda", "Himayatnagar"
-  ];
-  for (const loc of hyderabadLocalities) {
-    if (new RegExp(`\\b${loc}\\b`, "i").test(fullText)) {
-      if (!colony || colony === location) colony = loc;
-      location = loc;
+  const knownCities = ["Hyderabad", "Bangalore", "Bengaluru", "Mumbai", "Pune", "Delhi", "Chennai", "Kolkata", "Noida", "Gurgaon"];
+  for (const c of knownCities) {
+    if (new RegExp(c, "i").test(fullAddress) || new RegExp(c, "i").test(location) || new RegExp(c, "i").test(colony)) {
+      city = c === "Bengaluru" ? "Bangalore" : c;
       break;
     }
   }
 
-  // 7. Extract Furnishing & Tenant Preferences
+  // 7. Furnishing
   let furnishing = "Semi-Furnished";
-  if (/fully\s*furnished/i.test(fullText)) {
-    furnishing = "Fully Furnished";
-  } else if (/unfurnished/i.test(fullText)) {
+  if (/unfurnished/i.test(html) || /unfurnished/i.test(description)) {
     furnishing = "Unfurnished";
+  } else if (/fully furnished/i.test(html) || /fully furnished/i.test(description)) {
+    furnishing = "Fully Furnished";
   }
 
+  // 8. Tenant Type
   let tenantType: "bachelor" | "family" | "any" = "any";
-  if (/\bbachelor(s)?\b/i.test(fullText) && !/\bfamil(y|ies)\s+only\b/i.test(fullText)) {
+  if (/bachelor/i.test(description) || /bachelor/i.test(title)) {
     tenantType = "bachelor";
-  } else if (/\bfamil(y|ies)\s+only\b/i.test(fullText)) {
+  } else if (/family/i.test(description) || /family/i.test(title)) {
     tenantType = "family";
   }
 
-  // 8. Extract Bedrooms / BHK
-  let bedrooms = ldItem?.numberOfRooms || "";
-  if (!bedrooms) {
-    const bhkMatch = fullText.match(/(\d)\s*bhk/i) || fullText.match(/(\d)\s*bed/i);
-    if (bhkMatch) {
-      bedrooms = `${bhkMatch[1]} BHK`;
-    }
-  } else {
-    bedrooms = `${bedrooms} BHK`;
+  // 9. Bedrooms / BHK
+  let bedrooms = "1 BHK";
+  const bhkMatch = (title + " " + description).match(/(\d)\s*(?:bhk|bed|bedroom)/i);
+  if (bhkMatch) {
+    bedrooms = `${bhkMatch[1]} BHK`;
+  } else if (/1\s*rk/i.test(title + " " + description)) {
+    bedrooms = "1 RK";
   }
 
-  const phoneMatch = description.match(/\b(?:\+91|0)?[6-9]\d{9}\b/);
-  const phone = phoneMatch ? phoneMatch[0] : undefined;
+  // 10. Extract Phone Number
+  let phone: string | undefined = undefined;
+  const phoneMatch = description.match(/(?:\+91[\s-]?)?[6-9]\d{9}/);
+  if (phoneMatch) {
+    phone = phoneMatch[0].replace(/\s+/g, "");
+  }
 
   return {
-    sourceUrl: targetUrl,
+    sourceUrl,
     platform: "olx",
-    title: title || "Room / Apartment for Rent",
+    title: title || "Room / Flat for Rent",
     rent,
     advance,
     location: location || "Hyderabad",
-    colony: colony || location || "Madhapur",
+    colony: colony || location || "Prime Area",
     city,
     fullAddress: fullAddress || `${colony || "Prime Location"}, ${location || "Hyderabad"}`,
     description,
@@ -373,20 +425,6 @@ async function extractGenericListing(url: string): Promise<ExtractedListing> {
   const ogImages = [...html.matchAll(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/gi)];
   for (const m of ogImages) {
     if (m[1] && !m[1].includes("logo") && !m[1].includes("icon")) imageSet.add(m[1]);
-  }
-
-  const ldJsonScripts = [...html.matchAll(/<script\s+[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
-  for (const scriptMatch of ldJsonScripts) {
-    try {
-      const parsed = JSON.parse(scriptMatch[1]);
-      if (parsed.image) {
-        const imgs = Array.isArray(parsed.image) ? parsed.image : [parsed.image];
-        imgs.forEach((img: unknown) => {
-          const urlStr = typeof img === "string" ? img : (img as Record<string, unknown>)?.url;
-          if (typeof urlStr === "string") imageSet.add(urlStr);
-        });
-      }
-    } catch {}
   }
 
   const cleanImages = Array.from(imageSet).map((imgUrl, i) => ({

@@ -75,6 +75,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Rooms", href: "/rooms" },
+    { name: "Feed", href: "/feed" },
     { name: "PGs", href: "/pgs" },
     { name: "Day-Wise", href: "/day-wise" },
     { name: "Flatmates", href: "/flatmates" },
@@ -116,17 +117,22 @@ const Navbar = () => {
 
       <div className={`container mx-auto px-6 md:px-12 flex justify-between items-center transition-all ${isScrolled ? "py-4" : "py-6"}`}>
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          {/* Inline SVG — transparent, adapts to any bg */}
-          <img
-            src="/logo.png"
-            alt="Takevolet logo"
-            className="w-10 h-10 group-hover:scale-110 transition-transform duration-300 rounded-sm"
-          />
-          <span className="text-base sm:text-xl font-bold tracking-widest uppercase text-foreground">
-            TAKE<span className="text-primary">VOLET</span>
-          </span>
+        {/* Modern Vector Brand Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7B3AEC] via-[#6366F1] to-[#4F46E5] p-2 flex items-center justify-center shadow-md shadow-purple-500/20 group-hover:scale-105 group-hover:shadow-purple-500/35 transition-all duration-300 shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white">
+              <path d="M3 10.5L12 3.5L21 10.5V20C21 20.55 20.55 21 20 21H4C3.45 21 3 20.55 3 20V10.5Z" fill="white" />
+              <path d="M9 21V12.5H15V21H9Z" fill="#7B3AEC" />
+            </svg>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-lg sm:text-xl font-black tracking-tight leading-none text-foreground">
+              TAKE<span className="text-[#7B3AEC]">VOLET</span>
+            </span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-muted-foreground leading-tight mt-0.5">
+              Zero Brokerage
+            </span>
+          </div>
         </Link>
 
 
