@@ -7,7 +7,9 @@ import {
   Clock, X, AlertCircle, RefreshCw, Eye, EyeOff, LogOut,
   Wallet, ArrowUpRight, Building2, Phone, Mail, Send,
   BarChart2, Activity, Download, ChevronDown, Star, Lock,
-  ShoppingBag, ShieldCheck, Edit2
+  ShoppingBag, ShieldCheck, Edit2, Sparkles, Link2, Copy,
+  ExternalLink, Image as ImageIcon, Maximize2, CheckSquare,
+  Square, FileText
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { MOCK_ROOMS, MOCK_FLATMATES, MOCK_ITEMS } from "@/data/mock";
@@ -17,7 +19,7 @@ import { uploadRoomMedia } from "@/lib/db";
 
 const ADMIN_PASSWORD = "Nithin@Takevolet2026";
 
-type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "flatmates" | "property_sales" | "build_listings" | "bookings" | "form_builder" | "leads";
+type Tab = "overview" | "payouts" | "unlocks" | "interests" | "handovers" | "users" | "rooms" | "extractor" | "flatmates" | "property_sales" | "build_listings" | "bookings" | "form_builder" | "leads";
 
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false);
@@ -55,6 +57,33 @@ export default function AdminPage() {
   const [formSchema, setFormSchema] = useState<any[]>([]);
   const [formSchemaLoading, setFormSchemaLoading] = useState(false);
   const [formSchemaSaving, setFormSchemaSaving] = useState(false);
+
+  // Link Extraction Engine State
+  const [extractInput, setExtractInput] = useState("");
+  const [extractLoading, setExtractLoading] = useState(false);
+  const [extractError, setExtractError] = useState("");
+  const [extractedData, setExtractedData] = useState<any | null>(null);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveRoomLoading, setSaveRoomLoading] = useState(false);
+  const [saveRoomSuccess, setSaveRoomSuccess] = useState(false);
+  const [saveRoomForm, setSaveRoomForm] = useState<any>({
+    title: "",
+    rent: 0,
+    advance: 0,
+    location: "Hyderabad",
+    colony: "",
+    full_address: "",
+    furnishing: "Semi-Furnished",
+    tenant_type: "bachelor",
+    gender_preference: "Any",
+    description: "",
+    images: [] as string[],
+    phone: "",
+  });
+  const [recentExtractions, setRecentExtractions] = useState<any[]>([]);
 
   const [newImgUrl, setNewImgUrl] = useState("");
   const [newVidUrl, setNewVidUrl] = useState("");
@@ -256,6 +285,192 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem("takevolet_recent_extractions");
+      if (saved) setRecentExtractions(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  // ── Link Extractor Handlers ─────────────────────────────────────────────────
+  const showFeedbackToast = (msg: string) => {
+    setCopyFeedback(msg);
+    setTimeout(() => setCopyFeedback(null), 3000);
+  };
+
+  const handleExtractListing = async (urlToExtract?: string) => {
+    const targetUrl = (urlToExtract || extractInput).trim();
+    if (!targetUrl) {
+      setExtractError("Please paste an OLX listing link or share text");
+      return;
+    }
+    setExtractLoading(true);
+    setExtractError("");
+    try {
+      const res = await fetch("/api/admin/extract", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": ADMIN_PASSWORD,
+        },
+        body: JSON.stringify({ url: targetUrl }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Extraction failed");
+      }
+
+      setExtractedData(json.data);
+      const allHdUrls = (json.data.cleanImages || []).map((img: any) => img.hdUrl || img.originalUrl);
+      setSelectedImages(allHdUrls);
+
+      setSaveRoomForm({
+        title: json.data.title || "",
+        rent: json.data.rent || 0,
+        advance: json.data.advance || (json.data.rent ? json.data.rent * 2 : 0),
+        location: json.data.location || "Hyderabad",
+        colony: json.data.colony || json.data.location || "Madhapur",
+        full_address: json.data.fullAddress || "",
+        furnishing: json.data.furnishing || "Semi-Furnished",
+        tenant_type: json.data.tenantType || "bachelor",
+        gender_preference: "Any",
+        description: json.data.description || "",
+        images: allHdUrls,
+        phone: json.data.phone || "",
+      });
+
+      // Save to recent extractions
+      const updatedRecent = [
+        {
+          id: Date.now().toString(),
+          title: json.data.title,
+          rent: json.data.rent,
+          location: json.data.colony || json.data.location,
+          image: allHdUrls[0] || "",
+          imagesCount: allHdUrls.length,
+          sourceUrl: targetUrl,
+          data: json.data,
+          extractedAt: new Date().toISOString(),
+        },
+        ...recentExtractions.filter((r: any) => r.sourceUrl !== targetUrl),
+      ].slice(0, 8);
+
+      setRecentExtractions(updatedRecent);
+      try {
+        localStorage.setItem("takevolet_recent_extractions", JSON.stringify(updatedRecent));
+      } catch {}
+
+      showFeedbackToast("Listing and clean images extracted successfully!");
+    } catch (err: any) {
+      console.error(err);
+      setExtractError(err.message || "Failed to extract listing. Please ensure the link is active.");
+    } finally {
+      setExtractLoading(false);
+    }
+  };
+
+  const handleCopyText = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    showFeedbackToast(`Copied ${label} to clipboard!`);
+  };
+
+  const handleCopyAllImageUrls = () => {
+    if (!selectedImages.length) return;
+    navigator.clipboard.writeText(selectedImages.join("\n"));
+    showFeedbackToast(`Copied ${selectedImages.length} clean image URLs!`);
+  };
+
+  const handleDownloadSingleImage = async (imgUrl: string, idx: number) => {
+    try {
+      showFeedbackToast(`Downloading image #${idx + 1}...`);
+      const res = await fetch(imgUrl);
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `takevolet-clean-${idx + 1}-${Date.now()}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(imgUrl, "_blank");
+    }
+  };
+
+  const handleDownloadSelectedImages = async () => {
+    if (!selectedImages.length) return;
+    showFeedbackToast(`Triggering download for ${selectedImages.length} clean images...`);
+    for (let i = 0; i < selectedImages.length; i++) {
+      await handleDownloadSingleImage(selectedImages[i], i);
+      await new Promise(r => setTimeout(r, 400));
+    }
+  };
+
+  const handleToggleImageSelect = (imgUrl: string) => {
+    setSelectedImages(prev => {
+      const next = prev.includes(imgUrl) ? prev.filter(u => u !== imgUrl) : [...prev, imgUrl];
+      setSaveRoomForm((f: any) => ({ ...f, images: next }));
+      return next;
+    });
+  };
+
+  const handleSelectAllImages = () => {
+    if (!extractedData?.cleanImages) return;
+    const all = extractedData.cleanImages.map((img: any) => img.hdUrl || img.originalUrl);
+    setSelectedImages(all);
+    setSaveRoomForm((f: any) => ({ ...f, images: all }));
+  };
+
+  const handleDeselectAllImages = () => {
+    setSelectedImages([]);
+    setSaveRoomForm((f: any) => ({ ...f, images: [] }));
+  };
+
+  const handleSaveExtractedRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!saveRoomForm.title || !saveRoomForm.rent) {
+      alert("Title and Rent are required!");
+      return;
+    }
+    setSaveRoomLoading(true);
+    try {
+      const res = await fetch("/api/admin/data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": ADMIN_PASSWORD,
+        },
+        body: JSON.stringify({
+          action: "create_room",
+          roomData: {
+            ...saveRoomForm,
+            images: selectedImages,
+          },
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to publish room");
+      }
+
+      if (json.room) {
+        setLocalRooms(prev => [json.room, ...prev]);
+      }
+      setShowSaveModal(false);
+      setSaveRoomSuccess(true);
+      setTimeout(() => setSaveRoomSuccess(false), 5000);
+      showFeedbackToast("🎉 Room successfully published to Takevolet!");
+      fetchData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Error saving room: " + err.message);
+    } finally {
+      setSaveRoomLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (authed) {
       fetchData();
       const interval = setInterval(fetchData, 30000); // auto-refresh every 30s
@@ -399,13 +614,14 @@ export default function AdminPage() {
         
         <div className="flex-1 py-6 px-4 space-y-1">
           <p className="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-3 px-3">Menu</p>
-          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "flatmates", "property_sales", "build_listings", "bookings", "form_builder", "leads"] as Tab[]).map(tab => {
+          {(["overview", "payouts", "unlocks", "interests", "handovers", "users", "rooms", "extractor", "flatmates", "property_sales", "build_listings", "bookings", "form_builder", "leads"] as Tab[]).map(tab => {
             const label = tab === "payouts" && pendingPayouts.length > 0 ? `Payouts (${pendingPayouts.length})` 
                         : tab === "unlocks" && data?.contactUnlocks?.length > 0 ? `Unlocks (${data.contactUnlocks.length})`
                         : tab === "property_sales" ? `Property Sales`
                         : tab === "build_listings" ? `Build Listings`
                         : tab === "form_builder" ? `Form Builder`
                         : tab === "leads" ? `Social Leads CRM`
+                        : tab === "extractor" ? `✨ Link Extractor`
                         : tab.charAt(0).toUpperCase() + tab.slice(1);
             
             const count = tab === "users" ? users.length 
@@ -415,6 +631,7 @@ export default function AdminPage() {
                         : tab === "build_listings" ? localBuildListings.length 
                         : tab === "bookings" ? localBookings.length 
                         : tab === "leads" ? localLeads.length 
+                        : tab === "extractor" ? (extractedData ? "Ready" : null)
                         : null;
             
             const labelStr = count !== null ? `${label} (${count})` : label;
@@ -991,7 +1208,18 @@ export default function AdminPage() {
         {/* ── ROOMS ── */}
         {activeTab === "rooms" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <p className="text-sm font-bold uppercase tracking-widest mb-4">Posted Rooms ({localRooms.length})</p>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-widest text-white">Posted Rooms ({localRooms.length})</p>
+                <p className="text-xs text-gray-400 mt-0.5">Manage live room listings or import new rooms from OLX without watermarks.</p>
+              </div>
+              <button
+                onClick={() => setActiveTab("extractor")}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
+              >
+                <Sparkles size={14} /> Extract from OLX Link
+              </button>
+            </div>
             {localRooms.length === 0 ? (
               <div className="bg-[#14171C] border border-dashed border-gray-600 border-[#2A2E39] p-16 text-center">
                 <Home size={32} className="mx-auto mb-3 text-gray-400" />
@@ -1061,6 +1289,582 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </motion.div>
+        )}
+
+        {/* ── LINK EXTRACTION ENGINE ── */}
+        {activeTab === "extractor" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            
+            {/* Header Hero Banner */}
+            <div className="bg-gradient-to-r from-[#14171C] via-[#1A1F2C] to-[#14171C] border border-blue-500/30 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <Sparkles size={160} className="text-blue-400" />
+              </div>
+              <div className="relative z-10 max-w-3xl">
+                <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 px-3 py-1 rounded-full text-blue-400 text-xs font-bold uppercase tracking-wider mb-3">
+                  <Sparkles size={13} className="text-blue-400 animate-pulse" />
+                  Takevolet Extraction Engine
+                </div>
+                <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-2">
+                  OLX Clean Image & Room Data Extractor
+                </h1>
+                <p className="text-gray-300 text-xs md:text-sm leading-relaxed mb-4">
+                  Bypass screenshots, mobile status bars, and OLX watermark overlays. Paste any OLX listing link or shared text to extract <strong>100% clean, original full-resolution photos directly from OLX Apollo CDN</strong>, alongside title, rent, location, and description.
+                </p>
+                <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-gray-400">
+                  <span className="bg-[#2A2E39]/80 border border-gray-700 px-2.5 py-1 rounded-lg text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 size={12} /> Zero OLX Watermark
+                  </span>
+                  <span className="bg-[#2A2E39]/80 border border-gray-700 px-2.5 py-1 rounded-lg text-blue-400 flex items-center gap-1">
+                    <CheckCircle2 size={12} /> High-Res 1080p Originals
+                  </span>
+                  <span className="bg-[#2A2E39]/80 border border-gray-700 px-2.5 py-1 rounded-lg text-amber-400 flex items-center gap-1">
+                    <CheckCircle2 size={12} /> 1-Click Publish to Takevolet
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Notification Toasts */}
+            <AnimatePresence>
+              {copyFeedback && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between shadow-lg">
+                  <span className="flex items-center gap-2"><CheckCircle2 size={14} /> {copyFeedback}</span>
+                  <button onClick={() => setCopyFeedback(null)} className="text-emerald-400 hover:text-white"><X size={13} /></button>
+                </motion.div>
+              )}
+              {extractError && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="bg-red-500/20 border border-red-500/40 text-red-300 px-4 py-3 rounded-xl text-xs font-semibold flex items-start justify-between shadow-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Extraction Error</p>
+                      <p className="text-[11px] text-red-200/80 mt-0.5">{extractError}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setExtractError("")} className="text-red-400 hover:text-white"><X size={14} /></button>
+                </motion.div>
+              )}
+              {saveRoomSuccess && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="bg-gradient-to-r from-emerald-600/20 to-green-600/20 border border-emerald-500 text-emerald-300 p-4 rounded-xl flex items-center justify-between shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 size={20} className="text-emerald-400" />
+                    <div>
+                      <p className="font-bold text-sm">Room Successfully Published!</p>
+                      <p className="text-xs text-gray-300">The listing has been created in Takevolet database with clean photos.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("rooms")}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-black px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
+                  >
+                    View in Rooms Tab
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Input & Extraction Control Panel */}
+            <div className="bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl">
+              <form onSubmit={(e) => { e.preventDefault(); handleExtractListing(); }} className="space-y-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-widest font-bold text-gray-400 mb-2">
+                    Paste OLX Listing URL or App Share Text:
+                  </label>
+                  <div className="relative flex items-center">
+                    <div className="absolute left-4 text-gray-400 pointer-events-none">
+                      <Link2 size={18} />
+                    </div>
+                    <input
+                      type="text"
+                      value={extractInput}
+                      onChange={(e) => setExtractInput(e.target.value)}
+                      placeholder="e.g. https://www.olx.in/item/... or pasted WhatsApp/app share text with link"
+                      className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-blue-500 rounded-xl pl-12 pr-32 py-3.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all shadow-inner"
+                    />
+                    <div className="absolute right-3 flex items-center gap-1.5">
+                      {extractInput && (
+                        <button
+                          type="button"
+                          onClick={() => { setExtractInput(""); setExtractError(""); }}
+                          className="text-gray-500 hover:text-gray-300 p-1 rounded-md transition-colors"
+                          title="Clear input"
+                        >
+                          <X size={15} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const text = await navigator.clipboard.readText();
+                            if (text) {
+                              setExtractInput(text);
+                              showFeedbackToast("Pasted from clipboard!");
+                            }
+                          } catch {
+                            alert("Clipboard access not permitted. Please paste manually (Ctrl+V).");
+                          }
+                        }}
+                        className="text-gray-400 hover:text-white bg-[#1A1D24] border border-[#2A2E39] hover:border-gray-500 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+                        title="Paste from clipboard"
+                      >
+                        <Copy size={12} /> Paste
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-gray-500">Quick Test Samples:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = "https://www.olx.in/item/2-bhk-furnished-flat-for-rent-thondayad-calicutnv-iid-1853831994";
+                        setExtractInput(url);
+                        handleExtractListing(url);
+                      }}
+                      className="text-[11px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-lg transition-all"
+                    >
+                      Sample 1: 2 BHK Furnished (Calicut)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = "https://www.olx.in/item/apartment-for-rent-at-malapparamba-junction-calicut-iid-1854926647";
+                        setExtractInput(url);
+                        handleExtractListing(url);
+                      }}
+                      className="text-[11px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 px-2.5 py-1 rounded-lg transition-all"
+                    >
+                      Sample 2: Malaparamba Flat (11 Clean Photos)
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={extractLoading || !extractInput.trim()}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer"
+                  >
+                    {extractLoading ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        Extracting Clean Media...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} />
+                        Extract Clean Images & Data
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Extracted Listing Results */}
+            {extractedData && (
+              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                
+                {/* Main Listing Header & Actions Bar */}
+                <div className="bg-[#14171C] border border-blue-500/40 rounded-2xl p-6 shadow-2xl relative">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                          <CheckCircle2 size={11} /> {extractedData.platform === "olx" ? "OLX Verified CDN" : "Generic Listing"}
+                        </span>
+                        <span className="bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                          {extractedData.cleanImages?.length || 0} Clean Photos Extracted
+                        </span>
+                        {extractedData.bedrooms && (
+                          <span className="bg-purple-500/10 border border-purple-500/30 text-purple-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+                            {extractedData.bedrooms}
+                          </span>
+                        )}
+                        {extractedData.furnishing && (
+                          <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+                            {extractedData.furnishing}
+                          </span>
+                        )}
+                      </div>
+
+                      <h2 className="text-xl md:text-2xl font-black text-white truncate hover:text-clip">
+                        {extractedData.title}
+                      </h2>
+
+                      <div className="flex flex-wrap items-baseline gap-4 mt-2">
+                        <span className="text-2xl font-black text-primary">
+                          ₹{extractedData.rent?.toLocaleString("en-IN") || 0}
+                          <span className="text-xs font-normal text-gray-400 ml-1">/ month</span>
+                        </span>
+                        {extractedData.advance > 0 && (
+                          <span className="text-xs text-gray-400">
+                            Advance Deposit: <strong className="text-white font-mono">₹{extractedData.advance?.toLocaleString("en-IN")}</strong>
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400">
+                          📍 {extractedData.colony ? `${extractedData.colony}, ` : ""}{extractedData.location}, {extractedData.city}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-3 shrink-0">
+                      <button
+                        onClick={() => setShowSaveModal(true)}
+                        className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 flex items-center gap-2 transition-all cursor-pointer"
+                      >
+                        <Sparkles size={14} />
+                        Publish to Takevolet
+                      </button>
+
+                      <button
+                        onClick={handleCopyAllImageUrls}
+                        className="bg-[#1A1D24] hover:bg-[#222730] border border-[#2A2E39] hover:border-blue-500/50 text-gray-200 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 transition-all"
+                        title="Copy all clean image links"
+                      >
+                        <Copy size={13} />
+                        Copy All URLs
+                      </button>
+
+                      <button
+                        onClick={handleDownloadSelectedImages}
+                        disabled={selectedImages.length === 0}
+                        className="bg-[#1A1D24] hover:bg-[#222730] border border-[#2A2E39] hover:border-emerald-500/50 disabled:opacity-40 text-gray-200 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 transition-all"
+                        title="Download selected clean photos"
+                      >
+                        <Download size={13} />
+                        Download ({selectedImages.length})
+                      </button>
+
+                      {extractedData.sourceUrl && (
+                        <a
+                          href={extractedData.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-400 hover:text-white p-3 rounded-xl border border-[#2A2E39] hover:border-gray-500 bg-[#1A1D24] transition-all"
+                          title="Open original OLX listing"
+                        >
+                          <ExternalLink size={15} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Clean Photos Showcase Grid */}
+                <div className="bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2A2E39] pb-4">
+                    <div>
+                      <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <ImageIcon size={18} className="text-blue-400" />
+                        Clean Original Photos ({extractedData.cleanImages?.length || 0})
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        These photos are fetched directly from the high-res storage source. Zero watermark stamps.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllImages}
+                        className="text-xs text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-gray-600">|</span>
+                      <button
+                        type="button"
+                        onClick={handleDeselectAllImages}
+                        className="text-xs text-gray-400 hover:text-white font-semibold transition-colors"
+                      >
+                        Deselect All
+                      </button>
+                      <span className="text-xs bg-[#2A2E39] text-gray-300 px-2.5 py-1 rounded-lg font-mono">
+                        Selected: {selectedImages.length} / {extractedData.cleanImages?.length || 0}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Images Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {(extractedData.cleanImages || []).map((img: any, idx: number) => {
+                      const isSelected = selectedImages.includes(img.hdUrl || img.originalUrl);
+                      const activeUrl = img.hdUrl || img.originalUrl;
+                      return (
+                        <div
+                          key={img.id || idx}
+                          className={`group relative rounded-xl overflow-hidden border transition-all duration-200 bg-black/40 flex flex-col ${
+                            isSelected
+                              ? "border-blue-500 shadow-lg shadow-blue-500/10 ring-1 ring-blue-500"
+                              : "border-[#2A2E39] hover:border-gray-500 opacity-70 hover:opacity-100"
+                          }`}
+                        >
+                          {/* Image Thumbnail Container */}
+                          <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/90 flex items-center justify-center">
+                            <img
+                              src={img.thumbnailUrl || img.originalUrl}
+                              alt={`Clean listing photo ${idx + 1}`}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              loading="lazy"
+                            />
+
+                            {/* Top Left Selection Checkbox */}
+                            <div className="absolute top-2.5 left-2.5 z-10">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleImageSelect(activeUrl)}
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                                  isSelected
+                                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/40"
+                                    : "bg-black/70 text-gray-400 hover:text-white border border-white/20"
+                                }`}
+                              >
+                                {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+                              </button>
+                            </div>
+
+                            {/* Watermark-Free Badge */}
+                            <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
+                              <span className="bg-black/80 backdrop-blur-md text-emerald-400 border border-emerald-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                                ✨ Clean HD
+                              </span>
+                            </div>
+
+                            {/* Hover Actions Overlay */}
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewImage(activeUrl)}
+                                className="bg-white/10 hover:bg-white/25 text-white p-2.5 rounded-xl transition-all"
+                                title="Zoom Fullscreen"
+                              >
+                                <Maximize2 size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadSingleImage(activeUrl, idx)}
+                                className="bg-white/10 hover:bg-white/25 text-white p-2.5 rounded-xl transition-all"
+                                title="Download Clean JPG"
+                              >
+                                <Download size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(activeUrl, `Image #${idx + 1} URL`)}
+                                className="bg-white/10 hover:bg-white/25 text-white p-2.5 rounded-xl transition-all"
+                                title="Copy Clean Image URL"
+                              >
+                                <Copy size={16} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Image Footer Details */}
+                          <div className="p-3 bg-[#171A21] border-t border-[#2A2E39] flex items-center justify-between text-[11px]">
+                            <span className="text-gray-400 font-mono text-[10px]">Photo #{idx + 1}</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(activeUrl, `Photo #${idx + 1} URL`)}
+                                className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1"
+                              >
+                                <Copy size={11} /> Copy Link
+                              </button>
+                              <span className="text-gray-600">·</span>
+                              <a
+                                href={activeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-gray-400 hover:text-white transition-colors"
+                                title="Open original CDN image in new tab"
+                              >
+                                <ExternalLink size={11} />
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Extracted Details & Description Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  
+                  {/* Left 1 Column: Structured Specs */}
+                  <div className="bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl space-y-4">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                      <FileText size={16} className="text-blue-400" />
+                      Extracted Specifications
+                    </h3>
+
+                    <div className="space-y-3 text-xs">
+                      <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
+                        <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Listing Title</span>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold text-white">{extractedData.title}</p>
+                          <button onClick={() => handleCopyText(extractedData.title, "Title")} className="text-gray-400 hover:text-white shrink-0"><Copy size={12} /></button>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
+                        <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Pricing</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-bold text-primary">₹{extractedData.rent?.toLocaleString("en-IN")}/mo</span>
+                          <span className="text-gray-400">Advance: ₹{extractedData.advance?.toLocaleString("en-IN")}</span>
+                          <button onClick={() => handleCopyText(`Rent: ₹${extractedData.rent}, Advance: ₹${extractedData.advance}`, "Pricing")} className="text-gray-400 hover:text-white"><Copy size={12} /></button>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
+                        <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Location Details</span>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-white">{extractedData.colony}, {extractedData.location}</p>
+                            <p className="text-[11px] text-gray-400">{extractedData.city}</p>
+                          </div>
+                          <button onClick={() => handleCopyText(`${extractedData.colony}, ${extractedData.location}, ${extractedData.city}`, "Location")} className="text-gray-400 hover:text-white"><Copy size={12} /></button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
+                          <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Configuration</span>
+                          <p className="font-semibold text-white">{extractedData.bedrooms || "1 BHK"}</p>
+                        </div>
+                        <div className="p-3 bg-[#1A1D24] rounded-xl border border-[#2A2E39]">
+                          <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Furnishing</span>
+                          <p className="font-semibold text-white">{extractedData.furnishing || "Semi-Furnished"}</p>
+                        </div>
+                      </div>
+
+                      {extractedData.phone && (
+                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                          <span className="text-[10px] text-emerald-400 uppercase font-bold block mb-1">📞 Contact Phone Detected</span>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono font-bold text-white text-sm">{extractedData.phone}</span>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => handleCopyText(extractedData.phone, "Phone Number")} className="text-emerald-400 hover:text-white"><Copy size={13} /></button>
+                              <a href={`https://wa.me/91${extractedData.phone.replace(/[^0-9]/g, "").slice(-10)}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:text-white text-[11px] font-bold underline">WhatsApp</a>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right 2 Columns: Full Description */}
+                  <div className="lg:col-span-2 bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between border-b border-[#2A2E39] pb-3 mb-4">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-white">Full Listing Description</h3>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyText(extractedData.description, "Description")}
+                          className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
+                        >
+                          <Copy size={12} /> Copy Text
+                        </button>
+                      </div>
+                      <div className="bg-[#0D0F12] border border-[#2A2E39] rounded-xl p-4 max-h-[360px] overflow-y-auto">
+                        <p className="text-xs text-gray-300 whitespace-pre-line leading-relaxed font-light">
+                          {extractedData.description || "No description provided."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-[#2A2E39] mt-6 flex flex-wrap items-center justify-between gap-4">
+                      <div className="text-xs text-gray-400">
+                        Ready to make this room live on Takevolet? Clean photos will be saved directly.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowSaveModal(true)}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <Sparkles size={14} />
+                        Publish Listing to Takevolet Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Recent Extractions History */}
+            {recentExtractions.length > 0 && (
+              <div className="bg-[#14171C] border border-[#2A2E39] rounded-2xl p-6 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-[#2A2E39] pb-3">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                    <Clock size={16} />
+                    Recently Extracted Listings ({recentExtractions.length})
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecentExtractions([]);
+                      localStorage.removeItem("takevolet_recent_extractions");
+                    }}
+                    className="text-[11px] text-gray-500 hover:text-red-400 transition-colors"
+                  >
+                    Clear History
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {recentExtractions.map((rec: any) => (
+                    <div
+                      key={rec.id}
+                      onClick={() => {
+                        setExtractedData(rec.data);
+                        const urls = (rec.data.cleanImages || []).map((img: any) => img.hdUrl || img.originalUrl);
+                        setSelectedImages(urls);
+                        setSaveRoomForm({
+                          title: rec.data.title || "",
+                          rent: rec.data.rent || 0,
+                          advance: rec.data.advance || 0,
+                          location: rec.data.location || "Hyderabad",
+                          colony: rec.data.colony || "Madhapur",
+                          full_address: rec.data.fullAddress || "",
+                          furnishing: rec.data.furnishing || "Semi-Furnished",
+                          tenant_type: rec.data.tenantType || "bachelor",
+                          gender_preference: "Any",
+                          description: rec.data.description || "",
+                          images: urls,
+                          phone: rec.data.phone || "",
+                        });
+                        showFeedbackToast(`Reloaded "${rec.title}"!`);
+                      }}
+                      className="group bg-[#171A21] border border-[#2A2E39] hover:border-blue-500/50 rounded-xl p-3 cursor-pointer transition-all hover:shadow-lg flex items-center gap-3"
+                    >
+                      {rec.image ? (
+                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/90 shrink-0 border border-[#2A2E39]">
+                          <img src={rec.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        </div>
+                      ) : (
+                        <div className="w-14 h-14 bg-[#2A2E39] rounded-lg flex items-center justify-center shrink-0">
+                          <Home size={18} className="text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-white truncate group-hover:text-blue-400 transition-colors">{rec.title}</p>
+                        <p className="text-[11px] text-primary font-bold">₹{rec.rent?.toLocaleString("en-IN")}/mo</p>
+                        <p className="text-[10px] text-gray-500 truncate">{rec.location} · {rec.imagesCount} photos</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </motion.div>
         )}
 
@@ -2204,7 +3008,7 @@ export default function AdminPage() {
                 </div>
 
                 <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                  Are you absolutely sure you want to delete <span className="font-bold text-white">"{deleteItem.title}"</span>? This action is permanent and cannot be undone.
+                  Are you absolutely sure you want to delete <span className="font-bold text-white">&quot;{deleteItem.title}&quot;</span>? This action is permanent and cannot be undone.
                 </p>
 
                 <div className="flex gap-3 justify-end">
@@ -2218,6 +3022,242 @@ export default function AdminPage() {
                     Yes, Delete
                   </button>
                 </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── FULLSCREEN IMAGE PREVIEW MODAL ── */}
+        <AnimatePresence>
+          {previewImage && (
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                className="max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center relative">
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="absolute -top-10 right-0 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"
+                  title="Close preview"
+                >
+                  <X size={20} />
+                </button>
+                <div className="relative max-h-[80vh] overflow-hidden rounded-xl border border-white/20 shadow-2xl bg-black flex items-center justify-center">
+                  <img src={previewImage} alt="Fullscreen clean listing photo" className="max-w-full max-h-[80vh] object-contain" />
+                  <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-emerald-400 border border-emerald-500/40 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
+                    <Sparkles size={12} /> 1080p Clean (Zero Watermark)
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 mt-4">
+                  <button
+                    onClick={() => handleDownloadSingleImage(previewImage, 0)}
+                    className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg transition-all"
+                  >
+                    <Download size={14} /> Download Clean Photo
+                  </button>
+                  <button
+                    onClick={() => handleCopyText(previewImage, "Image URL")}
+                    className="bg-[#1A1D24] hover:bg-[#2A2E39] border border-[#2A2E39] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all"
+                  >
+                    <Copy size={14} /> Copy URL
+                  </button>
+                  <a
+                    href={previewImage}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-[#1A1D24] hover:bg-[#2A2E39] border border-[#2A2E39] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all"
+                  >
+                    <ExternalLink size={14} /> Open Full Size
+                  </a>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── PUBLISH EXTRACTED ROOM MODAL ── */}
+        <AnimatePresence>
+          {showSaveModal && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-[#14171C] border border-primary/40 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 relative rounded-2xl my-8">
+                <div className="flex items-center justify-between border-b border-[#2A2E39] pb-4 mb-6">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
+                      <Sparkles size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-base text-white">Publish Room to Takevolet</h3>
+                      <p className="text-xs text-gray-400">Review and adjust details before creating live listing</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowSaveModal(false)} className="text-gray-400 hover:text-white p-1">
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveExtractedRoom} className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Listing Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={saveRoomForm.title}
+                      onChange={e => setSaveRoomForm({ ...saveRoomForm, title: e.target.value })}
+                      className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Monthly Rent (₹) *</label>
+                      <input
+                        type="number"
+                        required
+                        value={saveRoomForm.rent}
+                        onChange={e => setSaveRoomForm({ ...saveRoomForm, rent: Number(e.target.value) })}
+                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Advance Deposit (₹)</label>
+                      <input
+                        type="number"
+                        value={saveRoomForm.advance}
+                        onChange={e => setSaveRoomForm({ ...saveRoomForm, advance: Number(e.target.value) })}
+                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Colony / Locality *</label>
+                      <input
+                        type="text"
+                        required
+                        value={saveRoomForm.colony}
+                        onChange={e => setSaveRoomForm({ ...saveRoomForm, colony: e.target.value })}
+                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">City / Area *</label>
+                      <input
+                        type="text"
+                        required
+                        value={saveRoomForm.location}
+                        onChange={e => setSaveRoomForm({ ...saveRoomForm, location: e.target.value })}
+                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Full Address (Revealed upon unlock)</label>
+                    <input
+                      type="text"
+                      value={saveRoomForm.full_address}
+                      onChange={e => setSaveRoomForm({ ...saveRoomForm, full_address: e.target.value })}
+                      className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Furnishing</label>
+                      <select
+                        value={saveRoomForm.furnishing}
+                        onChange={e => setSaveRoomForm({ ...saveRoomForm, furnishing: e.target.value })}
+                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                      >
+                        <option value="Furnished">Furnished</option>
+                        <option value="Semi-Furnished">Semi-Furnished</option>
+                        <option value="Unfurnished">Unfurnished</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Tenant Type</label>
+                      <select
+                        value={saveRoomForm.tenant_type}
+                        onChange={e => setSaveRoomForm({ ...saveRoomForm, tenant_type: e.target.value })}
+                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                      >
+                        <option value="bachelor">Bachelor</option>
+                        <option value="family">Family</option>
+                        <option value="any">Any</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Gender Pref</label>
+                      <select
+                        value={saveRoomForm.gender_preference}
+                        onChange={e => setSaveRoomForm({ ...saveRoomForm, gender_preference: e.target.value })}
+                        className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                      >
+                        <option value="Any">Any Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest font-bold mb-1 text-gray-400">Description</label>
+                    <textarea
+                      rows={3}
+                      value={saveRoomForm.description}
+                      onChange={e => setSaveRoomForm({ ...saveRoomForm, description: e.target.value })}
+                      className="w-full bg-[#0D0F12] border border-[#2A2E39] focus:border-primary rounded-lg px-3 py-2 text-xs text-white focus:outline-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400">
+                        Selected Clean Photos ({selectedImages.length})
+                      </label>
+                      <span className="text-[10px] text-emerald-400">✨ Zero Watermarks</span>
+                    </div>
+                    {selectedImages.length === 0 ? (
+                      <p className="text-xs text-red-400 italic">No images selected! Please select at least one photo.</p>
+                    ) : (
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {selectedImages.map((img, i) => (
+                          <div key={i} className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-[#2A2E39] bg-black">
+                            <img src={img} alt="" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => handleToggleImageSelect(img)}
+                              className="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 text-white rounded-full p-0.5"
+                              title="Remove photo"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#2A2E39]">
+                    <button
+                      type="button"
+                      onClick={() => setShowSaveModal(false)}
+                      className="px-4 py-2.5 rounded-xl border border-[#2A2E39] hover:bg-[#2A2E39]/50 text-xs font-bold uppercase text-gray-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saveRoomLoading || selectedImages.length === 0}
+                      className="bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-primary/20 cursor-pointer"
+                    >
+                      {saveRoomLoading ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                      Publish Room Now
+                    </button>
+                  </div>
+                </form>
               </motion.div>
             </div>
           )}

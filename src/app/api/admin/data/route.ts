@@ -284,6 +284,80 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, user: data });
   }
 
+  if (action === "create_room") {
+    const { roomData } = body;
+    if (!roomData || !roomData.title || !roomData.rent) {
+      return NextResponse.json({ error: "title and rent are required" }, { status: 400 });
+    }
+
+    let finalUserId = roomData.user_id;
+    if (!finalUserId) {
+      const { data: adminProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("email", "nithinappala625@gmail.com")
+        .maybeSingle();
+
+      if (adminProfile?.id) {
+        finalUserId = adminProfile.id;
+      } else {
+        const { data: firstProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .limit(1)
+          .maybeSingle();
+        finalUserId = firstProfile?.id;
+      }
+    }
+
+    if (!finalUserId) {
+      return NextResponse.json({ error: "No profile found to associate this listing with" }, { status: 400 });
+    }
+
+    const defaultLeavingDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+
+    const newRoomPayload = {
+      user_id: finalUserId,
+      title: roomData.title,
+      description: roomData.description || "",
+      rent: Number(roomData.rent),
+      advance: Number(roomData.advance || 0),
+      location: roomData.location || "Hyderabad",
+      colony: roomData.colony || roomData.location || "Madhapur",
+      house_no: roomData.house_no || "",
+      full_address: roomData.full_address || `${roomData.colony || "Prime Area"}, ${roomData.location || "Hyderabad"}`,
+      leaving_date: roomData.leaving_date || defaultLeavingDate,
+      tenant_type: roomData.tenant_type || "bachelor",
+      members_allowed: Number(roomData.members_allowed || 2),
+      current_members: Number(roomData.current_members || 1),
+      gender_preference: roomData.gender_preference || "Any",
+      furnishing: roomData.furnishing || "Semi-Furnished",
+      parking: roomData.parking || "Bike",
+      amenities: roomData.amenities || [],
+      furniture: roomData.furniture || [],
+      has_items: !!roomData.has_items,
+      items: roomData.items || [],
+      commission: Number(roomData.commission || 1000),
+      images: Array.isArray(roomData.images) ? roomData.images : [],
+      videos: Array.isArray(roomData.videos) ? roomData.videos : [],
+      is_available: true,
+      is_rented_out: false,
+    };
+
+    const { data: createdRoom, error: insertError } = await supabaseAdmin
+      .from("rooms")
+      .insert(newRoomPayload)
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Failed to insert room:", insertError);
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, room: createdRoom });
+  }
+
   if (!payoutId) {
     return NextResponse.json({ error: "payoutId is required for this action" }, { status: 400 });
   }
