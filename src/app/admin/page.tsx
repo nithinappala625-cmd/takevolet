@@ -366,7 +366,7 @@ export default function AdminPage() {
       // Save to recent extractions
       const updatedRecent = [
         {
-          id: Date.now().toString(),
+          id: targetUrl,
           title: json.data.title,
           rent: json.data.rent,
           location: json.data.colony || json.data.location,
@@ -374,7 +374,7 @@ export default function AdminPage() {
           imagesCount: allHdUrls.length,
           sourceUrl: targetUrl,
           data: json.data,
-          extractedAt: new Date().toISOString(),
+          extractedAt: "Just now",
         },
         ...recentExtractions.filter((r: any) => r.sourceUrl !== targetUrl),
       ].slice(0, 8);

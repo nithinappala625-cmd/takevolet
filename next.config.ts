@@ -17,8 +17,13 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
       // Cloudinary image uploads
       { protocol: "https", hostname: "res.cloudinary.com" },
+      // OLX Apollo CDN and image hosts
+      { protocol: "https", hostname: "apollo.olx.in" },
+      { protocol: "https", hostname: "*.olx.in" },
+      { protocol: "https", hostname: "*.olxcdn.com" },
     ],
   },
+
 
   // Ensure environment variables are validated at build time
   env: {
