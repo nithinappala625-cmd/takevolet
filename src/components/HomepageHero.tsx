@@ -944,21 +944,52 @@ export function DownloadAppSection() {
 
               {/* Download Buttons */}
               <div className="flex flex-wrap items-center gap-4 pt-4">
+                {/* Official Google Play Store Link - Primary Action */}
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.takevolet.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-slate-950 hover:bg-black text-white px-6 py-3 rounded-2xl flex items-center gap-3 border border-slate-700 shadow-xl shadow-primary/10 transition-all hover:scale-[1.02] cursor-pointer group"
+                >
+                  <svg className="w-7 h-7 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#EA4335"
+                      d="M3.609 1.814L13.793 12 3.61 22.186a2.41 2.41 0 0 1-.61-1.686V3.5a2.41 2.41 0 0 1 .609-1.686z"
+                    />
+                    <path
+                      fill="#FBBC04"
+                      d="M17.382 8.412L14.852 10.942 4.692 1.254c.2-.07.42-.11.65-.11.67 0 1.28.27 1.73.71l10.31 6.558z"
+                    />
+                    <path
+                      fill="#4285F4"
+                      d="M14.852 13.058l2.53 2.53-10.31 6.558c-.45.44-1.06.71-1.73.71-.23 0-.45-.04-.65-.11l10.16-9.688z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M20.532 10.23l-3.15-1.818-2.53 2.53 2.53 2.53 3.15-1.818c1.07-.618 1.07-1.624 0-2.242z"
+                    />
+                  </svg>
+                  <div className="text-left">
+                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-slate-300 leading-tight">GET IT ON</span>
+                    <span className="text-base sm:text-lg font-black text-white leading-tight flex items-center gap-1.5">
+                      Google Play <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform text-primary" />
+                    </span>
+                  </div>
+                </a>
+
+                {/* Direct APK Download Alternative */}
                 <a
                   href="/takevolet.apk"
                   download="takevolet-app.apk"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2.5 shadow-lg shadow-primary/25 transition-all cursor-pointer"
+                  className="border border-border bg-card hover:bg-secondary text-foreground px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shadow-sm"
                 >
-                  <Download size={17} /> Download Android APK (Free)
+                  <Download size={16} className="text-primary" /> Direct APK (8.4 MB)
                 </a>
-                <div className="flex items-center gap-2 border border-border bg-card px-5 py-3 rounded-2xl text-xs font-semibold text-muted-foreground shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Google Play Store (Coming Soon)</span>
-                </div>
               </div>
 
-              <p className="text-[11px] text-muted-foreground font-light">
-                Compatible with all Android 8.0+ devices. Safe, lightweight (8.4 MB), and completely free.
+              <p className="text-[11px] text-muted-foreground font-light flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                Available directly on Google Play Store for all Android devices. Verified, fast &amp; completely free.
               </p>
             </div>
 
@@ -1002,9 +1033,14 @@ export function DownloadAppSection() {
                     </span>
                   </div>
 
-                  <div className="bg-primary text-primary-foreground text-center py-2 rounded-xl text-xs font-bold uppercase tracking-wider shadow-md shadow-primary/20">
-                    Connect on WhatsApp
-                  </div>
+                  <a
+                    href="https://play.google.com/store/apps/details?id=com.takevolet.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block bg-primary text-primary-foreground text-center py-2 rounded-xl text-xs font-bold uppercase tracking-wider shadow-md shadow-primary/20 hover:opacity-90 transition-opacity"
+                  >
+                    Install on Google Play
+                  </a>
                 </div>
               </div>
             </div>
