@@ -5,8 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-const FRONTEND_ADMIN_PASSWORD = "Nithin@Takevolet2026";
+import { verifyAdminRequest } from "@/lib/adminAuth";
 
 // Service-role client — bypasses RLS (server-side only, never exposed to browser)
 const supabaseAdmin = createClient(
@@ -16,7 +15,7 @@ const supabaseAdmin = createClient(
 );
 
 function verifyAdmin(request: Request): boolean {
-  return request.headers.get("x-admin-password") === FRONTEND_ADMIN_PASSWORD;
+  return verifyAdminRequest(request);
 }
 
 // ─── GET /api/admin/data ───────────────────────────────────────────────────────

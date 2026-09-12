@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
-
-const FRONTEND_ADMIN_PASSWORD = "Nithin@Takevolet2026";
+import { verifyAdminRequest } from "@/lib/adminAuth";
 const LEADS_FILE_PATH = path.join(process.cwd(), "data", "leads.json");
 
 // Ensure data directory and leads.json exist
@@ -43,8 +42,7 @@ const supabaseAdmin = createClient(
 );
 
 function verifyAdmin(request: Request): boolean {
-  const pwd = request.headers.get("x-admin-password") || request.headers.get("authorization")?.replace("Bearer ", "");
-  return pwd === FRONTEND_ADMIN_PASSWORD || pwd === "Nithin@RoomRelay2026";
+  return verifyAdminRequest(request);
 }
 
 // ─── GET /api/admin/leads ──────────────────────────────────────────────────────

@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-
-const FRONTEND_ADMIN_PASSWORD = "Nithin@Takevolet2026";
+import { verifyAdminRequest } from "@/lib/adminAuth";
 
 function verifyAdmin(request: Request): boolean {
-  const pwd = request.headers.get("x-admin-password");
-  return pwd === FRONTEND_ADMIN_PASSWORD;
+  return verifyAdminRequest(request);
 }
 
 export interface ExtractedListing {
@@ -126,7 +124,7 @@ async function extractOlxListing(rawUrl: string): Promise<ExtractedListing> {
 
   // 1. Parse Schema.org application/ld+json scripts
   const ldJsonScripts = [...html.matchAll(/<script\s+[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
-  let ldItem: Record<string, unknown> | null = null;
+  let ldItem: any = null;
   let breadcrumbs: string[] = [];
 
   for (const scriptMatch of ldJsonScripts) {

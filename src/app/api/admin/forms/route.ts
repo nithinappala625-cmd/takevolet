@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-
-const ADMIN_PASSWORD = "Nithin@Takevolet2026";
+import { verifyAdminRequest } from "@/lib/adminAuth";
 
 export async function GET(request: Request) {
   try {
@@ -66,8 +65,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const pwd = request.headers.get("x-admin-password");
-    if (pwd !== ADMIN_PASSWORD) {
+    if (!verifyAdminRequest(request)) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
