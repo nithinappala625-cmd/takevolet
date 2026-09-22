@@ -57,6 +57,11 @@ const nextConfig: NextConfig = {
         destination: "/terms-and-conditions",
         permanent: true,
       },
+      {
+        source: "/top-projects",
+        destination: "/properties",
+        permanent: true,
+      },
     ];
   },
 };

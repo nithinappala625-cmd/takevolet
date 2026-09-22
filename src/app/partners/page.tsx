@@ -1,6 +1,16 @@
+import { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import { Star, Building2, MapPin } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Our Partner House Owners — Verified Direct Rentals | Takevolet",
+  description:
+    "Meet verified house owners partnered with Takevolet to provide direct, zero-brokerage bachelor & family rooms across Hyderabad.",
+  alternates: {
+    canonical: "/partners",
+  },
+};
 
 export const revalidate = 60; // Revalidate every minute
 

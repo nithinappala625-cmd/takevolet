@@ -50,8 +50,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       title,
       description,
       images: [finalImage],
-    }
-  }
+    },
+    alternates: {
+      canonical: `https://takevolet.online/marketplace/${id}`,
+    },
+  };
 }
 
 export default async function MarketplaceDetailLayout({ children, params }: { children: React.ReactNode, params: Promise<{ id: string }> }) {

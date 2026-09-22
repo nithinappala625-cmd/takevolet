@@ -122,7 +122,7 @@ export const metadata: Metadata = {
   category: "Real Estate",
   classification: "Real Estate, Room Rentals, Properties For Sale, Construction Services, Flatmates, India",
   metadataBase: new URL(APP_URL),
-  alternates: { canonical: "./" },
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "en_IN",

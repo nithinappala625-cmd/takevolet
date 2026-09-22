@@ -50,8 +50,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       title,
       description,
       images: [finalImage],
-    }
-  }
+    },
+    alternates: {
+      canonical: `https://takevolet.online/flatmates/${id}`,
+    },
+  };
 }
 
 export default async function FlatmateDetailLayout({ children, params }: { children: React.ReactNode, params: Promise<{ id: string }> }) {

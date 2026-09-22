@@ -1,4 +1,4 @@
-﻿# ─── Takevolet — GitHub + Vercel Deployment ──────────────────────────────────
+# ─── Takevolet — GitHub + Vercel Deployment ──────────────────────────────────
 
 # Dependencies
 node_modules/
@@ -7,9 +7,13 @@ node_modules/
 
 # Next.js build output
 .next/
-out/
-build/
-dist/
+/out/
+/build/
+/dist/
+takevolet app/build/
+takevolet app/android/build/
+takevolet app/android/app/build/
+takevolet app/.dart_tool/
 
 # Environment files (NEVER commit these)
 .env

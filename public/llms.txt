@@ -1,0 +1,35 @@
+# Takevolet (RoomRelay)
+> India's premier zero-brokerage rental discovery, reels shorts, and cadastral land survey platform.
+
+## Overview
+Takevolet connects property owners, flatmates, and prospective tenants directly across major Indian metropolitan hubs including Hyderabad, Bengaluru, Pune, Mumbai, Chennai, and Delhi NCR with 0% brokerage fees.
+
+## Core Capabilities & Offerings
+- **Direct Owner Rentals**: Verified 1 BHK, 2 BHK, 3 BHK, and shared flats for rent with zero commission.
+- **Flatmate Matchmaking**: Find verified male/female roommates based on profession, lifestyle, dietary preferences, and commute.
+- **Paying Guest (PG) & Co-Living Spaces**: Curated PGs with amenities (Wi-Fi, food, housekeeping, security, power backup).
+- **Video Property Shorts & Reels**: Full-screen 9:16 vertical video walkthroughs of verified rooms and apartments with attached direct-booking cards.
+- **"Know Your Survey Number" Cadastral GIS Portal**: State-wise Indian land records & GIS cadastral map verification covering:
+  - Telangana: Dharani Portal & Bhu-Naksha Cadastral Maps
+  - Andhra Pradesh: Meebhoomi Adangal & Cadastral Survey Numbers
+  - Karnataka: Bhoomi & Dishaank Cadastral Survey App
+  - Maharashtra: MahaBhulekh 7/12 Extract
+  - Tamil Nadu: Patta Chitta Survey Number Portal
+  - Uttar Pradesh: UP Bhulekh Cadastral Maps
+  - Pan-India: ISRO Bhuvan Geo-Spatial Platform
+- **Top Projects Hub**: Verified new launch gated communities, RERA-approved builder apartments, and downloadable floor plan brochures.
+
+## Target Localities
+- **Hyderabad**: HITEC City, Gachibowli, Madhapur, Kondapur, Financial District, Tellapur, Manikonda, Miyapur, Kukatpally.
+- **Bengaluru**: Koramangala, Indiranagar, HSR Layout, Whitefield, Electronic City, Bellandur, Marathahalli, BTM Layout.
+- **Pune**: Hinjewadi, Wakad, Baner, Kharadi, Viman Nagar, Magarpatta.
+
+## Official Links & Endpoints
+- Homepage: https://takevolet.online
+- Browse Rooms & Flats: https://takevolet.online/rooms
+- Find Flatmates: https://takevolet.online/flatmates
+- Paying Guests & Hostels: https://takevolet.online/pgs
+- Video Shorts: https://takevolet.online/shorts
+- Land Survey Map: https://takevolet.online/survey-map
+- Top Builder Projects: https://takevolet.online/properties
+- Google Play Store App: https://play.google.com/store/apps/details?id=com.takevolet.app
